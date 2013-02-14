@@ -37,6 +37,8 @@ void read_config(char *filename)
   rayTraceData.galRadPointNFWTest = -1.0;
   rayTraceData.MGConvFact = -1.0;
   rayTraceData.ComvSmoothingScale = -1.0;
+  rayTraceData.treeAllocFactor = 2.5;
+  rayTraceData.BHCrit = -1.0;
   
   //open file to hold usedvalues
   sprintf(usedfile,"%s-usedvalues",filename);
@@ -209,6 +211,11 @@ void read_config(char *filename)
 	  rayTraceData.MGConvFact = atof(val);
 	  fprintf(usedfp,"%s %lf\n","MGConvFact",atof(val));
 	}
+      else if(strcmp_caseinsens(tag,"BHCrit") == 0)
+	{
+	  rayTraceData.MGConvFact = atof(val);
+	  fprintf(usedfp,"%s %lf\n","MGConvFact",atof(val));
+	}
       else if(strcmp_caseinsens(tag,"GalsFileList") == 0)
 	{
 	  strcpy(rayTraceData.GalsFileList,val);
@@ -359,6 +366,11 @@ void read_config(char *filename)
       assert(rayTraceData.NumGalOutputFiles <= NTasks);
       assert(rayTraceData.NumGalOutputFiles > 0);
     }
+  
+#ifdef TREEPM
+  assert(rayTraceData.BHCrit > 0.0);
+#endif
+  
 #else
   assert(readLightConeOrigin[0] == 1);
   assert(readLightConeOrigin[1] == 1);
