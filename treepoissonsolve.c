@@ -11,6 +11,7 @@
 #include "raytrace.h"
 #include "treecode.h"
 
+/*
 static int compPartNest(const void *a, const void *b)
 {
   if(((const Part*)a)->nest > ((const Part*)b)->nest)
@@ -20,6 +21,7 @@ static int compPartNest(const void *a, const void *b)
   else
     return 0;
 }
+*/
 
 void do_tree_poisson_solve(double densfact)
 {
