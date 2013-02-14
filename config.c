@@ -8,6 +8,7 @@
 #include <hdf5.h>
 #include <gsl/gsl_math.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "raytrace.h"
 
@@ -16,6 +17,7 @@ static int strcmp_caseinsens(const char *s1, const char *s2);
 void read_config(char *filename)
 {
   char usedfile[MAX_FILENAME];
+  char cmd[4096];
   FILE *usedfp,*fp;
   char fline[1024];
   int i,len,loc;
@@ -39,6 +41,9 @@ void read_config(char *filename)
   rayTraceData.ComvSmoothingScale = -1.0;
   rayTraceData.treeAllocFactor = 2.5;
   rayTraceData.BHCrit = -1.0;
+
+  //make output dir
+  mkdir(rayTraceData.OutputPath,02755)
   
   //open file to hold usedvalues
   sprintf(usedfile,"%s-usedvalues",filename);
@@ -340,6 +345,10 @@ void read_config(char *filename)
   //close files
   fclose(usedfp);
   fclose(fp);
+  
+  //copy config file to output folder
+  sprintf(cmd,"cp %s %s/raytrace.cfg",usedfile,rayTraceData.OutputPath);
+  system(cmd);
   
   //error check
 #ifndef MAKE_LENSPLANES
