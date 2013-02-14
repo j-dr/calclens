@@ -43,7 +43,7 @@ void read_config(char *filename)
   rayTraceData.BHCrit = -1.0;
 
   //make output dir
-  mkdir(rayTraceData.OutputPath,02755)
+  mkdir(rayTraceData.OutputPath,02755);
   
   //open file to hold usedvalues
   sprintf(usedfile,"%s-usedvalues",filename);
