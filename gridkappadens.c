@@ -38,7 +38,7 @@ void gridkappadens(double densfact, double backdens)
 	minSL = lensPlaneParts[i].smoothingLength;
     }
   gridOrder = rayTraceData.bundleOrder;
-  while(gs[gridOrder] > minSL/5.0)
+  while(gs[gridOrder] > minSL/SMOOTHKERN_SHTRESOLVE_FAC)
     ++gridOrder;
   if(gridOrder > rayTraceData.rayOrder)
     gridOrder = rayTraceData.rayOrder;
@@ -76,7 +76,7 @@ void gridkappadens(double densfact, double backdens)
   poissonHEALPixArea = 4.0*M_PI/((double) (order2npix(rayTraceData.poissonOrder)));
   
   //mark buffer cells
-  mapbuffrad = rayTraceData.maxSL*2.0 + sqrt(4.0*M_PI/order2npix(rayTraceData.bundleOrder)) + GRIDSEARCH_RADIUS_ARCMIN/60.0/180.0*M_PI;
+  mapbuffrad = rayTraceData.maxSL*2.0 + rayTraceData.partBuffRad;
   mark_bundlecells(mapbuffrad,PRIMARY_BUNDLECELL,GRIDKAPPADENS_MAPBUFF_BUNDLECELL);
   
   alloc_mapcells(PRIMARY_BUNDLECELL,GRIDKAPPADENS_MAPBUFF_BUNDLECELL);

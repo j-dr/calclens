@@ -69,7 +69,7 @@ void do_tree_poisson_solve(double densfact)
     lensPlaneParts[i].nest = peano2nest(lensPlaneParts[i].nest,HEALPIX_UTILS_MAXORDER);
   */
   
-  thetaS = sqrt(rayTraceData.SHTSplitScale*rayTraceData.SHTSplitScale + gridFact2);
+  thetaS = sqrt(rayTraceData.TreePMSplitScale*rayTraceData.TreePMSplitScale + gridFact2);
   td = buildTree(lensPlaneParts,NlensPlaneParts,thetaS,0l);
   
   /*for(i=0;i<NlensPlaneParts;++i)

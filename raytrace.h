@@ -166,6 +166,7 @@ typedef struct {
   char HEALPixWindowFunctionPath[MAX_FILENAME];
   long SHTOrder;
   double ComvSmoothingScale;
+  double BHCrit;
   
   /* for doing gals image search */
   char GalsFileList[MAX_FILENAME]; 
@@ -214,6 +215,7 @@ typedef struct {
   double MGConvFact;
   double TreePMSplitScale;
   int TreePMOnlyDoSHT;
+  double treeAllocFactor;
 } RayTraceData;
 
 // 64 bytes

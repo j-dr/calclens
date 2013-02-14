@@ -26,6 +26,7 @@ void get_smoothing_lengths(void)
   long i;
   double obsSLVal[3];
   double r;
+  double vec[3];
   
   //get part radii set up
   for(i=0;i<NlensPlaneParts;++i)
