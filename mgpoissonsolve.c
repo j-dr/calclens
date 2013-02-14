@@ -73,8 +73,6 @@ void mgpoissonsolve(double densfact, double backdens)
   ptime = -MPI_Wtime();
   
   runTimes[7] -= MPI_Wtime();
-  //get smoothing lengths for particles
-  get_smoothing_lengths();
   
   //loop through active bundle cells and run MG solver
   for(i=0;i<NbundleCells;++i)

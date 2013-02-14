@@ -11,7 +11,7 @@
 #include "raytrace.h"
 #include "healpix_shtrans.h"
 
-#ifdef SHTONLY
+#if defined(SHTONLY) || defined(TREEPM)
 static int shearinterp_comp(double rvec[3], double *pot, double alpha[2], double U[4]);
 static int shearinterp_poly(double rvec[3], double *pot, double alpha[2], double U[4]);
 #endif
@@ -26,7 +26,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   long i,j,k,n;
   long bundleMapShift,mapNest,bundleNest;
   float *mapvec;
-#ifdef SHTONLY
+#if defined(SHTONLY) || defined(TREEPM)
   float *mapvec_gradtheta,*mapvec_gradphi;
   float *mapvec_gradthetatheta,*mapvec_gradthetaphi,*mapvec_gradphiphi;
 #endif
@@ -54,6 +54,9 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   char name[MAX_FILENAME];
 #endif            
   double alm2mapTime,map2almTime;
+#ifdef TREEPM
+  double thetaS2 = rayTraceData.TreePMSplitScale*rayTraceData.TreePMSplitScale;
+#endif
   
   logProfileTag(PROFILETAG_SHT);
   
@@ -72,8 +75,6 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
      4) call map2alm_mpi, divide by -l(l+1), then call alm2map_mpi
      5) then do the ring to peano shuffle
   */
-  
-  get_smoothing_lengths();
   
   //this computes = actual radius needed + max dist a ray moves out of bundleCell
   mapbuffrad = rayTraceData.partBuffRad + rayTraceData.maxSL*2.0;
@@ -411,6 +412,13 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 	    alm_real[i] *= (double) (-1.0/((double) l)/(((double) l)+1.0));
 	    alm_imag[i] *= (double) (-1.0/((double) l)/(((double) l)+1.0));
 	    
+#ifdef TREEPM
+	    if(!rayTraceData.TreePMOnlyDoSHT)
+	      {
+		alm_real[i] *= exp(-0.5*l*(l+1.0)*thetaS2);
+		alm_imag[i] *= exp(-0.5*l*(l+1.0)*thetaS2);
+	      }
+#endif
 	    /*if(strlen(rayTraceData.HEALPixWindowFunctionPath) > 0)
 	      {
 	      alm_real[i] /= plan.window_function[l];
@@ -421,7 +429,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 	++i;
       }
   
-#ifdef SHTONLY
+#if defined(SHTONLY) || defined(TREEPM)
   //compute phi and derivs
   mapvec_gradtheta = (float*)malloc(sizeof(fftwf_complex)*plan.Nmapvec);
   assert(mapvec_gradtheta != NULL);
@@ -457,7 +465,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   sprintf(name,"%s/shtlenspot%ld.%d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
   write_ringmap(name,mapvec,plan);
   
-#ifdef SHTONLY
+#if defined(SHTONLY) || defined(TREEPM)
   sprintf(name,"%s/shtgradtheta%ld.%d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
   write_ringmap(name,mapvec_gradtheta,plan);
   
@@ -489,7 +497,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   write_bundlecells2ascii("step5SHT");
 #endif
   
-#ifdef SHTONLY
+#if defined(SHTONLY) || defined(TREEPM)
   healpixmap_ring2peano_shuffle(&mapvec_gradtheta,plan);
   mapCellsGradTheta = mapCells;
   
@@ -535,7 +543,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   
   healpixsht_destroy_plan(plan);
   
-#ifdef SHTONLY
+#if defined(SHTONLY) || defined(TREEPM)
   //now set ray defl and shear comps with long range part
   long doNotHaveCell;
   double rvec[3],alpha[2],U[4],lenspot;
@@ -579,7 +587,8 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   logProfileTag(PROFILETAG_SHT);
 }
 
-#ifdef SHTONLY
+#if defined(SHTONLY) || defined(TREEPM)
+
 static int compLong(const void *a, const void *b)
 {
   if((*((const long*)a)) > (*((const long*)b)))

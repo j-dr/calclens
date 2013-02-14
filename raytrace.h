@@ -110,6 +110,25 @@
 #define SMOOTHKERN_MGRESOLVE_FAC   4.0
 #define SMOOTHKERN_SHTRESOLVE_FAC  4.0
 
+/*
+  TreePM options
+
+  MIN_SPLIT_TO_SMOOTH_RATIO - minimum ratio of (maximum smoothing scale) to (treePM split scale)
+  MAX_RADTREEWALK_TO_SPLIT_RATIO - maxmimu radius for which tree walk is performed in units of treePM splitting scale
+  SHTSPLITFACTOR - the treePM splitting scale is  SHTSPLITFACTOR*(HEALPix cell size) unless this is too small
+  HEALPIX_GRID_SMOOTH_FACT - fraction of grid cell added in quadrature to splitting scale for tree walk
+  MIN_TREE_OPEN_FAC - tree nodes with sizes greater than SHT splitting scale divided by MIN_TREE_OPEN_FAC are 
+                      forced to be opened even if satisfy BH crit
+  MAX_SMOOTH_TO_TREENODE_FAC - tree nodes with max smoothing length greater than their size divided by MAX_SMOOTH_TO_TREENODE_FAC
+                               are forced to be opened even if satisfy BH crit
+*/
+#define MIN_SPLIT_TO_SMOOTH_RATIO        5.0
+#define MAX_RADTREEWALK_TO_SPLIT_RATIO   5.5
+#define SHTSPLITFACTOR                   3.0
+#define HEALPIX_GRID_SMOOTH_FACT         0.6
+#define MIN_TREE_OPEN_FAC                2.0
+#define MAX_SMOOTH_TO_TREENODE_FAC       2.0
+
 /* macros for bit flags */
 #define SETBITFLAG(x,b) ((x) |= (1 << (b)))
 #define CLEARBITFLAG(x,b) ((x) &= (~(1 << (b))))
@@ -193,6 +212,8 @@ typedef struct {
   double minComvSmoothingScale;
   double maxComvSmoothingScale;
   double MGConvFact;
+  double TreePMSplitScale;
+  int TreePMOnlyDoSHT;
 } RayTraceData;
 
 // 64 bytes
@@ -339,6 +360,12 @@ extern HEALPixMapCell *mapCellsGradPhi;
 extern HEALPixMapCell *mapCellsGradThetaTheta;
 extern HEALPixMapCell *mapCellsGradThetaPhi;
 extern HEALPixMapCell *mapCellsGradPhiPhi;
+
+/* in treepoissonsolve.c */
+void do_tree_poisson_solve(double densfact);
+
+/* in gridkappadens.c */
+void gridkappadens(double densfact, double backdens);
 
 /* in mgpoissonsolve.c */
 void mgpoissonsolve(double densfact, double backdens);

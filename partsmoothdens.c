@@ -25,7 +25,26 @@ void get_smoothing_lengths(void)
 {
   long i;
   double obsSLVal[3];
-
+  double r;
+  
+  //get part radii set up
+  for(i=0;i<NlensPlaneParts;++i)
+    {
+      r = sqrt(lensPlaneParts[i].pos[0]*lensPlaneParts[i].pos[0] + 
+               lensPlaneParts[i].pos[1]*lensPlaneParts[i].pos[1] + 
+	       lensPlaneParts[i].pos[2]*lensPlaneParts[i].pos[2]);
+      
+      lensPlaneParts[i].pos[0] /= r;
+      lensPlaneParts[i].pos[1] /= r;
+      lensPlaneParts[i].pos[2] /= r;
+      
+      vec[0] = lensPlaneParts[i].pos[0];
+      vec[1] = lensPlaneParts[i].pos[1];
+      vec[2] = lensPlaneParts[i].pos[2];
+      
+      lensPlaneParts[i].r = sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+    }
+  
   //enforce these mins and maxes
   obsSLVal[0] = 0.0;
   obsSLVal[1] = lensPlaneParts[0].smoothingLength;
@@ -42,6 +61,8 @@ void get_smoothing_lengths(void)
         lensPlaneParts[i].smoothingLength = rayTraceData.maxSL;
       if(lensPlaneParts[i].smoothingLength < rayTraceData.minSL)
         lensPlaneParts[i].smoothingLength = rayTraceData.minSL;
+      
+      lensPlaneParts[i].cosSmoothingLength = cos(lensPlaneParts[i].smoothingLength);
     }
   
   if(ThisTask == 0)
