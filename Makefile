@@ -26,10 +26,6 @@ OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
 
 #select your computer
 #COMP="orange"
-#COMP="mandor-gcc"
-#COMP="mandor-icc"
-#COMP="fulla-icc"
-#COMP="fulla-gcc"
 COMP="orion-gcc"
 #COMP="midway"
 
@@ -76,56 +72,6 @@ EXTRACFLAGS =  -I/home/beckermr/include #-Wall -W -Wmissing-prototypes -Wstrict-
 EXTRACLIB   = -L/home/beckermr/lib
 endif
 
-
-ifeq ($(COMP),"mandor-gcc")
-CC          =  /usr/local/bin/mpicc
-OPTIMIZE    =  -g -O3 -fno-math-errno #-Werror
-GSLL        =  -lgsl -lgslcblas
-FFTWL       =  -lfftw3 -lfftw3f
-HDF5L       =  -lz -lhdf5_hl -lhdf5
-FITSL       =  -lcfitsio
-EXTRACFLAGS =  -I/home/beckermr/include -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
-	-Wwrite-strings -Wnested-externs -fshort-enums -fno-common -Dinline=
-EXTRACLIB   = -L/home/beckermr/lib
-endif
-
-ifeq ($(COMP),"mandor-icc")
-CC          =  /opt/intel/Compiler/11.1/056/bin/intel64/mpicc
-OPTIMIZE    =  -g -O3
-GSLI        =  -I/home/beckermr/include
-GSLL        =  -L/home/beckermr/lib -lgsl -lgslcblas
-FFTWI       =  -I/home/beckermr/include
-FFTWL       =  -L/home/beckermr/lib -lfftw3 -lfftw3f
-HDF5I       =  -I/home/beckermr/include
-HDF5L       =  -L/home/beckermr/lib -lz -lhdf5_hl -lhdf5
-FITSL       =  -lcfitsio
-EXTRACFLAGS =  -Wall -wd981 #-wd1419 -wd810
-endif
-
-ifeq ($(COMP),"fulla-icc")
-CC          =  /usr/local/openmpi-intel/bin/mpicc
-OPTIMIZE    =  -g -O3 -ipo -Wall -wd981 -wd2259 -wd1572
-GSLL        =  -lgsl -lgslcblas
-FFTWL       =  -lfftw3 -lfftw3f
-HDF5I       =  -I/usr/local/hdf5/include
-HDF5L       =  -L/usr/local/hdf5/lib -lz -lhdf5_hl -lhdf5
-FITSL       =  -lcfitsio
-EXTRACFLAGS =  -I/home/beckermr/include -Wall -wd981
-EXTRACLIB   =  -L/home/beckermr/lib
-endif
-
-ifeq ($(COMP),"fulla-gcc")
-CC          =  /usr/local/openmpi-gcc/bin/mpicc
-OPTIMIZE    =  -g -O3
-GSLL        =  -lgsl -lgslcblas
-FFTWL       =  -lfftw3 -lfftw3f
-HDF5I       =  -I/usr/local/hdf5/include
-HDF5L       =  -L/usr/local/hdf5/lib -lz -lhdf5_hl -lhdf5
-FITSL       =  -lcfitsio
-EXTRACFLAGS =  -I/home/beckermr/include -Wall
-EXTRACLIB   =  -L/home/beckermr/lib
-endif
-
 #set it all up
 ifeq (NFWHALOTEST,$(findstring NFWHALOTEST,$(OPTS)))
 OPTS += -DNOBACKDENS -DPOINTMASSTEST
@@ -159,7 +105,8 @@ OBJS = $(MEMWATCH) $(TESTCODE) raytrace.o raytrace_utils.o healpix_utils.o confi
 	make_lensplanes_hdf5.o lightconeio.o read_lensplanes_hdf5.o make_lensplanes_pointmass_test.o rayio.o partio.o rayprop.o \
 	galsio.o restart.o rot_paratrans.o nnbrs_healpixtree.o \
 	healpix_plmgen.o healpix_shtrans.o shtpoissonsolve.o map_shuffle.o alm2map_transpose_mpi.o partsmoothdens.o \
-	gridsearch.o loadbalance.o alm2allmaps_transpose_mpi.o map2alm_transpose_mpi.o mgpoissonsolve.o mgpoissonsolve_utils.o
+	gridsearch.o loadbalance.o alm2allmaps_transpose_mpi.o map2alm_transpose_mpi.o mgpoissonsolve.o mgpoissonsolve_utils.o \
+	treecode.o treepoissonsolve.o
 
 EXEC = raytrace
 TEST = raytrace
