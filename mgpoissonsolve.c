@@ -19,7 +19,7 @@
 //macros for code
 //#define NGP_FILL_U_MGGRID       /* controls what kind of interpolation is done for guess at lens pot */
                                   /* the NGP interp is faster, but then MG poisson solver is slower by approx same factor */
-#define MGDERIV_METRIC_FAC_AT_END /* define to compute metrix factors for derivs on MG grid after interp to ray position */
+#define MGDERIV_METRIC_FAC_AT_END /* define to compute metric factors for derivs on MG grid after interp to ray position */
 //#define SCALE_MGDENS              /* define to scale the density and potential by a constant factor before poisson solver runs */
 
 //prototypes
@@ -37,7 +37,7 @@ static double getinterpval_healpix_mggrid(double vec[3], double RmatPatchToSpher
 static void get_rmats_bundlecell(long bundleCell, double RmatSphereToPatch[3][3], double RmatPatchToSphere[3][3]);
 static void rot_tangvectens(double _vec[3], double tvec[2], double ttens[2][2], double Rmat[3][3], double rvec[3], double rtvec[2], double rttens[2][2]);
 //static double sphdist_haversine(double t1, double p1, double t2, double p2);
-static void getderiv_mggrid(MGGrid u, double **gx, double **gy, double **gxx, double **gxy, double **gyy);
+//static void getderiv_mggrid(MGGrid u, double **gx, double **gy, double **gxx, double **gxy, double **gyy);
 
 //timing variables
 #define NUMRUNTIMES 11
@@ -127,7 +127,7 @@ void mgpoissonsolve(double densfact, double backdens)
 
 void mgpoissonsolve_bundlecell(long bundleCell, const double densfact, const double backdens)
 {
-  long N,Nlev,lev,Nmin,j,i;
+  long N,Nlev,lev,Nmin,j;
   double L;
   MGGrid u;
   MGGridSet *grids;
@@ -209,6 +209,7 @@ void mgpoissonsolve_bundlecell(long bundleCell, const double densfact, const dou
   runTimes[6] += MPI_Wtime();
   
 #ifdef SCALE_MGDENS
+  long i;
   double nfact = backdens;
   for(lev=Nlev-1;lev>=0;--lev)
     {
@@ -2303,6 +2304,7 @@ static void getderiv_mggrid_xtheta_yphi(MGGrid u, double *gxy)
   1) computes all derivatives needed (i.e. x-, y-, xx-, yy-, and xy-derivative) by finite diff at 4th order  
   2) uses special asymmetirc stencils at the edges of the patch
 */
+/*
 static void getderiv_mggrid(MGGrid u, double **gx, double **gy, double **gxx, double **gxy, double **gyy)
 {
   long Nf = u->N;
@@ -2321,7 +2323,7 @@ static void getderiv_mggrid(MGGrid u, double **gx, double **gy, double **gxx, do
   (*gyy) = (double*)malloc(sizeof(double)*Nf*Nf);
   assert((*gyy) != NULL);
   
-  /* compute derivs of lensing potential */
+  // compute derivs of lensing potential 
   for(i=0;i<Nf;++i)
     for(j=0;j<Nf;++j)
       {
@@ -2481,3 +2483,4 @@ static void getderiv_mggrid(MGGrid u, double **gx, double **gy, double **gxx, do
 	}
     }
 }
+*/
