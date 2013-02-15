@@ -13,7 +13,7 @@
 
 #if defined(SHTONLY) || defined(TREEPM)
 static int shearinterp_comp(double rvec[3], double *pot, double alpha[2], double U[4]);
-static int shearinterp_poly(double rvec[3], double *pot, double alpha[2], double U[4]);
+//static int shearinterp_poly(double rvec[3], double *pot, double alpha[2], double U[4]);
 #endif
 
 #ifdef DEBUG_IO
@@ -546,7 +546,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 #if defined(SHTONLY) || defined(TREEPM)
   //now set ray defl and shear comps with long range part
   long doNotHaveCell;
-  double rvec[3],alpha[2],U[4],lenspot;
+  double rvec[3],alpha[2] = {0.0,0.0},U[4] = {0.0,0.0,0.0,0.0},lenspot = 0.0;
   for(i=0;i<NbundleCells;++i)
     {
       if(ISSETBITFLAG(bundleCells[i].active,PRIMARY_BUNDLECELL))
@@ -589,6 +589,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 
 #if defined(SHTONLY) || defined(TREEPM)
 
+/*
 static int compLong(const void *a, const void *b)
 {
   if((*((const long*)a)) > (*((const long*)b)))
@@ -697,34 +698,33 @@ static void rot_ray_shearinterp_poly(double vec[3], double rvec[3],
   sinpsi = (rephi_vec[0]*etheta_rvec[0] + rephi_vec[1]*etheta_rvec[1] + rephi_vec[2]*etheta_rvec[2])/norm;
   cospsi = (rephi_vec[0]*ephi_rvec[0] + rephi_vec[1]*ephi_rvec[1] + rephi_vec[2]*ephi_rvec[2])/norm;
   
-  /* psi is defined as
-     R(e_theta) = cos(psi) e_theta' - sin(psi) e_phi'
-     R(e_phi)   = sin(psi) e_theta' + cos(psi) e_phi'
+  /// psi is defined as
+  //   R(e_theta) = cos(psi) e_theta' - sin(psi) e_phi'
+  //   R(e_phi)   = sin(psi) e_theta' + cos(psi) e_phi'
      
-     thus to rotate tangent vector
-     t = t_theta R(e_theta) + t_phi R(e_phi)
+  //   thus to rotate tangent vector
+  //   t = t_theta R(e_theta) + t_phi R(e_phi)
      
-     we plug and chug to get
-     t = (t_theta*cos(psi) + t_phi*sin(psi)) e_theta' + (-t_theta*sin(psi) + t_phi*cos(psi)) e_phi' 
-  */
+  //   we plug and chug to get
+  //   t = (t_theta*cos(psi) + t_phi*sin(psi)) e_theta' + (-t_theta*sin(psi) + t_phi*cos(psi)) e_phi' 
+  
   ralpha[0] = alpha[0]*cospsi + alpha[1]*sinpsi;
   ralpha[1] = -1.0*alpha[0]*sinpsi + alpha[1]*cospsi;
   
-  /* psi is defined as
-     R(e_theta) = cos(psi) e_theta' - sin(psi) e_phi'
-     R(e_phi)   = sin(psi) e_theta' + cos(psi) e_phi'
+  // psi is defined as
+  //   R(e_theta) = cos(psi) e_theta' - sin(psi) e_phi'
+  //   R(e_phi)   = sin(psi) e_theta' + cos(psi) e_phi'
      
-     under this coordinate change we have that 
+  //   under this coordinate change we have that 
      
-     T' = R x T x Transpose(R)
-     where 
-     T = | t_00 t_01 |
-         | t_10 t_11 |
+  //   T' = R x T x Transpose(R)
+  //   where 
+  //   T = | t_00 t_01 |
+  //       | t_10 t_11 |
          
-     R = | cos(psi) -sin(psi) |
-         | sin(psi)  cos(psi) |
-  */
- 
+  //   R = | cos(psi) -sin(psi) |
+  //       | sin(psi)  cos(psi) |
+   
   double r[2][2],rt[2][2],t1[2][2];
   int i,j;
   
@@ -748,7 +748,6 @@ static void rot_ray_shearinterp_poly(double vec[3], double rvec[3],
 }
 
 #include <gsl/gsl_multifit.h>
-
 static int shearinterp_poly(double _vec[3], double *pot, double alpha[2], double U[4])
 {
   long doNotHaveCell = 0;
@@ -998,7 +997,8 @@ static int shearinterp_poly(double _vec[3], double *pot, double alpha[2], double
   
   return doNotHaveCell;
 }
-  
+*/
+
 static int shearinterp_comp(double rvec[3], double *pot, double alpha[2], double U[4])
 {
   double theta,phi,wgt[4],pot_interp;
