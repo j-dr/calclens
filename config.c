@@ -201,10 +201,20 @@ void read_config(char *filename)
 	  strcpy(rayTraceData.HEALPixRingWeightPath,val);
 	  fprintf(usedfp,"%s %s\n","HEALPixRingWeightPath",val);
 	} 
+      else if(strcmp_caseinsens(tag,"HEALPixWindowFunctionPath") == 0)
+	{
+	  strcpy(rayTraceData.HEALPixWindowFunctionPath,val);
+	  fprintf(usedfp,"%s %s\n","HEALPixWindowFunctionPath",val);
+	} 
       else if(strcmp_caseinsens(tag,"SHTOrder") == 0)
 	{
 	  rayTraceData.SHTOrder = atol(val);
 	  fprintf(usedfp,"%s %ld\n","SHTOrder",atol(val));
+	}
+      else if(strcmp_caseinsens(tag,"minSHTOrder") == 0)
+	{
+	  rayTraceData.minSHTOrder = atol(val);
+	  fprintf(usedfp,"%s %ld\n","minSHTOrder",atol(val));
 	}
       else if(strcmp_caseinsens(tag,"ComvSmoothingScale") == 0)
 	{
@@ -218,8 +228,8 @@ void read_config(char *filename)
 	}
       else if(strcmp_caseinsens(tag,"BHCrit") == 0)
 	{
-	  rayTraceData.MGConvFact = atof(val);
-	  fprintf(usedfp,"%s %lf\n","MGConvFact",atof(val));
+	  rayTraceData.BHCrit = atof(val);
+	  fprintf(usedfp,"%s %lf\n","BHCrit",atof(val));
 	}
       else if(strcmp_caseinsens(tag,"GalsFileList") == 0)
 	{

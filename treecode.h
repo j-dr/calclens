@@ -16,7 +16,7 @@ typedef struct {
   long alwaysOpen;
 } TreeNode;
 
-#define NumTreeExpFactTable 30000
+#define NumTreeExpFactTable 1000
 typedef struct {
   TreeNode *nodes;
   long Nnodes;

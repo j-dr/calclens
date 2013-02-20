@@ -248,7 +248,7 @@ void raytrace(void)
 #endif
 #ifdef TREEPM
 	  do_tree_poisson_solve(rayTraceData.densfact);
-	  gridkappadens(rayTraceData.densfact,rayTraceData.backdens);
+	  //gridkappadens(rayTraceData.densfact,rayTraceData.backdens);
 #else
 	  mgpoissonsolve(rayTraceData.densfact,rayTraceData.backdens);
 #endif
@@ -410,7 +410,7 @@ static void set_plane_params(void)
 	  if(thetaS/rayTraceData.maxSL >= MIN_SPLIT_TO_SMOOTH_RATIO)
 	    break;
 	}
-      while(testOrder > rayTraceData.SHTOrder);
+      while(testOrder > rayTraceData.minSHTOrder);
       
       rayTraceData.poissonOrder = testOrder;
       
@@ -433,8 +433,8 @@ static void set_plane_params(void)
     {
       fprintf(stderr,"densfact = %le, backdens = %le, max smoothing scale = %le, cmv dist. = %lg\n",
 	      rayTraceData.densfact,rayTraceData.backdens,rayTraceData.maxComvSmoothingScale/rayTraceData.planeRad,rayTraceData.planeRad);
-      fprintf(stderr,"SHT order = %ld, partBuffRad = %lg, splitScale = %le\n",rayTraceData.poissonOrder
-	      ,rayTraceData.partBuffRad,rayTraceData.TreePMSplitScale);
+      fprintf(stderr,"SHT order = %ld, partBuffRad = %lg, splitScale = %le [%f SHT cells sizes]\n",rayTraceData.poissonOrder
+	      ,rayTraceData.partBuffRad,rayTraceData.TreePMSplitScale,rayTraceData.TreePMSplitScale/sqrt(4.0*M_PI/order2npix(testOrder)));
     }
 #else
   rayTraceData.poissonOrder = rayTraceData.SHTOrder;

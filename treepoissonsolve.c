@@ -30,11 +30,7 @@ void do_tree_poisson_solve(double densfact)
   TreeWalkData twd;
   double r,vec[3];
   double obsSLVal[3],thetaS;
-#ifdef HEALPIX_NGP_PARTINTERP
-  double gridFact2 = 0.0;
-#else
   double gridFact2 = 4.0*M_PI/order2npix(rayTraceData.poissonOrder)*HEALPIX_GRID_SMOOTH_FACT*HEALPIX_GRID_SMOOTH_FACT;
-#endif
   long Nwalk = 0,Nf = 0,Nn = 0,Ne = 0;
   double timeT,timeB;
     

@@ -116,9 +116,9 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 	      
 	      if(
 	      #ifdef USE_FULLSKY_PARTDIST
-	      (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,MAPBUFF_BUNDLECELL))
+	      (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
 	      #else
-	      (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,MAPBUFF_BUNDLECELL))
+	      (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
 	      #endif
 	      && bundleCells[bundleNest].firstMapCell >= 0)
 	      {
@@ -131,36 +131,38 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 	      continue;
 	      //END OF FIXME NGP SHT step
 	      */
+
+#ifdef TREEPM
+	      if(!rayTraceData.TreePMOnlyDoSHT)
+		{
+		  long wgtpix[4];
+		  double wgt[4];
+		  get_interpol(theta,phi,wgtpix,wgt,rayTraceData.poissonOrder);
+		  for(m=0;m<4;++m)
+		    {
+		      mapNest = ring2nest(wgtpix[m],rayTraceData.poissonOrder);
+		      bundleNest = (mapNest >> bundleMapShift);
+		      j = (bundleNest << bundleMapShift);
+		      if(
+#ifdef USE_FULLSKY_PARTDIST
+			 (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+#else
+			 (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+#endif
+			 && bundleCells[bundleNest].firstMapCell >= 0)
+			{
+			  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
+			    (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass*wgt[m]);
+			  
+			  assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
+			}
+		    }
+		  
+		  continue;
+		}
+#endif
 	      
-	      /*
-	      //FIXME CIC SHT step - comment this out! 
-	      long wgtpix[4];
-	      double wgt[4];
-	      get_interpol(theta,phi,wgtpix,wgt,rayTraceData.poissonOrder);
-	      for(m=0;m<4;++m)
-	      {
-	      mapNest = ring2nest(wgtpix[m],rayTraceData.poissonOrder);
-	      bundleNest = (mapNest >> bundleMapShift);
-	      j = (bundleNest << bundleMapShift);
-	      if(
-	      #ifdef USE_FULLSKY_PARTDIST
-	      (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,MAPBUFF_BUNDLECELL))
-	      #else
-	      (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,MAPBUFF_BUNDLECELL))
-	      #endif
-	      && bundleCells[bundleNest].firstMapCell >= 0)
-	      {
-	      mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
-	      (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass*wgt[m]);
-	      
-	      assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
-	      }
-	      }
-	      
-	      continue;
-	      //END OF FIXME CIC SHT step
-	      */
-	      
+	      //use smoothing lengths otherwise
 	      smoothingRad = lensPlaneParts[k+bundleCells[i].firstPart].smoothingLength;
 	      
 	      queryOrder = 0;
@@ -217,9 +219,9 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 		      
 		      if(
 #ifdef USE_FULLSKY_PARTDIST
-			 (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,MAPBUFF_BUNDLECELL))
+			 (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
 #else
-			 (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,MAPBUFF_BUNDLECELL))
+			 (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
 #endif
 			 && bundleCells[bundleNest].firstMapCell >= 0)
 			{
@@ -250,9 +252,9 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 		  
 		  if(
 #ifdef USE_FULLSKY_PARTDIST
-		     (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,MAPBUFF_BUNDLECELL))
+		     (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
 #else
-		     (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,MAPBUFF_BUNDLECELL))
+		     (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
 #endif
 		     && bundleCells[bundleNest].firstMapCell >= 0)
 		    {
@@ -299,13 +301,15 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
       if(ThisTask == 0)
 	fprintf(stderr,"using ring weights!\n");
     }
-  /*if(strlen(rayTraceData.HEALPixWindowFunctionPath) > 0)
+#ifdef TREEPM
+  if(strlen(rayTraceData.HEALPixWindowFunctionPath) > 0)
     {
-    read_window_function(rayTraceData.HEALPixWindowFunctionPath,&plan);
-    
-    if(ThisTask == 0)
-    fprintf(stderr,"using pixel window!\n");
-    }*/
+      read_window_function(rayTraceData.HEALPixWindowFunctionPath,&plan);
+      
+      if(ThisTask == 0)
+	fprintf(stderr,"using pixel window!\n");
+    }
+#endif
   mapvec = (float*)malloc(sizeof(fftwf_complex)*plan.Nmapvec);
   assert(mapvec != NULL);
   healpixmap_peano2ring_shuffle(mapvec,plan);
@@ -418,12 +422,13 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 		alm_real[i] *= exp(-0.5*l*(l+1.0)*thetaS2);
 		alm_imag[i] *= exp(-0.5*l*(l+1.0)*thetaS2);
 	      }
-#endif
-	    /*if(strlen(rayTraceData.HEALPixWindowFunctionPath) > 0)
+
+	    if(strlen(rayTraceData.HEALPixWindowFunctionPath) > 0)
 	      {
-	      alm_real[i] /= plan.window_function[l];
-	      alm_imag[i] /= plan.window_function[l];
-	      }*/
+		alm_real[i] /= pow(plan.window_function[l],HPIX_WINDOWFUNC_POW[rayTraceData.poissonOrder]);
+		alm_imag[i] /= pow(plan.window_function[l],HPIX_WINDOWFUNC_POW[rayTraceData.poissonOrder]);
+	      }
+#endif
 	  }
 	
 	++i;

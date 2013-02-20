@@ -92,7 +92,7 @@ void gridkappadens(double densfact, double backdens)
 	 && 
 	 bundleCells[i].Nparts > 0
 	 &&
-	 (ISSETBITFLAG(bundleCells[i].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[i].active,MAPBUFF_BUNDLECELL))
+	 (ISSETBITFLAG(bundleCells[i].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[i].active,GRIDKAPPADENS_MAPBUFF_BUNDLECELL))
 	 &&
 	 bundleCells[i].firstMapCell >= 0)
 	{
@@ -160,7 +160,7 @@ void gridkappadens(double densfact, double backdens)
 		      bundleNest = (mapNest >> bundleMapShift);
 		      j = (bundleNest << bundleMapShift);
 		      
-		      if( (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,MAPBUFF_BUNDLECELL))
+		      if( (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,GRIDKAPPADENS_MAPBUFF_BUNDLECELL))
 			  && bundleCells[bundleNest].firstMapCell >= 0)
 			{
 			  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val += 
@@ -251,7 +251,7 @@ void gridkappadens(double densfact, double backdens)
                       baseInd = (bundleNest << bundleMapShift);
                       if(bundleCells[bundleNest].firstMapCell >= 0
                          &&
-                         (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,MAPBUFF_BUNDLECELL))
+                         (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,GRIDKAPPADENS_MAPBUFF_BUNDLECELL))
                          )
                         {
                           mapinds[k] = bundleCells[bundleNest].firstMapCell + mapNest - baseInd;

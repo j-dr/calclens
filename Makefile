@@ -1,8 +1,8 @@
 # compile time options
 #OPTS += -DMAKE_LENSPLANES #makes lens planes from input light cone - must be done before ray tracing 
 #OPTS += -DBORNAPPRX #ray trace with born approximation
-#OPTS += -DOUTPUTRAYDEFLECTIONS #output ray deflections
-#OPTS += -DOUTPUTPHI #output lensing potential at ray position
+OPTS += -DOUTPUTRAYDEFLECTIONS #output ray deflections
+OPTS += -DOUTPUTPHI #output lensing potential at ray position
 OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
 #OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
 #OPTS += -DSHTONLY
@@ -11,7 +11,7 @@ OPTS += -DTREEPM          #define to use TREEPM
 
 #testing options
 #OPTS += -DNFWHALOTEST #define to write lensplanes and do test with an NFW halo - need POINTMASSTEST defined as well 
-#OPTS += -DPOINTMASSTEST #define to write lensplanes and do a point mass test
+OPTS += -DPOINTMASSTEST #define to write lensplanes and do a point mass test
 
 #!!! DO NOT CHANGE THESE UNLESS YOU ARE AN EXPERT !!!
 #OPTS += -DNOBACKDENS #define to not subtract a background density from kappa grid - use for point mass test or NFW halo test
@@ -26,8 +26,8 @@ OPTS += -DTREEPM          #define to use TREEPM
 
 #select your computer
 #COMP="orange"
-#COMP="orion-gcc"
-COMP="midway"
+COMP="orion-gcc"
+#COMP="midway"
 
 ################################
 #edit/add to match your machine
@@ -117,7 +117,7 @@ OBJS1=$(OBJS) main.o
 $(EXEC): $(OBJS1)
 	$(CLINK) $(CFLAGS) -o $@ $(OBJS1) $(CLIB)
 
-$(OBJS1): healpix_shtrans.h  healpix_utils.h  profile.h  raytrace.h mgpoissonsolve.h Makefile
+$(OBJS1): healpix_shtrans.h  healpix_utils.h  profile.h  raytrace.h mgpoissonsolve.h treecode.h Makefile
 
 .PHONY : clean
 clean: 

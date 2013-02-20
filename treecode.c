@@ -6,6 +6,8 @@
 #include <float.h>
 #include <assert.h>
 #include <gsl/gsl_sf_expint.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
 
 #include "raytrace.h"
 #include "treecode.h"
@@ -37,6 +39,11 @@ static struct _kernelTableStr {
   double cosSigma;
 } kernelTable[NumKernelTable];
 
+static gsl_spline *spline_alpha = NULL;
+static gsl_interp_accel *acc_alpha = NULL; 
+static gsl_spline *spline_gamma = NULL;
+static gsl_interp_accel *acc_gamma = NULL; 
+
 TreeWalkData computePotentialForceShearTree(double vec[3], double BHCrit, TreeData td)
 {
   TreeWalkData twd;
@@ -47,6 +54,7 @@ TreeWalkData computePotentialForceShearTree(double vec[3], double BHCrit, TreeDa
   double vnorm = sqrt((1.0 - vec[2])*(1.0 + vec[2]));
   double vnorm2 = vnorm*vnorm;
   //double U[4],alpha[2];
+  double expf;
   
 #ifdef CHECKTREEWALK
   int checkMe = 0;
@@ -138,11 +146,12 @@ TreeWalkData computePotentialForceShearTree(double vec[3], double BHCrit, TreeDa
 	      cosp /= norm;
 	      
 	      //factors needed for comp of f, gammaE, and pot 
-	      w = (cosr - td->minCosr)/td->dcosr;
+	      /*w = (cosr - td->minCosr)/td->dcosr;
 	      i = (long) w;
 	      ip1 = i + 1;
 	      w -= i;
 	      onemw = 1.0 - w;
+	      */
 	      
 	      if(cosr >= td->parts[td->nodes[nodeInd].partInd].cosSmoothingLength)
 		{ 
@@ -196,8 +205,15 @@ TreeWalkData computePotentialForceShearTree(double vec[3], double BHCrit, TreeDa
 		}
 	      
 	      //multiply by the treePM force splitting function to remove long-range part
-	      fr *= (td->expAlphaTable[i]*onemw + td->expAlphaTable[ip1]*w);
-	      two_gammaE *= (td->expGammaTable[i]*onemw + td->expGammaTable[ip1]*w);
+	      //fr *= (td->expAlphaTable[i]*onemw + td->expAlphaTable[ip1]*w);
+	      //two_gammaE *= (td->expGammaTable[i]*onemw + td->expGammaTable[ip1]*w);
+	      
+	      //fr *= gsl_spline_eval(spline_alpha,cosr,acc_alpha);
+	      //two_gammaE *= gsl_spline_eval(spline_gamma,cosr,acc_gamma);
+	      
+	      expf = exp((cosr-1.0)/td->thetaSplit2);
+	      fr *= expf;
+	      two_gammaE *= expf*(1.0 + sinr*sinr/td->thetaSplit2/(1.0 + cosr));
 	      
 	      twd.pot += pot;
 	      twd.alpha[0] += fr*cosp;
@@ -258,11 +274,12 @@ TreeWalkData computePotentialForceShearTree(double vec[3], double BHCrit, TreeDa
 		  cosp /= norm;
 		  
 		  //factors needed for comp of f, gammaE, and pot 
-		  w = (cosr - td->minCosr)/td->dcosr;
+		  /*w = (cosr - td->minCosr)/td->dcosr;
 		  i = (long) w;
 		  ip1 = i + 1;
 		  w -= i;
 		  onemw = 1.0 - w;
+		  */
 		  
 		  if(cosr >= td->parts[nextPart].cosSmoothingLength)
 		    { 
@@ -316,9 +333,16 @@ TreeWalkData computePotentialForceShearTree(double vec[3], double BHCrit, TreeDa
 		    }
 		  
 		  //multiply by the treePM force splitting function to remove long-range part
-		  fr *= (td->expAlphaTable[i]*onemw + td->expAlphaTable[ip1]*w);
-		  two_gammaE *= (td->expGammaTable[i]*onemw + td->expGammaTable[ip1]*w);
+		  //fr *= (td->expAlphaTable[i]*onemw + td->expAlphaTable[ip1]*w);
+		  //two_gammaE *= (td->expGammaTable[i]*onemw + td->expGammaTable[ip1]*w);
 		  
+		  //fr *= gsl_spline_eval(spline_alpha,cosr,acc_alpha);
+		  //two_gammaE *= gsl_spline_eval(spline_gamma,cosr,acc_gamma);
+
+		  expf = exp((cosr-1.0)/td->thetaSplit2);
+		  fr *= expf;
+		  two_gammaE *= expf*(1.0 + sinr*sinr/td->thetaSplit2/(1.0 + cosr));
+	      
 		  twd.pot += pot;
 		  twd.alpha[0] += fr*cosp;
 		  twd.alpha[1] += fr*sinp;
@@ -396,11 +420,12 @@ TreeWalkData computePotentialForceShearTree(double vec[3], double BHCrit, TreeDa
 	  cosp = (vec[2]*tmp - td->nodes[nodeInd].vec[2]*vnorm2)/norm;
 	  
 	  //factors needed for comp of f, gammaE, and pot 
-	  w = (cosr - td->minCosr)/td->dcosr;
+	  /*w = (cosr - td->minCosr)/td->dcosr;
 	  i = (long) w;
 	  ip1 = i + 1;
 	  w -= i;
 	  onemw = 1.0 - w;
+	  */
 	  
 	  mass_4pi = mass/(12.5663706143591729538505735331180115367886775975);
 	  mass_4pi_cosrm1 = mass_4pi/cosrm1;
@@ -410,8 +435,15 @@ TreeWalkData computePotentialForceShearTree(double vec[3], double BHCrit, TreeDa
 	  two_gammaE = mass_4pi_cosrm1*cosrp1;
 	  
 	  //multiply by the treePM force splitting function to remove long-range part
-	  fr *= (td->expAlphaTable[i]*onemw + td->expAlphaTable[ip1]*w);
-	  two_gammaE *= (td->expGammaTable[i]*onemw + td->expGammaTable[ip1]*w);
+	  //fr *= (td->expAlphaTable[i]*onemw + td->expAlphaTable[ip1]*w);
+	  //two_gammaE *= (td->expGammaTable[i]*onemw + td->expGammaTable[ip1]*w);
+	  
+	  //fr *= gsl_spline_eval(spline_alpha,cosr,acc_alpha);
+	  //two_gammaE *= gsl_spline_eval(spline_gamma,cosr,acc_gamma);
+	      
+	  expf = exp((cosr-1.0)/td->thetaSplit2);
+	  fr *= expf;
+	  two_gammaE *= expf*(1.0 + sinr*sinr/td->thetaSplit2/(1.0 + cosr));
 	  
 	  twd.pot += pot;
 	  twd.alpha[0] += fr*cosp;
@@ -512,12 +544,13 @@ TreeData buildTree(Part *parts, long Nparts, double thetaSplit, long baseOrder)
     s = -1.0;
   else
     s = cos((MAX_RADTREEWALK_TO_SPLIT_RATIO*td->thetaSplit+td->nodeArcSizes[baseOrder])*2.0);
-  td->dcosr = (1.0 - s)/((double) (NumTreeExpFactTable-2));
-  td->minCosr = s;
+  td->dcosr = acos(s)/((double) (NumTreeExpFactTable-1)); //(1.0 - s)/((double) (NumTreeExpFactTable-1));
+  td->minCosr = 0.0; //s;
   
-  for(i=0;i<NumTreeExpFactTable;++i)
+  for(i=0;i<NumTreeExpFactTable-1;++i)
     {
-      td->cosrTable[i] = i*td->dcosr + s;
+      //td->cosrTable[i] = i*td->dcosr + s;
+      td->cosrTable[i] = cos((NumTreeExpFactTable-1-i)*td->dcosr + td->minCosr);
       
       if(td->cosrTable[i] > 1.0)
 	td->cosrTable[i] = 1.0;
@@ -540,6 +573,34 @@ TreeData buildTree(Part *parts, long Nparts, double thetaSplit, long baseOrder)
 	  td->potTable[i] = gsl_sf_expint_Ei(r);
 	}
     }
+  
+  td->cosrTable[NumTreeExpFactTable-1] = 1.0;
+  td->expAlphaTable[NumTreeExpFactTable-1] = 1.0;
+  td->expGammaTable[NumTreeExpFactTable-1] = 1.0;
+  r = -1e-120;
+  td->potTable[i] = gsl_sf_expint_Ei(r);
+  
+  //if(ThisTask == 0)
+  //for(i=0;i<NumTreeExpFactTable;++i)
+  //  fprintf(stderr,"cosr = %g, a,g = %g|%g\n",td->cosrTable[i],td->expAlphaTable[i],td->expGammaTable[i]);
+  
+  if(spline_alpha != NULL)
+    gsl_spline_free(spline_alpha);
+  spline_alpha = gsl_spline_alloc(gsl_interp_cspline,(size_t) (NumTreeExpFactTable));
+  gsl_spline_init(spline_alpha,td->cosrTable,td->expAlphaTable,(size_t) (NumTreeExpFactTable));
+  if(acc_alpha != NULL)
+    gsl_interp_accel_reset(acc_alpha);
+  else
+    acc_alpha = gsl_interp_accel_alloc();
+  
+  if(spline_gamma != NULL)
+    gsl_spline_free(spline_gamma);
+  spline_gamma = gsl_spline_alloc(gsl_interp_cspline,(size_t) (NumTreeExpFactTable));
+  gsl_spline_init(spline_gamma,td->cosrTable,td->expGammaTable,(size_t) (NumTreeExpFactTable));
+  if(acc_gamma != NULL)
+    gsl_interp_accel_reset(acc_gamma);
+  else
+    acc_gamma = gsl_interp_accel_alloc();
   
   if(initTables)
     initKernelTables();
@@ -667,10 +728,11 @@ TreeData buildTree(Part *parts, long Nparts, double thetaSplit, long baseOrder)
   if(ThisTask == 0)
     fprintf(stderr,"tree built in %lg seconds. (init,addparts,finalize,refine,expand = %lg|%lg|%lg|%lg|%lg seconds, baseOrder = %ld)\n",
 	    timeB,times[0],times[1],times[2],times[3],times[4],baseOrder);
-#else
-  if(ThisTask == 0)
-    fprintf(stderr,"tree built in %lg seconds.\n",timeB);
 #endif
+  //#else
+  //if(ThisTask == 0)
+  //fprintf(stderr,"tree built in %lg seconds.\n",timeB);
+  //#endif
     
   return td;
 }
@@ -1506,10 +1568,19 @@ static double force_shear_parang_ppshort_sigma(double vec[3], double vnorm, doub
     }
   
   //multiply by the treePM force splitting function to remove long-range part
-#ifndef DIRECTSUMMATION
-  fr *= (td->expAlphaTable[i]*onemw + td->expAlphaTable[ip1]*w);
-  two_gammaE *= (td->expGammaTable[i]*onemw + td->expGammaTable[ip1]*w);
-#endif
+  //FIXME #ifndef DIRECTSUMMATION
+  //fr *= (td->expAlphaTable[i]*onemw + td->expAlphaTable[ip1]*w);
+  //two_gammaE *= (td->expGammaTable[i]*onemw + td->expGammaTable[ip1]*w);
+  //#endif
+  
+  /*double expf;
+  expf = exp((cosr-1.0)/td->thetaSplit2);
+  fr *= expf;
+  two_gammaE *= expf*(1.0 + sinr*sinr/td->thetaSplit2/(1.0 + cosr));
+  */
+  
+  fr *= gsl_spline_eval(spline_alpha,cosr,acc_alpha);
+  two_gammaE *= gsl_spline_eval(spline_gamma,cosr,acc_gamma);
   
   fvec[0] = fr*cosp;
   fvec[1] = fr*sinp;
@@ -1518,6 +1589,55 @@ static double force_shear_parang_ppshort_sigma(double vec[3], double vnorm, doub
   shtens[1] = two_gammaE*sinp*cosp;             //2*0+1 = 1
   //shtens[2] = shtens[1];                      //2*1+0 = 2 //2*0+1 = 1
   //shtens[3] = -shtens[3];                     //2*1+1 = 3
+  
+  /*
+  static long iiii = 1;
+  if(iiii == 1)
+    {
+      /*
+      fprintf(stderr,"cosr = %f, i,ip1 = %d|%d, w,1-w = %f|%f, a,g = %g|%g (true %g|%g)\n",
+	      cosr,i,ip1,w,onemw,
+	      td->expAlphaTable[i]*onemw + td->expAlphaTable[ip1]*w,
+	      td->expGammaTable[i]*onemw + td->expGammaTable[ip1]*w,
+	      exp((cosr-1.0)/td->thetaSplit2),
+	      exp((cosr-1.0)/td->thetaSplit2)*(1.0 + sinr*sinr/td->thetaSplit2/(1.0 + cosr)));
+      */
+  /*
+      cosr = td->dcosr*i + td->minCosr + td->dcosr/2.0;
+      if(1.0 - cosr*cosr >= 0.0)
+	sinr = sqrt(1.0 - cosr*cosr);
+      else
+	sinr = 0.0;
+      w = (cosr - td->minCosr)/td->dcosr;
+      i = (long) w;
+      ip1 = i + 1;
+      w -= i;
+      onemw = 1.0 - w;
+    */  
+      /*fprintf(stderr,"tt  cosr = %f, i,ip1 = %d|%d, w,1-w = %f|%f, a,g = %g|%g (true %g|%g), i a,g = %g|%g, ip1 a,g = %g|%g\n",
+	      cosr,i,ip1,w,onemw,
+	      td->expAlphaTable[i]*onemw + td->expAlphaTable[ip1]*w,
+	      td->expGammaTable[i]*onemw + td->expGammaTable[ip1]*w,
+	      exp((cosr-1.0)/td->thetaSplit2),
+	      exp((cosr-1.0)/td->thetaSplit2)*(1.0 + sinr*sinr/td->thetaSplit2/(1.0 + cosr)),
+	      td->expAlphaTable[i],td->expGammaTable[i],
+	      td->expAlphaTable[ip1],td->expGammaTable[ip1]
+	      );
+      */
+      /*
+      fprintf(stderr,"tts cosr = %f, i,ip1 = %d|%d, w,1-w = %f|%f, a,g = %g|%g (true %g|%g), i a,g = %e|%e, ip1 a,g = %e|%e\n",
+	      cosr,i,ip1,w,onemw,
+	      (gsl_spline_eval(spline_alpha,cosr,acc_alpha)),
+	      (gsl_spline_eval(spline_gamma,cosr,acc_gamma)),
+	      exp((cosr-1.0)/td->thetaSplit2),
+	      exp((cosr-1.0)/td->thetaSplit2)*(1.0 + sinr*sinr/td->thetaSplit2/(1.0 + cosr)),
+	      (td->expAlphaTable[i]),(td->expGammaTable[i]),
+	      (td->expAlphaTable[ip1]),(td->expGammaTable[ip1])
+	      );
+      
+      */
+  //  iiii = 0;
+  //}
   
   return pot;
 }
@@ -1541,6 +1661,7 @@ TreeWalkData computePotentialForceShearDirectSummation(double vec[3], TreeData t
   twd.NumInteractTreeWalk = 0;
   twd.NumInteractTreeWalkNode = 0;
   twd.Nempty = 0;
+  double maxR = cos(MAX_RADTREEWALK_TO_SPLIT_RATIO*td->thetaSplit);
   
   for(i=0;i<td->Nparts;++i)
     {
@@ -1551,9 +1672,11 @@ TreeWalkData computePotentialForceShearDirectSummation(double vec[3], TreeData t
       vecp[1] /= td->parts[i].r;
       vecp[2] /= td->parts[i].r;
       cosarcDistCOM = vec[0]*vecp[0] + vec[1]*vecp[1] + vec[2]*vecp[2];
-      twd.pot += force_shear_parang_ppshort_sigma(vec,vnorm,vecp,cosarcDistCOM,
-						  td->parts[i].smoothingLength,td,
-						  td->parts[i].mass,alpha,U);
+      
+      if(cosarcDistCOM >= maxR)
+	twd.pot += force_shear_parang_ppshort_sigma(vec,vnorm,vecp,cosarcDistCOM,
+						    td->parts[i].smoothingLength,td,
+						    td->parts[i].mass,alpha,U);
       twd.alpha[0] += alpha[0];
       twd.alpha[1] += alpha[1];
       twd.U[0] += U[0];

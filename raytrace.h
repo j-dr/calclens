@@ -103,7 +103,7 @@
   SMOOTHKERN_SHTRESOLVE_FAC - # of resolution elements used to grid up particles for SHT density
 */
 #define GRIDSEARCH_RADIUS_ARCMIN   2.5
-#define MIN_SMOOTH_TO_RAY_RATIO    2.0
+#define MIN_SMOOTH_TO_RAY_RATIO    1e-3 //FIXME
 #define RAYBUFF_RADIUS_ARCMIN      10.0
 #define MGPATCH_SIZE_FAC           4.0
 #define NUM_MGPATCH_MIN            256
@@ -125,9 +125,10 @@
 #define MIN_SPLIT_TO_SMOOTH_RATIO        5.0
 #define MAX_RADTREEWALK_TO_SPLIT_RATIO   5.5
 #define SHTSPLITFACTOR                   3.0
-#define HEALPIX_GRID_SMOOTH_FACT         0.6
+#define HEALPIX_GRID_SMOOTH_FACT         0.0
 #define MIN_TREE_OPEN_FAC                2.0
 #define MAX_SMOOTH_TO_TREENODE_FAC       2.0
+extern const float HPIX_WINDOWFUNC_POW[HEALPIX_UTILS_MAXORDER+1];
 
 /* macros for bit flags */
 #define SETBITFLAG(x,b) ((x) |= (1 << (b)))
@@ -167,6 +168,7 @@ typedef struct {
   long SHTOrder;
   double ComvSmoothingScale;
   double BHCrit;
+  long minSHTOrder;
   
   /* for doing gals image search */
   char GalsFileList[MAX_FILENAME]; 
