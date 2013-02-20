@@ -392,6 +392,14 @@ static void set_plane_params(void)
 #elif defined(TREEPM)
   double thetaS;
   long testOrder;
+  long minOrder;
+  
+  if(rayTraceData.bundleOrder < rayTraceData.minSHTOrder)
+    minOrder = rayTraceData.bundleOrder;
+  else if(rayTraceData.minSHTOrder > 0)
+    minOrder = rayTraceData.minSHTOrder;
+  else
+    minOrder = rayTraceData.bundleOrder;
   
   if(rayTraceData.minSL >= MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.SHTOrder)))
     rayTraceData.TreePMOnlyDoSHT = 1;
@@ -410,7 +418,7 @@ static void set_plane_params(void)
 	  if(thetaS/rayTraceData.maxSL >= MIN_SPLIT_TO_SMOOTH_RATIO)
 	    break;
 	}
-      while(testOrder > rayTraceData.minSHTOrder);
+      while(testOrder > minOrder);
       
       rayTraceData.poissonOrder = testOrder;
       
