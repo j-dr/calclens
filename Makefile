@@ -25,8 +25,8 @@ OPTS += -DPOINTMASSTEST #define to write lensplanes and do a point mass test
 #OPTS += -DDEF_GSL_IEEE_ENV #define the GSL IEEE environment variables - for debugging
 
 #select your computer
-#COMP="orange"
-COMP="orion-gcc"
+COMP="orange"
+#COMP="orion-gcc"
 #COMP="midway"
 
 ################################
