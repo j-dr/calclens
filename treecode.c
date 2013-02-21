@@ -12,8 +12,6 @@
 #include "raytrace.h"
 #include "treecode.h"
 
-#define MIN_NUM_PARTS_PER_TREENODE 10
-
 static const double hpix_cell_areas[] = {
   1.04719755119659763132e+00,
   2.61799387799149407829e-01,
@@ -132,6 +130,8 @@ static void refineTreeNode(TreeData td, long nodeInd)
       td->nodes[ind].vec[2] = 0.0;
       for(j=td->nodes[ind].pstart;j<td->nodes[ind].np+td->nodes[ind].pstart;++j)
 	{
+	  if(td->nodes[ind].cosMaxSL < td->parts[j].smoothingLength)
+	    td->nodes[ind].cosMaxSL = td->parts[j].smoothingLength;
 	  td->nodes[ind].mass += td->parts[j].mass;
 	  td->nodes[ind].vec[0] += td->parts[j].mass*td->parts[j].pos[0];
 	  td->nodes[ind].vec[1] += td->parts[j].mass*td->parts[j].pos[1];
@@ -195,6 +195,7 @@ TreeData buildTree(Part *parts, long Nparts, double thetaSplit)
       td->nodes[i].vec[0] = 0.0;
       td->nodes[i].vec[1] = 0.0;
       td->nodes[i].vec[2] = 0.0;
+      td->nodes[i].cosMaxSL = 0.0;
     }
     
   //add inital set of parts to tree
@@ -221,6 +222,8 @@ TreeData buildTree(Part *parts, long Nparts, double thetaSplit)
   for(i=0;i<NpixBaseOrder;++i)
     for(j=td->nodes[i].pstart;j<td->nodes[i].np+td->nodes[i].pstart;++j)
       {
+	if(td->nodes[i].cosMaxSL < td->parts[j].smoothingLength)
+	  td->nodes[i].cosMaxSL = td->parts[j].smoothingLength;
 	td->nodes[i].mass += td->parts[j].mass;
 	td->nodes[i].vec[0] += td->parts[j].mass*td->parts[j].pos[0];
 	td->nodes[i].vec[1] += td->parts[j].mass*td->parts[j].pos[1];
@@ -272,6 +275,12 @@ TreeData buildTree(Part *parts, long Nparts, double thetaSplit)
 	  td->nodes[i].vec[1] /= r;
 	  td->nodes[i].vec[2] /= r;
 	}
+      
+      td->nodes[i].cosMaxSL += 2.0*sqrt(hpix_cell_areas[td->nodes[i].order]);
+      if(td->nodes[i].cosMaxSL >= M_PI)
+	td->nodes[i].cosMaxSL = -1.0;
+      else
+	td->nodes[i].cosMaxSL = cos(td->nodes[i].cosMaxSL);
     }
   
   timeB += MPI_Wtime();
@@ -338,10 +347,10 @@ static void computePotentialForceShearTree_recursive(double vec[3], double vnorm
   if(cosarcDistG < td->nodeCosRCut[td->nodes[nodeInd].order])
     return;
   
-  //if small enough, treat as single point mass                                                                                                                                                                                                                                                              
+  //if small enough, treat as single point mass
   cosarcDistCOM = vec[0]*td->nodes[nodeInd].vec[0] + vec[1]*td->nodes[nodeInd].vec[1] + vec[2]*td->nodes[nodeInd].vec[2];
   BHRat2 = (hpix_cell_areas[td->nodes[nodeInd].order])/(2.0*M_PI*(1.0 - cosarcDistCOM));
-  if(BHRat2 < BHCrit2)
+  if(BHRat2 < BHCrit2 && cosarcDistCOM < td->nodes[nodeInd].cosMaxSL)
     {
       if(td->nodes[nodeInd].mass > 0.0)
 	{

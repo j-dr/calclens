@@ -5,16 +5,20 @@
 
 #define GET_TREE_STATS
 
+#define MIN_NUM_PARTS_PER_TREENODE 1
+
 typedef struct {
   long order;
-  long nest;
-  long child[4];
+  double cosMaxSL;
+  
   long pstart;
   long np;
   double mass;
   double vec[3];
   double vecG[3];  
-  //double cosMaxSL;
+  
+  long nest;
+  long child[4];
   //long alwaysOpen;
 } TreeNode;
 
