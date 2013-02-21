@@ -70,6 +70,16 @@ void get_smoothing_lengths(void)
     fprintf(stderr,"mean,min,max obs. smoothing len. = %lg|%lg|%lg [radians] (min,max actual smoothing len. %lg|%lg [radians])\n",
             exp(obsSLVal[0]/NlensPlaneParts),obsSLVal[1],obsSLVal[2],
             rayTraceData.minSL,rayTraceData.maxSL);
+  
+#ifdef DEBUG_IO
+  FILE *fp;
+  char name[MAX_FILENAME];
+  sprintf(name,"%s/smoothlengths%04ld.%04d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
+  fp = fopen(name,"w");
+  for(i=0;i<NlensPlaneParts;++i)
+    fprintf(fp,"%.20e\n",lensPlaneParts[i].smoothingLength*rayTraceData.planeRad);
+  fclose(fp);
+#endif
 }
 
 #define EPKERN

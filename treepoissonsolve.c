@@ -11,18 +11,6 @@
 #include "raytrace.h"
 #include "treecode.h"
 
-/*
-static int compPartNest(const void *a, const void *b)
-{
-  if(((const Part*)a)->nest > ((const Part*)b)->nest)
-    return 1;
-  else if(((const Part*)a)->nest < ((const Part*)b)->nest)
-    return -1;
-  else
-    return 0;
-}
-*/
-
 void do_tree_poisson_solve(double densfact)
 {
   long i,j;
@@ -36,80 +24,15 @@ void do_tree_poisson_solve(double densfact)
     
   logProfileTag(PROFILETAG_TREEBUILD);
   timeB = -MPI_Wtime();
-  /*for(i=0;i<NlensPlaneParts;++i)
-    {
-      r = sqrt(lensPlaneParts[i].pos[0]*lensPlaneParts[i].pos[0] + 
-	       lensPlaneParts[i].pos[1]*lensPlaneParts[i].pos[1] + 
-	       lensPlaneParts[i].pos[2]*lensPlaneParts[i].pos[2]);
-      
-      lensPlaneParts[i].pos[0] /= r;
-      lensPlaneParts[i].pos[1] /= r;
-      lensPlaneParts[i].pos[2] /= r;
-      
-      vec[0] = lensPlaneParts[i].pos[0];
-      vec[1] = lensPlaneParts[i].pos[1];
-      vec[2] = lensPlaneParts[i].pos[2];
-      
-      lensPlaneParts[i].r = sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
-      
-      lensPlaneParts[i].nest = nest2peano(lensPlaneParts[i].nest,HEALPIX_UTILS_MAXORDER);
-    }
-  
-  for(i=0;i<NbundleCells;++i)
-    {
-      if(bundleCells[i].Nparts > 0)
-	qsort(&(lensPlaneParts[bundleCells[i].firstPart]),(size_t) (bundleCells[i].Nparts),sizeof(Part),compPartNest);
-    }
-  
-  for(i=0;i<NlensPlaneParts;++i)
-    lensPlaneParts[i].nest = peano2nest(lensPlaneParts[i].nest,HEALPIX_UTILS_MAXORDER);
-  */
-  
+    
   thetaS = sqrt(rayTraceData.TreePMSplitScale*rayTraceData.TreePMSplitScale + gridFact2);
-  td = buildTree(lensPlaneParts,NlensPlaneParts,thetaS,0l);
+  td = buildTree(lensPlaneParts,NlensPlaneParts,thetaS);
   
-  /*for(i=0;i<NlensPlaneParts;++i)
-    lensPlaneParts[i].smoothingLength = lensPlaneParts[i].smoothingLength*rayTraceData.NumNbrsSmooth;
-  */
-  
-#ifdef DEBUG_IO
-  FILE *fp;
-  char name[MAX_FILENAME];
-  sprintf(name,"%s/smoothlengths%04ld.%04d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
-  fp = fopen(name,"w");
-  for(i=0;i<NlensPlaneParts;++i)
-    fprintf(fp,"%.20e\n",lensPlaneParts[i].smoothingLength*rayTraceData.planeRad);
-  fclose(fp);
-#endif
-  
-  //enforce these mins and maxes
-  /*obsSLVal[0] = 0.0;
-  obsSLVal[1] = lensPlaneParts[0].smoothingLength;
-  obsSLVal[2] = lensPlaneParts[0].smoothingLength;
-  for(i=0;i<NlensPlaneParts;++i)
-    {
-      obsSLVal[0] += log(lensPlaneParts[i].smoothingLength);
-      if(lensPlaneParts[i].smoothingLength < obsSLVal[1])
-	obsSLVal[1] = lensPlaneParts[i].smoothingLength;
-      if(lensPlaneParts[i].smoothingLength > obsSLVal[2])
-	obsSLVal[2] = lensPlaneParts[i].smoothingLength;
-      
-      if(lensPlaneParts[i].smoothingLength > rayTraceData.maxSL)
-	lensPlaneParts[i].smoothingLength = rayTraceData.maxSL;
-      if(lensPlaneParts[i].smoothingLength < rayTraceData.minSL)
-	lensPlaneParts[i].smoothingLength = rayTraceData.minSL;
-      
-      if(lensPlaneParts[i].smoothingLength >= M_PI)
-	lensPlaneParts[i].cosSmoothingLength = -1.0;
-      else
-	lensPlaneParts[i].cosSmoothingLength = cos(lensPlaneParts[i].smoothingLength);
-	}
-  */
+  /*
   for(i=0;i<td->Nnodes;++i)
     {
       if(td->nodes[i].mass > 0)
         {
-	  //td->nodes[i].cosMaxSL = td->nodes[i].cosMaxSL*rayTraceData.NumNbrsSmooth;
 	  if(td->nodes[i].cosMaxSL > rayTraceData.maxSL)
 	    td->nodes[i].cosMaxSL = rayTraceData.maxSL;
 	  if(td->nodes[i].cosMaxSL < rayTraceData.minSL)
@@ -123,17 +46,13 @@ void do_tree_poisson_solve(double densfact)
 	  td->nodes[i].cosMaxSL = cos(td->nodes[i].cosMaxSL);
         }
     }
+  */
+  
   timeB += MPI_Wtime();
   logProfileTag(PROFILETAG_TREEBUILD);
   
   if(ThisTask == 0)
     fprintf(stderr,"tree built in %lg seconds.\n",timeB);
-  
-  /*if(ThisTask == 0)
-    fprintf(stderr,"geom. mean,min,max obs. smoothing len. = %lg|%lg|%lg [Mpc/h] (min,max smoothing len. %lg|%lg [Mpc/h], NNbrs = %lg)\n",
-	    exp(obsSLVal[0]/NlensPlaneParts)*rayTraceData.planeRad,obsSLVal[1]*rayTraceData.planeRad,obsSLVal[2]*rayTraceData.planeRad,
-	    rayTraceData.minSL*rayTraceData.planeRad,rayTraceData.maxSL*rayTraceData.planeRad,rayTraceData.NumNbrsSmooth);
-  */
   
 #ifdef CHECKTREEWALK
   int firstRay = 1;
@@ -179,10 +98,12 @@ void do_tree_poisson_solve(double densfact)
 	      bundleCells[i].rays[j].U[1] += twd.U[1]*densfact;
 	      bundleCells[i].rays[j].U[2] += twd.U[2]*densfact;
 	      bundleCells[i].rays[j].U[3] += twd.U[3]*densfact;
-	      
+
+#ifdef GET_TREE_STATS	      
 	      Nf += twd.NumInteractTreeWalk;
 	      Nn += twd.NumInteractTreeWalkNode;
 	      Ne += twd.Nempty;
+#endif
 	    }
 	  
 	  bundleCells[i].cpuTime += MPI_Wtime();
@@ -199,9 +120,14 @@ void do_tree_poisson_solve(double densfact)
 #endif
 #endif
   
+#ifdef GET_TREE_STATS
   if(ThisTask == 0)
     fprintf(stderr,"tree walk done in %lg seconds (%lg rays per second, part,node interactions = %ld|%ld).\n",
 	    timeT,((double) Nwalk)/timeT,Nf,Nn);
+#else
+  if(ThisTask == 0)
+    fprintf(stderr,"tree walk done in %lg seconds (%lg rays per second).\n",timeT,((double) Nwalk)/timeT);
+#endif
   
   /*
   double minTime,maxTime,totTime,avgTime;
