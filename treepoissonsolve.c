@@ -80,13 +80,13 @@ void do_tree_poisson_solve(double densfact)
 #ifdef CHECKTREEWALK
               if(firstRay && ThisTask == 0)
                 {
-                  twd = computePotentialForceShearTree(vec,-1.0*rayTraceData.BHCrit,td);
+                  twd = computePotentialForceShearTree(vec,-1.0*rayTraceData.BHCrit*rayTraceData.BHCrit,td);
                   firstRay = 0;
                 }
               else
-                twd = computePotentialForceShearTree(vec,rayTraceData.BHCrit,td);
+                twd = computePotentialForceShearTree(vec,rayTraceData.BHCrit*rayTraceData.BHCrit,td);
 #else
-              twd = computePotentialForceShearTree(vec,rayTraceData.BHCrit,td);
+              twd = computePotentialForceShearTree(vec,rayTraceData.BHCrit*rayTraceData.BHCrit,td);
 #endif
 #endif
 	      bundleCells[i].rays[j].phi += twd.pot*densfact;

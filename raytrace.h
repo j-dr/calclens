@@ -103,7 +103,7 @@
   SMOOTHKERN_SHTRESOLVE_FAC - # of resolution elements used to grid up particles for SHT density
 */
 #define GRIDSEARCH_RADIUS_ARCMIN   2.5
-#define MIN_SMOOTH_TO_RAY_RATIO    1e-3 //FIXME
+#define MIN_SMOOTH_TO_RAY_RATIO    2.0 
 #define RAYBUFF_RADIUS_ARCMIN      10.0
 #define MGPATCH_SIZE_FAC           4.0
 #define NUM_MGPATCH_MIN            256
@@ -123,7 +123,7 @@
                                are forced to be opened even if satisfy BH crit
 */
 #define MIN_SPLIT_TO_SMOOTH_RATIO        5.0
-#define MAX_RADTREEWALK_TO_SPLIT_RATIO   10.0
+#define MAX_RADTREEWALK_TO_SPLIT_RATIO   15.0
 #define SHTSPLITFACTOR                   3.0
 #define HEALPIX_GRID_SMOOTH_FACT         0.0
 #define MIN_TREE_OPEN_FAC                2.0

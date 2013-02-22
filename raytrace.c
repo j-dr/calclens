@@ -248,7 +248,7 @@ void raytrace(void)
 #endif
 #ifdef TREEPM
 	  do_tree_poisson_solve(rayTraceData.densfact);
-	  //gridkappadens(rayTraceData.densfact,rayTraceData.backdens);
+	  gridkappadens(rayTraceData.densfact,rayTraceData.backdens);
 #else
 	  mgpoissonsolve(rayTraceData.densfact,rayTraceData.backdens);
 #endif
@@ -295,7 +295,7 @@ void raytrace(void)
   if(rayTraceData.CurrentPlaneNum == rayTraceData.NumLensPlanes)
     {
       if(ThisTask == 0)
-	fprintf(stderr,"\nfinished ray tracing for all lens planes.\n");
+	fprintf(stderr,"finished ray tracing for all lens planes.\n");
       
       //do last plane I/O
       if(strlen(rayTraceData.RayOutputName) > 0)
@@ -347,8 +347,10 @@ static void set_plane_params(void)
      3) factors of binL are from integral over lens plane to define projected mass density
   */
   //NOTE: 2nd order vol estmate is exact for a point mass but screws up NFW test 
-#ifdef POINTMASSTEST
-   //2nd order estimate
+#if defined(NFWHALOTEST)
+  double radialvolume = (pow(rayTraceData.planeRad + binL/2.0,3.0) - pow(rayTraceData.planeRad - binL/2.0,3.0))/3.0;
+#elif defined(POINTMASSTEST)
+  //2nd order estimate
   double radialvolume = rayTraceData.planeRad*rayTraceData.planeRad*binL;
 #else
    //exact
