@@ -67,9 +67,14 @@ void get_smoothing_lengths(void)
     }
   
   if(ThisTask == 0)
-    fprintf(stderr,"mean,min,max obs. smoothing len. = %lg|%lg|%lg [radians] (min,max actual smoothing len. %lg|%lg [radians])\n",
-            exp(obsSLVal[0]/NlensPlaneParts),obsSLVal[1],obsSLVal[2],
-            rayTraceData.minSL,rayTraceData.maxSL);
+    {
+      fprintf(stderr,"mean,min,max obs. smoothing len. = %lg|%lg|%lg [radians] (min,max actual smoothing len. %lg|%lg [radians])\n",
+	      exp(obsSLVal[0]/NlensPlaneParts),obsSLVal[1],obsSLVal[2],
+	      rayTraceData.minSL,rayTraceData.maxSL);
+      fprintf(stderr,"min,max comoving smoothing len. %lg|%lg [Mpc/h]\n",
+	      rayTraceData.minSL*rayTraceData.planeRad,rayTraceData.maxSL*rayTraceData.planeRad);
+      fflush(stderr);
+    }
   
 #ifdef DEBUG_IO
   FILE *fp;

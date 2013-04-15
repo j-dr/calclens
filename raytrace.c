@@ -247,7 +247,8 @@ void raytrace(void)
 	  write_bundlecells2ascii("preMGPS");
 #endif
 #ifdef TREEPM
-	  do_tree_poisson_solve(rayTraceData.densfact);
+	  if(!rayTraceData.TreePMOnlyDoSHT)
+	    do_tree_poisson_solve(rayTraceData.densfact);
 	  gridkappadens(rayTraceData.densfact,rayTraceData.backdens);
 #else
 	  mgpoissonsolve(rayTraceData.densfact,rayTraceData.backdens);
@@ -366,16 +367,20 @@ static void set_plane_params(void)
   
   //set absolute min and max smoothing lengths
   rayTraceData.maxSL = rayTraceData.maxComvSmoothingScale/rayTraceData.planeRad;
-  if(rayTraceData.maxSL < MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder)))
+#ifndef POINTMASSTEST
+    if(rayTraceData.maxSL < MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder)))
     rayTraceData.maxSL = MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder));
-  if(rayTraceData.maxSL > M_PI)
+    if(rayTraceData.maxSL > M_PI)
     rayTraceData.maxSL = M_PI;
-  
-  rayTraceData.minSL = rayTraceData.minComvSmoothingScale/rayTraceData.planeRad;
-  if(rayTraceData.minSL < MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder)))
+#endif
+    
+    rayTraceData.minSL = rayTraceData.minComvSmoothingScale/rayTraceData.planeRad;
+#ifndef POINTMASSTEST
+    if(rayTraceData.minSL < MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder)))
     rayTraceData.minSL = MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder));
-  if(rayTraceData.minSL > M_PI)
+    if(rayTraceData.minSL > M_PI)
     rayTraceData.minSL = M_PI;
+#endif
   
 #ifdef SHTONLY  
   rayTraceData.poissonOrder = rayTraceData.SHTOrder;

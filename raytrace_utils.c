@@ -586,13 +586,19 @@ void init_bundlecells(void)
   if(j < NTasks)
     {
       if(ThisTask == 0)
-	fprintf(stderr,"too few bundle cells (%ld cells, order %ld) for %d tasks!\n",j,rayTraceData.bundleOrder,NTasks);
+	{
+	  fprintf(stderr,"too few bundle cells (%ld cells, order %ld) for %d tasks!\n",j,rayTraceData.bundleOrder,NTasks);
+	  fflush(stderr);
+	}
       
       MPI_Abort(MPI_COMM_WORLD,999);
     }
   
   if(ThisTask == 0)
-    fprintf(stderr,"domain decomp has %ld active bundle cells with order %ld.\n",j,rayTraceData.bundleOrder);
+    {
+      fprintf(stderr,"domain decomp has %ld active bundle cells with order %ld.\n",j,rayTraceData.bundleOrder);
+      fflush(stderr);
+    }
   
   /* build restricted peano index hash vector which covers cells with particles and rays */
   bundlePeanoInds = (long*)malloc(sizeof(long)*NbundleCells);

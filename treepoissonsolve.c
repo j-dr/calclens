@@ -52,7 +52,10 @@ void do_tree_poisson_solve(double densfact)
   logProfileTag(PROFILETAG_TREEBUILD);
   
   if(ThisTask == 0)
-    fprintf(stderr,"tree built in %lg seconds.\n",timeB);
+    {
+      fprintf(stderr,"tree built in %lg seconds.\n",timeB);
+      fflush(stderr);
+    }
   
 #ifdef CHECKTREEWALK
   int firstRay = 1;
@@ -73,7 +76,7 @@ void do_tree_poisson_solve(double densfact)
 	      vec[0] = bundleCells[i].rays[j].n[0]/rayTraceData.planeRad;
 	      vec[1] = bundleCells[i].rays[j].n[1]/rayTraceData.planeRad;
 	      vec[2] = bundleCells[i].rays[j].n[2]/rayTraceData.planeRad;
-	      	      
+	      
 #ifdef DIRECTSUMMATION
 	      twd = computePotentialForceShearDirectSummation(vec,td);
 #else
@@ -98,7 +101,7 @@ void do_tree_poisson_solve(double densfact)
 	      bundleCells[i].rays[j].U[1] += twd.U[1]*densfact;
 	      bundleCells[i].rays[j].U[2] += twd.U[2]*densfact;
 	      bundleCells[i].rays[j].U[3] += twd.U[3]*densfact;
-
+	      
 #ifdef GET_TREE_STATS	      
 	      Nf += twd.NumInteractTreeWalk;
 	      Nn += twd.NumInteractTreeWalkNode;
@@ -117,16 +120,23 @@ void do_tree_poisson_solve(double densfact)
 #if DEBUG_LEVEL > 0
   fprintf(stderr,"%05d: %ld parts, %lg seconds, %ld rays, part,node interactions = %ld|%ld, empty nodes = %ld\n",
 	  ThisTask,td->Nparts,timeT,Nwalk,Nf,Nn,Ne);
+  fflush(stderr);
 #endif
 #endif
   
 #ifdef GET_TREE_STATS
   if(ThisTask == 0)
-    fprintf(stderr,"tree walk done in %lg seconds (%lg rays per second, part,node interactions = %ld|%ld).\n",
-	    timeT,((double) Nwalk)/timeT,Nf,Nn);
+    {
+      fprintf(stderr,"tree walk done in %lg seconds (%lg rays per second, part,node interactions = %ld|%ld).\n",
+	      timeT,((double) Nwalk)/timeT,Nf,Nn);
+      fflush(stderr);
+    }
 #else
   if(ThisTask == 0)
-    fprintf(stderr,"tree walk done in %lg seconds (%lg rays per second).\n",timeT,((double) Nwalk)/timeT);
+    {
+      fprintf(stderr,"tree walk done in %lg seconds (%lg rays per second).\n",timeT,((double) Nwalk)/timeT);
+      fflush(stderr);
+    }
 #endif
   
   /*

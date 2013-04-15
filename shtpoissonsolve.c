@@ -425,8 +425,8 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 
 	    if(strlen(rayTraceData.HEALPixWindowFunctionPath) > 0)
 	      {
-		alm_real[i] /= pow(plan.window_function[l],HPIX_WINDOWFUNC_POW[rayTraceData.poissonOrder]);
-		alm_imag[i] /= pow(plan.window_function[l],HPIX_WINDOWFUNC_POW[rayTraceData.poissonOrder]);
+		alm_real[i] /= pow(plan.window_function[l],HEALPIX_WINDOWFUNC_POWER);
+		alm_imag[i] /= pow(plan.window_function[l],HEALPIX_WINDOWFUNC_POWER);
 	      }
 #endif
 	  }

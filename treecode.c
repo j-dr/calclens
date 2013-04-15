@@ -14,7 +14,6 @@
 #include "raytrace.h"
 #include "treecode.h"
 
-
 static void epkern_alpha_shear(double r, double cosr, double sinr, double sigma, double *fr, double *two_gammaE)
 {
 #define NSVEC 10000
@@ -25,6 +24,7 @@ static void epkern_alpha_shear(double r, double cosr, double sinr, double sigma,
   static gsl_spline *spline_s2;
   static gsl_interp_accel *accel_s2;
   long i;
+  double isigma;
   
   if(init) 
     {
@@ -33,9 +33,9 @@ static void epkern_alpha_shear(double r, double cosr, double sinr, double sigma,
 	{
 	  svec[i] = i*M_PI/(NSVEC-1.0);
           
-	  sigma = svec[i];
-	  nvec1[i] = gsl_sf_sinc(sigma/M_PI);
-	  nvec2[i] = gsl_sf_sinc(sigma/M_PI/2.0);
+	  isigma = svec[i];
+	  nvec1[i] = gsl_sf_sinc(isigma/M_PI);
+	  nvec2[i] = gsl_sf_sinc(isigma/M_PI/2.0);
 	  nvec2[i] = nvec2[i]*nvec2[i];
 	}
       
@@ -49,22 +49,26 @@ static void epkern_alpha_shear(double r, double cosr, double sinr, double sigma,
     }
 #undef NSVEC
   
-  double s1;
-  double s2;
+  double s1,s2,s1r,s2r;
   
   s1 = gsl_spline_eval(spline_s1,sigma,accel_s1);
   s2 = gsl_spline_eval(spline_s2,sigma,accel_s2);
+  s1r = gsl_spline_eval(spline_s1,r,accel_s1);
+  s2r = gsl_spline_eval(spline_s2,r,accel_s2);
   
   /*
   s1 = gsl_sf_sinc(sigma/M_PI);
   s2 = gsl_sf_sinc(sigma/M_PI/2.0);
   s2 = s2*s2;
+  s1r = gsl_sf_sinc(r/M_PI);
+  s2r = gsl_sf_sinc(r/M_PI/2.0);
+  s2r = s2r*s2r;
   */
   
-  double ns = 4.0*M_PI*(0.5*s2 - s1 + 0.5);    
-  double rs = r/sigma;
-  
-  double ht = 1.0/ns/(1.0 - cosr)*(rs*rs*(-2.0*s1 + cosr + s2) + 1.0 - cosr) - 1.0/4.0/M_PI;
+  double ns,rs,ht;
+  ns = 4.0*M_PI*(0.5*s2 - s1 + 0.5);    
+  rs = r/sigma;
+  ht = 1.0/ns/(1.0 - cosr)*(rs*rs*(-2.0*s1r + cosr + s2r) + 1.0 - cosr) - 1.0/4.0/M_PI;
   
   *fr = -1.0*ht*(1.0 - cosr)/sinr;
   *two_gammaE = -1.0*(2.0*cosr/(1.0 + cosr)*ht - (1.0 - rs*rs)/ns + 1.0/4.0/M_PI);
@@ -124,6 +128,7 @@ static void expandTreeNodes(TreeData td)
   else
     {
       fprintf(stderr,"could not expand tree nodes: old size = %ld, new size = %ld\n",td->NnodesAlloc,td->NnodesAlloc+nextra);
+      fflush(stderr);
       assert(tempnodes != NULL);
     }
 }
@@ -312,6 +317,7 @@ TreeData buildTree(Part *parts, long Nparts, double thetaSplit)
       else
 	{
 	  fprintf(stderr,"could not realloc tree nodes after building!\n");
+	  fflush(stderr);
 	  assert(tempnodes != NULL);
 	}
     }
@@ -344,7 +350,10 @@ TreeData buildTree(Part *parts, long Nparts, double thetaSplit)
     }
   
   if(ThisTask == 0)
-    fprintf(stderr,"tree has %ld nodes using %lf MB.\n",td->Nnodes,1.0*(td->Nnodes)*sizeof(TreeNode)/1024.0/1024.0);
+    {
+      fprintf(stderr,"tree has %ld nodes using %lf MB.\n",td->Nnodes,1.0*(td->Nnodes)*sizeof(TreeNode)/1024.0/1024.0);
+      fflush(stderr);
+    }
   
   timeB += MPI_Wtime();
   
@@ -383,6 +392,8 @@ static inline void force_shear_parang_ppshort_sigma(double vec[3], double vnorm,
   if(cosr >= cosSigma)
     {
       epkern_alpha_shear(acos(cosr),cosr,sinr,sigma,&fr,&two_gammaE);
+      fr *= mass;
+      two_gammaE *= mass;
     }
   else
     {

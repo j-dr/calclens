@@ -121,6 +121,8 @@
                       forced to be opened even if satisfy BH crit
   MAX_SMOOTH_TO_TREENODE_FAC - tree nodes with max smoothing length greater than their size divided by MAX_SMOOTH_TO_TREENODE_FAC
                                are forced to be opened even if satisfy BH crit
+  HEALPIX_WINDOWFUNC_POWER - power used to account for smoothing and interp over pixels (i.e., 
+                             phi(l,m) = phi(l,m)/W(l,m)^(HEALPIX_WINDOWFUNC_POWER) where W(l,m) is the HEALPix window function)
 */
 #define MIN_SPLIT_TO_SMOOTH_RATIO        5.0
 #define MAX_RADTREEWALK_TO_SPLIT_RATIO   15.0
@@ -128,7 +130,7 @@
 #define HEALPIX_GRID_SMOOTH_FACT         0.0
 #define MIN_TREE_OPEN_FAC                2.0
 #define MAX_SMOOTH_TO_TREENODE_FAC       2.0
-extern const float HPIX_WINDOWFUNC_POW[HEALPIX_UTILS_MAXORDER+1];
+#define HEALPIX_WINDOWFUNC_POWER         5.3
 
 /* macros for bit flags */
 #define SETBITFLAG(x,b) ((x) |= (1 << (b)))

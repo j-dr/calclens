@@ -40,9 +40,3 @@ HEALPixMapCell *mapCellsGradThetaTheta = NULL;
 HEALPixMapCell *mapCellsGradThetaPhi = NULL;
 HEALPixMapCell *mapCellsGradPhiPhi = NULL;
 
-const float HPIX_WINDOWFUNC_POW[HEALPIX_UTILS_MAXORDER+1] = {3.9,3.9,3.9,3.9,3.9,  // 0 - 4
-							     3.9,3.9,3.7,3.7,3.7,  // 5 - 9
-							     3.7,3.7,3.5,3.5,3.5,  //10 - 14
-							     3.5,3.5,3.5,3.5,3.5,  //15 - 19
-							     3.5,3.5,3.5,3.5,3.5,  //20 - 24
-							     3.5,3.5,3.5,3.5,3.5}; //25 - 29
