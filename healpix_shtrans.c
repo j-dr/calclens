@@ -225,7 +225,7 @@ void init_mrange_alm2map_healpix_mpi(long order)
   for(m=0;m<=lmax-1;++m)
     alm2mapMTimesGlobal[m+1] += alm2mapMTimesGlobal[m];
 
-  for(m=0;m<=lmax-1;++m)
+  for(m=0;m<=lmax;++m)
     alm2mapMTimesGlobal[m] /= integral;
 }
 
@@ -317,16 +317,18 @@ void get_mrange_alm2map_healpix_mpi(int MyNTasks, long *firstMTasks, long *lastM
       
       for(i=0;i<MyNTasks;++i)
         {
-          firstMTasks[i] = m;
+	  if(m >= Nalm2mapMTimesGlobal)
+	    break;
           
-          while(alm2mapMTimesGlobal[m] < (i+1)*int_per_proc)
-            {
-              ++m;
-              if(m >= Nalm2mapMTimesGlobal)
-                break;
-            }
+	  firstMTasks[i] = m;
           
-          lastMTasks[i] = m - 1;
+          while(alm2mapMTimesGlobal[m] < (i+1)*int_per_proc && m < Nalm2mapMTimesGlobal-1)
+	    ++m;
+	  
+	  if(m == firstMTasks[i])
+	    ++m;
+	  
+	  lastMTasks[i] = m - 1;
         }
       
       lastMTasks[MyNTasks-1] = lmax;
@@ -692,15 +694,17 @@ void get_ringrange_map2alm_healpix_mpi(int MyNTasks, long *firstRing, long *last
       
       for(i=0;i<MyNTasks;++i)
         {
+	  if(ring > Nmap2almRingTimesGlobal)
+	    break;
+
           firstRing[i] = ring;
           
-          while(map2almRingTimesGlobal[ring-1] < (i+1)*int_per_proc)
-            {
-              ++ring;
-              if(ring > Nmap2almRingTimesGlobal)
-                break;
-            }
-          
+          while(map2almRingTimesGlobal[ring-1] < (i+1)*int_per_proc && ring <= Nmap2almRingTimesGlobal-1)
+	    ++ring;
+	  
+	  if(ring == firstRing[i])
+	    ++ring;
+	  
           lastRing[i] = ring - 1;
         }
       
