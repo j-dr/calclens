@@ -90,8 +90,21 @@ void getDomainDecompPerCPU(int report)
     cpuPerBundleCell[i] = 0.0;
   for(i=0;i<NbundleCells;++i)
     cpuPerBundleCell[i] = bundleCells[i].cpuTime;
-  MPI_Allreduce(cpuPerBundleCell,totCPUPerBundleCell,(int) NbundleCells,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-    
+  
+  long sec,Nsec,dsec,lsec;
+  dsec = 512;
+  Nsec = NbundleCells/dsec;
+  if(dsec*Nsec < NbundleCells)
+    ++Nsec;
+  for(sec=0;sec<Nsec;++sec)
+    {
+      lsec = dsec;
+      if(lsec + sec*dsec > NbundleCells)
+	lsec = NbundleCells - sec*dsec;
+      MPI_Allreduce(cpuPerBundleCell + sec*dsec,totCPUPerBundleCell + sec*dsec,(int) lsec,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+    }
+  //MPI_Allreduce(cpuPerBundleCell,totCPUPerBundleCell,(int) NbundleCells,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+  
   //get first and last peano ind for each task
   for(i=0;i<NbundleCells;++i)
     if(bundleCellsNest2RestrictedPeanoInd[i] == -1)
@@ -197,7 +210,10 @@ void getDomainDecompPerCPU(int report)
     }
   
   if(ThisTask == 0 && report)
-    fprintf(stderr,"max mem,cpu for domain decomp = %lf|%lf of 1.0 (%lf per task).\n",maxMem,maxCPU,1.0/NTasks);
+    {
+      fprintf(stderr,"max mem,cpu for domain decomp = %lf|%lf of 1.0 (%lf per task).\n",maxMem,maxCPU,1.0/NTasks);
+      fflush(stderr);
+    }
   
   free(totCPUPerBundleCell);
   free(cpuPerBundleCell);
@@ -504,7 +520,7 @@ static void divide_tasks_domaindecomp(int firstTask, int lastTask, long firstPCe
       ++ind;
       for(i=firstTask;i<lastTask;++i)
 	{
-	  while(cpuUse < maxCpuUse && memUse < maxMemUsePerTask)
+	  while(cpuUse < maxCpuUse && memUse < maxMemUsePerTask && (lastPCell - ind) > lastTask-i)
 	    {
 	      ++ind;
 	      memUse += 1.0;
@@ -552,6 +568,11 @@ static void divide_tasks_domaindecomp(int firstTask, int lastTask, long firstPCe
       //if(ThisTask == 0)
       //fprintf(stderr,"%d: f,s,l task = %d|%d|%d, f,s,l pcell = %ld|%ld|%ld, memUse,cpuUse = %ld,%lf (%ld,%lf)\n",
       //    ThisTask,firstTask,splitTask,lastTask,firstPCell,splitPCell,lastPCell,memUse,cpuUse,maxMemUse,maxCpuUse);
+      
+      assert(firstTask < NTasks && firstTask >= 0);
+      assert(lastTask < NTasks && lastTask >= 0);
+      assert(splitTask < NTasks-1 && splitTask >= 0);
+      assert(splitPCell < NrestrictedPeanoInd-1 && splitPCell >= 0);
       
       firstRestrictedPeanoIndTasks[firstTask] = firstPCell;
       lastRestrictedPeanoIndTasks[splitTask] = splitPCell;

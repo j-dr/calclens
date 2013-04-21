@@ -594,12 +594,6 @@ void init_bundlecells(void)
       MPI_Abort(MPI_COMM_WORLD,999);
     }
   
-  if(ThisTask == 0)
-    {
-      fprintf(stderr,"domain decomp has %ld active bundle cells with order %ld.\n",j,rayTraceData.bundleOrder);
-      fflush(stderr);
-    }
-  
   /* build restricted peano index hash vector which covers cells with particles and rays */
   bundlePeanoInds = (long*)malloc(sizeof(long)*NbundleCells);
   assert(bundlePeanoInds != NULL);
@@ -643,10 +637,11 @@ void init_bundlecells(void)
   for(i=0;i<NbundleCells;++i)
     if(bundleCellsNest2RestrictedPeanoInd[i] != -1)
       bundleCells[i].cpuTime = 1.0/((double) NrestrictedPeanoInd);
+  
   getDomainDecompPerCPU(1);
   for(i=0;i<NbundleCells;++i)
     bundleCells[i].cpuTime = 0.0;
-    
+  
   //creates primary domain decomp for full sky particle distribution cells
 #ifdef USE_FULLSKY_PARTDIST 
   long NumFullSkyCellsPerTask,NumExtraFullSkyCells;
@@ -678,6 +673,12 @@ void init_bundlecells(void)
       SETBITFLAG(bundleCells[nest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL);
     }
 #endif /* USE_FULLSKY_PARTDIST */
+  
+  if(ThisTask == 0)
+    {
+      fprintf(stderr,"domain decomp has %ld active bundle cells with order %ld.\n",j,rayTraceData.bundleOrder);
+      fflush(stderr);
+    }
 }
 
 void destroy_bundlecells(void)
