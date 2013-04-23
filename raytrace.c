@@ -369,24 +369,24 @@ static void set_plane_params(void)
   rayTraceData.maxSL = rayTraceData.maxComvSmoothingScale/rayTraceData.planeRad;
 #ifndef POINTMASSTEST
     if(rayTraceData.maxSL < MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder)))
-    rayTraceData.maxSL = MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder));
+      rayTraceData.maxSL = MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder));
     if(rayTraceData.maxSL > M_PI)
-    rayTraceData.maxSL = M_PI;
+      rayTraceData.maxSL = M_PI;
 #endif
     
     rayTraceData.minSL = rayTraceData.minComvSmoothingScale/rayTraceData.planeRad;
 #ifndef POINTMASSTEST
     if(rayTraceData.minSL < MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder)))
-    rayTraceData.minSL = MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder));
+      rayTraceData.minSL = MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder));
     if(rayTraceData.minSL > M_PI)
-    rayTraceData.minSL = M_PI;
+      rayTraceData.minSL = M_PI;
 #endif
   
 #ifdef SHTONLY  
   rayTraceData.poissonOrder = rayTraceData.SHTOrder;
   rayTraceData.minSL = MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.poissonOrder));
   rayTraceData.maxSL = MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.poissonOrder));
-          
+  
   //big enough to make sure we get all parts needed 
   rayTraceData.partBuffRad = sqrt(4.0*M_PI/order2npix(rayTraceData.poissonOrder))*10.0 + 2.0*bundleLength + rayTraceData.maxSL*2.0;
   if(ThisTask == 0)

@@ -4,7 +4,7 @@
 #OPTS += -DOUTPUTRAYDEFLECTIONS #output ray deflections
 #OPTS += -DOUTPUTPHI #output lensing potential at ray position
 OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
-OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
+#OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
 #OPTS += -DSHTONLY
 OPTS += -DTREEPM          #define to use TREEPM
 #OPTS += -DDIRECTSUMMATION #define with TREEPM option to do direct summation
@@ -12,6 +12,7 @@ OPTS += -DTREEPM          #define to use TREEPM
 #testing options
 #OPTS += -DNFWHALOTEST #define to write lensplanes and do test with an NFW halo - need POINTMASSTEST defined as well 
 #OPTS += -DPOINTMASSTEST #define to write lensplanes and do a point mass test
+#OPTS += -DKEEP_RAND_FRAC -DRAND_FRAC_TO_KEEP=0.015625 #define to keep a random fraction of particles
 
 #!!! DO NOT CHANGE THESE UNLESS YOU ARE AN EXPERT !!!
 #OPTS += -DNOBACKDENS #define to not subtract a background density from kappa grid - use for point mass test or NFW halo test

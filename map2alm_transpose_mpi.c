@@ -141,19 +141,6 @@ void map2alm_mpi(double *alm_real, double *alm_imag, float *mapvec, HEALPixSHTPl
   if(lastRing == Nrings)
     --lastRingLoop;
   
-  /*
-  if(ThisTask == 0)
-    {
-      for(i=0;i<NTasks;++i)
-        {
-	  fprintf(stderr,"\t%ld: firstRing,lastRing,Nrings = %ld|%ld,%ld, firstM,lastM,NM = %ld|%ld|%ld\n",i,
-		  plan.firstRingTasks[i],plan.lastRingTasks[i],2*Nside,
-		  plan.firstMTasks[i],plan.lastMTasks[i],plan.lmax+1);
-	  fflush(stderr);
-	}
-    }
-  */
-  
   //time the rings to get load balance correct
   ringTime = (double*)malloc(sizeof(double)*NringsThisTask);
   memTot += sizeof(double)*NringsThisTask;

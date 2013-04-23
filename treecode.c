@@ -14,41 +14,44 @@
 #include "raytrace.h"
 #include "treecode.h"
 
-static void epkern_alpha_shear(double r, double cosr, double sinr, double sigma, double *fr, double *two_gammaE)
+  #define NSVEC 10000
+
+static int init = 1;
+static double svec[NSVEC],nvec1[NSVEC],nvec2[NSVEC];
+static gsl_spline *spline_s1;
+static gsl_interp_accel *accel_s1;
+static gsl_spline *spline_s2;
+static gsl_interp_accel *accel_s2;
+
+static void init_epkern_splines(void)
 {
-#define NSVEC 10000
-  static int init = 1;
-  static double svec[NSVEC],nvec1[NSVEC],nvec2[NSVEC];
-  static gsl_spline *spline_s1;
-  static gsl_interp_accel *accel_s1;
-  static gsl_spline *spline_s2;
-  static gsl_interp_accel *accel_s2;
   long i;
   double isigma;
   
-  if(init) 
+  for(i=0;i<NSVEC;++i)
     {
-      init = 0;
-      for(i=0;i<NSVEC;++i)
-	{
-	  svec[i] = i*M_PI/(NSVEC-1.0);
-          
-	  isigma = svec[i];
-	  nvec1[i] = gsl_sf_sinc(isigma/M_PI);
-	  nvec2[i] = gsl_sf_sinc(isigma/M_PI/2.0);
-	  nvec2[i] = nvec2[i]*nvec2[i];
-	}
+      svec[i] = i*M_PI/(NSVEC-1.0);
       
-      spline_s1 = gsl_spline_alloc(gsl_interp_cspline,(size_t) (NSVEC));
-      gsl_spline_init(spline_s1,svec,nvec1,(size_t) (NSVEC));
-      accel_s1 = gsl_interp_accel_alloc();
-      
-      spline_s2 = gsl_spline_alloc(gsl_interp_cspline,(size_t) (NSVEC));
-      gsl_spline_init(spline_s2,svec,nvec2,(size_t) (NSVEC));
-      accel_s2 = gsl_interp_accel_alloc();
+      isigma = svec[i];
+      nvec1[i] = gsl_sf_sinc(isigma/M_PI);
+      nvec2[i] = gsl_sf_sinc(isigma/M_PI/2.0);
+      nvec2[i] = nvec2[i]*nvec2[i];
     }
-#undef NSVEC
   
+  spline_s1 = gsl_spline_alloc(gsl_interp_cspline,(size_t) (NSVEC));
+  gsl_spline_init(spline_s1,svec,nvec1,(size_t) (NSVEC));
+  accel_s1 = gsl_interp_accel_alloc();
+  
+  spline_s2 = gsl_spline_alloc(gsl_interp_cspline,(size_t) (NSVEC));
+  gsl_spline_init(spline_s2,svec,nvec2,(size_t) (NSVEC));
+  accel_s2 = gsl_interp_accel_alloc();
+  
+  init = 0;
+}
+#undef NSVEC
+
+inline void epkern_alpha_shear(double r, double cosr, double sinr, double sigma, double *fr, double *two_gammaE)
+{
   double s1,s2,s1r,s2r;
   
   s1 = gsl_spline_eval(spline_s1,sigma,accel_s1);
@@ -66,11 +69,13 @@ static void epkern_alpha_shear(double r, double cosr, double sinr, double sigma,
   */
   
   double ns,rs,ht;
+  double onemcr;
+  onemcr = 1.0 - cosr;
   ns = 4.0*M_PI*(0.5*s2 - s1 + 0.5);    
   rs = r/sigma;
-  ht = 1.0/ns/(1.0 - cosr)*(rs*rs*(-2.0*s1r + cosr + s2r) + 1.0 - cosr) - 1.0/4.0/M_PI;
+  ht = 1.0/ns/(onemcr)*(rs*rs*(-2.0*s1r + cosr + s2r) + onemcr) - 1.0/4.0/M_PI;
   
-  *fr = -1.0*ht*(1.0 - cosr)/sinr;
+  *fr = -1.0*ht*(onemcr)/sinr;
   *two_gammaE = -1.0*(2.0*cosr/(1.0 + cosr)*ht - (1.0 - rs*rs)/ns + 1.0/4.0/M_PI);
 }
 
@@ -216,6 +221,10 @@ TreeData buildTree(Part *parts, long Nparts, double thetaSplit)
   double s,r;
   
   timeB -= MPI_Wtime();
+  
+  //init splines
+  if(init)
+    init_epkern_splines();
   
   //init tree data
   td = (TreeData)malloc(sizeof(_TreeData));
@@ -367,13 +376,16 @@ void destroyTree(TreeData td)
   free(td);
 }
 
-static inline void force_shear_parang_ppshort_sigma(double vec[3], double vnorm, double vecp[3], double cosr, 
+inline void force_shear_parang_ppshort_sigma(double vec[3], double vnorm, double vecp[3], double cosr, 
 						    double sigma, double cosSigma, TreeData td,
 						    double mass, TreeWalkData *twd)
 {
   // sin and cos of arcdist between points 
   // note that cosr = vec[0]*vecp[0] + vec[1]*vecp[1] + vec[2]*vecp[2];
-  double sinr = sqrt((1.0 - cosr)*(1.0 + cosr));
+  double crm1,crp1;
+  crm1 = cosr - 1.0;
+  crp1 = cosr + 1.0;
+  double sinr = sqrt(-crm1*crp1);
   double sinp,cosp,norm;
   norm = -vnorm*sinr;
   sinp = (vecp[1]*vec[0] - vecp[0]*vec[1])/norm;
@@ -385,9 +397,9 @@ static inline void force_shear_parang_ppshort_sigma(double vec[3], double vnorm,
   double rs2;
   double fr,two_gammaE,pot,potshift;
   double rs;
-  
+
   mass_4pi = mass/(12.5663706143591729538505735331180115367886775975);
-  mass_4pi_cosrm1 = mass_4pi/(cosr-1.0);
+  mass_4pi_cosrm1 = mass_4pi/crm1;
   
   if(cosr >= cosSigma)
     {
@@ -399,13 +411,13 @@ static inline void force_shear_parang_ppshort_sigma(double vec[3], double vnorm,
     {
       //FIXME twd->pot += mass_4pi*(td->potTable[i]*onemw + td->potTable[ip1]*w);
       fr = -mass_4pi_cosrm1*sinr;
-      two_gammaE = mass_4pi_cosrm1*(cosr + 1.0);
+      two_gammaE = mass_4pi_cosrm1*crp1;
     }
   
   double expf;
-  expf = exp((cosr-1.0)/td->thetaS2);
+  expf = exp(crm1/td->thetaS2);
   fr *= expf;
-  two_gammaE *= expf*(1.0 + sinr*sinr/td->thetaS2/(1.0 + cosr));
+  two_gammaE *= expf*(1.0 + sinr*sinr/td->thetaS2/crp1);
   
   twd->alpha[0] += fr*cosp;
   twd->alpha[1] += fr*sinp;
@@ -416,7 +428,7 @@ static inline void force_shear_parang_ppshort_sigma(double vec[3], double vnorm,
   //twd->U[3] += -shtens[3];                     //2*1+1 = 3
 }
 
-static void computePotentialForceShearTree_recursive(double vec[3], double vnorm, double BHCrit2, TreeData td, long nodeInd, TreeWalkData *twd)
+void computePotentialForceShearTree_recursive(double vec[3], double vnorm, double BHCrit2, TreeData td, long nodeInd, TreeWalkData *twd)
 {
   double cosarcDistG,cosarcDistCOM;
   double BHRat2;
@@ -436,7 +448,8 @@ static void computePotentialForceShearTree_recursive(double vec[3], double vnorm
       if(td->nodes[nodeInd].mass > 0.0)
 	{
 	  force_shear_parang_ppshort_sigma(vec,vnorm,td->nodes[nodeInd].vec,cosarcDistCOM,
-					   0.0,1.0,td,td->nodes[nodeInd].mass,twd);
+					   0.0,1.0,
+					   td,td->nodes[nodeInd].mass,twd);
 #ifdef GET_TREE_STATS
 	      ++(twd->NumInteractTreeWalkNode);
 #endif
@@ -461,8 +474,8 @@ static void computePotentialForceShearTree_recursive(double vec[3], double vnorm
 	      cosarcDistCOM = vec[0]*vecp[0] + vec[1]*vecp[1] + vec[2]*vecp[2];
 	      
 	      force_shear_parang_ppshort_sigma(vec,vnorm,vecp,cosarcDistCOM,
-					       td->parts[i].smoothingLength,td->parts[i].cosSmoothingLength,td,
-					       td->parts[i].mass,twd);
+					       td->parts[i].smoothingLength,td->parts[i].cosSmoothingLength,
+					       td,td->parts[i].mass,twd);
 #ifdef GET_TREE_STATS
 	      ++(twd->NumInteractTreeWalk);
 #endif
@@ -501,6 +514,9 @@ TreeWalkData computePotentialForceShearTree(double vec[3], double BHCrit2, TreeD
   twd.NumInteractTreeWalkNode = 0;
   twd.Nempty = 0;
   
+  if(init)
+    init_epkern_splines();
+  
   for(i=0;i<12;++i)
     if(td->nodes[i].mass > 0.0)
       computePotentialForceShearTree_recursive(vec,vnorm,BHCrit2,td,i,&twd);
@@ -526,6 +542,9 @@ TreeWalkData computePotentialForceShearDirectSummation(double vec[3], TreeData t
   twd.NumInteractTreeWalk = 0;
   twd.NumInteractTreeWalkNode = 0;
   twd.Nempty = 0;
+  
+  if(init)
+    init_epkern_splines();
   
   for(i=0;i<td->Nparts;++i)
     {

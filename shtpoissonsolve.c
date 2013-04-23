@@ -310,6 +310,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 	fprintf(stderr,"using pixel window!\n");
     }
 #endif
+  assert(plan.Nmapvec);
   mapvec = (float*)malloc(sizeof(fftwf_complex)*plan.Nmapvec);
   assert(mapvec != NULL);
   healpixmap_peano2ring_shuffle(mapvec,plan);

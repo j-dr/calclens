@@ -136,6 +136,26 @@ HEALPixSHTPlan healpixsht_plan(long order)
   plan.ring_weights = NULL;
   plan.window_function = NULL;
   
+  //get rings for this task
+  long i,j,good=1;
+  for(j=0;j<NTasks;++j)
+    if(plan.firstRingTasks[j] == -1 || plan.lastRingTasks[j] == -1 || plan.firstMTasks[j] == -1 || plan.lastMTasks[j] == -1)
+      good = 0;
+  
+  if(ThisTask == 0 && good == 0)
+    {
+      fprintf(stderr,"problem with assigning rings/ms to tasks! (Did you ask for more tasks than rings?)\n");
+      fflush(stderr);
+      for(i=0;i<NTasks;++i)
+        {
+	  fprintf(stderr,"\t%ld: firstRing,lastRing,Nrings = %ld|%ld|%ld, firstM,lastM,NM = %ld|%ld|%ld\n",i,
+		  plan.firstRingTasks[i],plan.lastRingTasks[i],2*order2nside(order),
+		  plan.firstMTasks[i],plan.lastMTasks[i],plan.lmax+1);
+	  fflush(stderr);
+	}
+      MPI_Abort(MPI_COMM_WORLD,123);
+    }
+  
   return plan;
 }
 
@@ -680,6 +700,16 @@ void get_ringrange_map2alm_healpix_mpi(int MyNTasks, long *firstRing, long *last
     {
       firstRing[0] = 1;
       lastRing[0]  = 2*nside;
+    }
+  else if(MyNTasks == 2*nside)
+    {
+      ring = 1;
+      for(i=0;i<MyNTasks;++i)
+        {
+          firstRing[i] = ring;
+          lastRing[i] = ring;
+	  ++ring;
+        }
     }
   else
     {

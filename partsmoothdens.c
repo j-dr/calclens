@@ -47,44 +47,47 @@ void get_smoothing_lengths(void)
     }
   
   //enforce these mins and maxes
-  obsSLVal[0] = 0.0;
-  obsSLVal[1] = lensPlaneParts[0].smoothingLength;
-  obsSLVal[2] = lensPlaneParts[0].smoothingLength;
-  for(i=0;i<NlensPlaneParts;++i)
+  if(NlensPlaneParts > 0)
     {
-      obsSLVal[0] += log(lensPlaneParts[i].smoothingLength);
-      if(lensPlaneParts[i].smoothingLength < obsSLVal[1])
-        obsSLVal[1] = lensPlaneParts[i].smoothingLength;
-      if(lensPlaneParts[i].smoothingLength > obsSLVal[2])
-        obsSLVal[2] = lensPlaneParts[i].smoothingLength;
+      obsSLVal[0] = 0.0;
+      obsSLVal[1] = lensPlaneParts[0].smoothingLength;
+      obsSLVal[2] = lensPlaneParts[0].smoothingLength;
+      for(i=0;i<NlensPlaneParts;++i)
+	{
+	  obsSLVal[0] += log(lensPlaneParts[i].smoothingLength);
+	  if(lensPlaneParts[i].smoothingLength < obsSLVal[1])
+	    obsSLVal[1] = lensPlaneParts[i].smoothingLength;
+	  if(lensPlaneParts[i].smoothingLength > obsSLVal[2])
+	    obsSLVal[2] = lensPlaneParts[i].smoothingLength;
+	  
+	  if(lensPlaneParts[i].smoothingLength > rayTraceData.maxSL)
+	    lensPlaneParts[i].smoothingLength = rayTraceData.maxSL;
+	  if(lensPlaneParts[i].smoothingLength < rayTraceData.minSL)
+	    lensPlaneParts[i].smoothingLength = rayTraceData.minSL;
+	  
+	  lensPlaneParts[i].cosSmoothingLength = cos(lensPlaneParts[i].smoothingLength);
+	}
       
-      if(lensPlaneParts[i].smoothingLength > rayTraceData.maxSL)
-        lensPlaneParts[i].smoothingLength = rayTraceData.maxSL;
-      if(lensPlaneParts[i].smoothingLength < rayTraceData.minSL)
-        lensPlaneParts[i].smoothingLength = rayTraceData.minSL;
+      if(ThisTask == 0)
+	{
+	  fprintf(stderr,"mean,min,max obs. smoothing len. = %lg|%lg|%lg [radians] (min,max actual smoothing len. %lg|%lg [radians])\n",
+		  exp(obsSLVal[0]/NlensPlaneParts),obsSLVal[1],obsSLVal[2],
+		  rayTraceData.minSL,rayTraceData.maxSL);
+	  fprintf(stderr,"min,max comoving smoothing len. %lg|%lg [Mpc/h]\n",
+		  rayTraceData.minSL*rayTraceData.planeRad,rayTraceData.maxSL*rayTraceData.planeRad);
+	  fflush(stderr);
+	}
       
-      lensPlaneParts[i].cosSmoothingLength = cos(lensPlaneParts[i].smoothingLength);
-    }
-  
-  if(ThisTask == 0)
-    {
-      fprintf(stderr,"mean,min,max obs. smoothing len. = %lg|%lg|%lg [radians] (min,max actual smoothing len. %lg|%lg [radians])\n",
-	      exp(obsSLVal[0]/NlensPlaneParts),obsSLVal[1],obsSLVal[2],
-	      rayTraceData.minSL,rayTraceData.maxSL);
-      fprintf(stderr,"min,max comoving smoothing len. %lg|%lg [Mpc/h]\n",
-	      rayTraceData.minSL*rayTraceData.planeRad,rayTraceData.maxSL*rayTraceData.planeRad);
-      fflush(stderr);
-    }
-  
 #ifdef DEBUG_IO
-  FILE *fp;
-  char name[MAX_FILENAME];
-  sprintf(name,"%s/smoothlengths%04ld.%04d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
-  fp = fopen(name,"w");
-  for(i=0;i<NlensPlaneParts;++i)
-    fprintf(fp,"%.20e\n",lensPlaneParts[i].smoothingLength*rayTraceData.planeRad);
-  fclose(fp);
+      FILE *fp;
+      char name[MAX_FILENAME];
+      sprintf(name,"%s/smoothlengths%04ld.%04d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
+      fp = fopen(name,"w");
+      for(i=0;i<NlensPlaneParts;++i)
+	fprintf(fp,"%.20e\n",lensPlaneParts[i].smoothingLength*rayTraceData.planeRad);
+      fclose(fp);
 #endif
+    }
 }
 
 #define EPKERN

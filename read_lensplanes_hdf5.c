@@ -112,16 +112,11 @@ static void getPeanoIndsToReadFromFile(long HEALPixOrder, long *PeanoIndsToRead,
   *FilePeanoIndsToRead = tmp;
 }
 
-//#define KEEP_RAND_FRAC 
-#ifdef KEEP_RAND_FRAC 
-#define RAND_FRAC_TO_KEEP (1.0/64.0)
-#endif
-
 void readRayTracingPlaneAtPeanoInds(hid_t *file_id, long HEALPixOrder, long *PeanoIndsToRead, long NumPeanoIndsToRead, Part **LCParts, long *NumLCParts)
 {
   herr_t status;
   char tablename[MAX_FILENAME];
-  long i,ind,j,FileHEALPixOrder,*NumLCPartsInPix,FileNPix;
+  long i,ind,j,k,FileHEALPixOrder,*NumLCPartsInPix,FileNPix;
   long *PeanoIndsToReadFromFile,NumPeanoIndsToReadFromFile;
   long KeepLCPart,LCPartPeanoInd;
   double vec[3];
@@ -129,14 +124,13 @@ void readRayTracingPlaneAtPeanoInds(hid_t *file_id, long HEALPixOrder, long *Pea
   
 #ifdef KEEP_RAND_FRAC 
   if(ThisTask == 0)
-    fprintf(stderr,"%d: keeping a random fraction of %le of particles\n",ThisTask,RAND_FRAC_TO_KEEP);
-  
-  static gsl_rng *rng = NULL;
-  if(rng == NULL)
     {
-      rng = gsl_rng_alloc(gsl_rng_ranlxd2);
-      gsl_rng_set(rng,(unsigned long) (ThisTask+1));
+      fprintf(stderr,"keeping only 1 of %lg of particles.\n",ThisTask,1.0/RAND_FRAC_TO_KEEP);
+      fflush(stderr);
     }
+  
+  gsl_rng *rng;
+  rng = gsl_rng_alloc(gsl_rng_ranlxd2);
 #endif
   
   /* define LCParticle type in HDF5 for table I/O */
@@ -179,12 +173,42 @@ void readRayTracingPlaneAtPeanoInds(hid_t *file_id, long HEALPixOrder, long *Pea
 					    dst_size,field_offset,dst_sizes,*LCParts+ind);
 	      assert(status >= 0);
 	      
+#ifdef KEEP_RAND_FRAC 
+	      gsl_rng_set(rng,(unsigned long) (PeanoIndsToReadFromFile[i]));
+	      j = 0;
+	      for(k=0;k<NumLCPartsInPix[PeanoIndsToReadFromFile[i]];++k)
+		{
+		  if(gsl_rng_uniform(rng) < RAND_FRAC_TO_KEEP)
+		    {
+		      (*LCParts)[ind+j] = (*LCParts)[ind+k];
+		      (*LCParts)[ind+j].mass = (*LCParts)[ind+j].mass/RAND_FRAC_TO_KEEP;
+		      ++j;
+		    }
+		}
+	      ind += j;
+#else
 	      ind += NumLCPartsInPix[PeanoIndsToReadFromFile[i]];
+#endif
 	    }
 	}
       
+#ifdef KEEP_RAND_FRAC 
+      *NumLCParts = ind;
+      if(*NumLCParts > 0)
+	{
+	  *LCParts = (Part*)realloc(*LCParts,sizeof(Part)*(*NumLCParts));
+	  assert(*LCParts != NULL);
+	}
+      else
+	{
+	  free(*LCParts);
+	  *NumLCParts = 0;
+	  *LCParts = NULL;
+	}
+#endif
+      
       /* if file cells are larger than requested cells, cull extra particles */
-      if(FileHEALPixOrder < HEALPixOrder)
+      if(FileHEALPixOrder < HEALPixOrder && (*NumLCParts) > 0)
 	{
 	  ind = 0;
 	  for(i=0;i<(*NumLCParts);++i)
@@ -224,36 +248,6 @@ void readRayTracingPlaneAtPeanoInds(hid_t *file_id, long HEALPixOrder, long *Pea
 	      *LCParts = NULL;
 	    }
 	}
-      
-#ifdef KEEP_RAND_FRAC
-      if(*NumLCParts > 0)
-	{
-	  ind = 0;
-	  for(i=0;i<(*NumLCParts);++i)
-	    {
-	      (*LCParts)[i].mass = (*LCParts)[i].mass/RAND_FRAC_TO_KEEP;
-	      if(gsl_rng_uniform(rng) < RAND_FRAC_TO_KEEP)
-		{
-		  (*LCParts)[ind] = (*LCParts)[i];
-		  ++ind;
-		}
-	    }
-	  
-	  *NumLCParts = ind;
-	  if(*NumLCParts > 0)
-	    {
-	      *LCParts = (Part*)realloc(*LCParts,sizeof(Part)*(*NumLCParts));
-	      assert(*LCParts != NULL);
-	    }
-	  else
-	    {
-	      free(*LCParts);
-	      *NumLCParts = 0;
-	      *LCParts = NULL;
-	    }
-	}
-#endif
-      
     }
   else
     {
@@ -263,4 +257,7 @@ void readRayTracingPlaneAtPeanoInds(hid_t *file_id, long HEALPixOrder, long *Pea
   
   free(PeanoIndsToReadFromFile);
   free(NumLCPartsInPix);
+#ifdef KEEP_RAND_FRAC 
+  gsl_rng_free(rng);
+#endif
 }
