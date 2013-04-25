@@ -1,8 +1,8 @@
-//////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 CALCLENS - Curved-sky grAvitational Lensing for Cosmological Light conE simulatioNS
 Copyright (C) 2009,2010,2011,2012 Matthew R. Becker
 Released under GNU GPL v3 - see COPYING and AUTHORS for details.
-//////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 
 CALCLENS stands for Curved-sky grAvitational Lensing for Cosmological
 Light conE simulatioNS. It is a curved-sky multiple-plane ray tracing
@@ -296,12 +296,14 @@ planes, the following options must be set.
     LightConeOriginZ - Z-origin of light in Mpc/h
     LensPlaneOrder - HEALPix order of cells used to spatially index
                      the light cone (usually between 3 and 5)
-    memBuffSizeInMB - size of buffer used in memory to sort particles (set as big as possible)
+    memBuffSizeInMB - size of buffer used in memory to sort particles (set as big 
+                      as possible)
     MaxNumLensPlaneInMem - if particles for more than this many lens
-                           planes are in mem, all planes will be written to disk (set to the
-                           number of lens planes usually)
-    LightConePartChunkFactor - memBuffSizeInMB/LightConePartChunkFactor extra mem is allocated to
-                               each plane as needed when sorting particles (set around 150 or so)
+                           planes are in mem, all planes will be written to disk (set 
+			   to the number of lens planes usually)
+    LightConePartChunkFactor - memBuffSizeInMB/LightConePartChunkFactor extra mem is 
+                               allocated to each plane as needed when sorting 
+			       particles (set around 150 or so)
     partMass - particle mass in Msun/h for light cone formats which need it
                (also used as mass of point mass or NFW mass for those tests)
     MassConvFact - conversion factor used to make masses in light cone
