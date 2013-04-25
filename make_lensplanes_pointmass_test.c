@@ -16,6 +16,8 @@ static void NFW_ptgen(float *x, float *y, float *z, int np, float r200, float co
 void make_lensplanes_pointmass_test(void)
 {
 #ifdef NFWHALOTEST
+  fprintf(stderr,"making lensing planes for a NFW test...\n");
+  
   //vars
   FILE *fp;
   int np,partid;
@@ -153,6 +155,8 @@ void make_lensplanes_pointmass_test(void)
 	fprintf(stderr,"\n\nassuming galaxies at %lf radius for NFW test!\n\n\n",galRad);
     }
 #else /* NFWHALOTEST code is above, pointmasstest below */
+  fprintf(stderr,"making lensing planes for a point mass test...\n");
+  
   //vars
   FILE *fp;
   int np,partid;

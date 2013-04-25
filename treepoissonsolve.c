@@ -18,35 +18,14 @@ void do_tree_poisson_solve(double densfact)
   TreeWalkData twd;
   double r,vec[3];
   double obsSLVal[3],thetaS;
-  double gridFact2 = 4.0*M_PI/order2npix(rayTraceData.poissonOrder)*HEALPIX_GRID_SMOOTH_FACT*HEALPIX_GRID_SMOOTH_FACT;
   long Nwalk = 0,Nf = 0,Nn = 0,Ne = 0;
   double timeT,timeB;
     
   logProfileTag(PROFILETAG_TREEBUILD);
   timeB = -MPI_Wtime();
     
-  thetaS = sqrt(rayTraceData.TreePMSplitScale*rayTraceData.TreePMSplitScale + gridFact2);
+  thetaS = rayTraceData.TreePMSplitScale;
   td = buildTree(lensPlaneParts,NlensPlaneParts,thetaS);
-  
-  /*
-  for(i=0;i<td->Nnodes;++i)
-    {
-      if(td->nodes[i].mass > 0)
-        {
-	  if(td->nodes[i].cosMaxSL > rayTraceData.maxSL)
-	    td->nodes[i].cosMaxSL = rayTraceData.maxSL;
-	  if(td->nodes[i].cosMaxSL < rayTraceData.minSL)
-	    td->nodes[i].cosMaxSL = rayTraceData.minSL;
-	  
-	  td->nodes[i].alwaysOpen = 0;
-	  
-	  if(td->nodes[i].cosMaxSL > td->nodeArcSizes[td->nodes[i].order]/MAX_SMOOTH_TO_TREENODE_FAC && td->nodes[i].down != -1)
-	    td->nodes[i].alwaysOpen = 1;
-	  
-	  td->nodes[i].cosMaxSL = cos(td->nodes[i].cosMaxSL);
-        }
-    }
-  */
   
   timeB += MPI_Wtime();
   logProfileTag(PROFILETAG_TREEBUILD);
@@ -56,10 +35,6 @@ void do_tree_poisson_solve(double densfact)
       fprintf(stderr,"tree built in %lg seconds.\n",timeB);
       fflush(stderr);
     }
-  
-#ifdef CHECKTREEWALK
-  int firstRay = 1;
-#endif
   
   logProfileTag(PROFILETAG_TREEWALK);
   timeT = -MPI_Wtime();
@@ -77,21 +52,14 @@ void do_tree_poisson_solve(double densfact)
 	      vec[1] = bundleCells[i].rays[j].n[1]/rayTraceData.planeRad;
 	      vec[2] = bundleCells[i].rays[j].n[2]/rayTraceData.planeRad;
 	      
+	      //assert(fabs(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2] - 1.0) < 1e-5);
+	      
 #ifdef DIRECTSUMMATION
 	      twd = computePotentialForceShearDirectSummation(vec,td);
 #else
-#ifdef CHECKTREEWALK
-              if(firstRay && ThisTask == 0)
-                {
-                  twd = computePotentialForceShearTree(vec,-1.0*rayTraceData.BHCrit*rayTraceData.BHCrit,td);
-                  firstRay = 0;
-                }
-              else
-                twd = computePotentialForceShearTree(vec,rayTraceData.BHCrit*rayTraceData.BHCrit,td);
-#else
               twd = computePotentialForceShearTree(vec,rayTraceData.BHCrit*rayTraceData.BHCrit,td);
 #endif
-#endif
+	      
 	      bundleCells[i].rays[j].phi += twd.pot*densfact;
 	      
 	      bundleCells[i].rays[j].alpha[0] -= twd.alpha[0]*densfact;
@@ -139,18 +107,19 @@ void do_tree_poisson_solve(double densfact)
     }
 #endif
   
-  /*
   double minTime,maxTime,totTime,avgTime;
-  
   MPI_Reduce(&timeT,&minTime,1,MPI_DOUBLE,MPI_MIN,0,MPI_COMM_WORLD);
   MPI_Reduce(&timeT,&maxTime,1,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
   MPI_Reduce(&timeT,&totTime,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
   avgTime = totTime/((double) NTasks);
-  
   if(ThisTask == 0)
-    fprintf(stderr,"tree walk done in %lg seconds. (max,min,avg = %lf|%lf|%lf - %.2f percent, %lg rays per second, part,node interactions = %ld|%ld)\n",
-	    timeT,maxTime,minTime,avgTime,(maxTime-avgTime)/avgTime*100.0,((double) Nwalk)/timeT,Nf,Nn);
-    
+    {
+      fprintf(stderr,"tree walk load balance: min,max,avg = %lf|%lf|%lf - %.2f percent\n",
+	      minTime,maxTime,avgTime,(maxTime-avgTime)/avgTime*100.0);
+      fflush(stderr);
+    }
+  
+  /*  
     MPI_Reduce(&timeB,&minTime,1,MPI_DOUBLE,MPI_MIN,0,MPI_COMM_WORLD);
     MPI_Reduce(&timeB,&maxTime,1,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
     MPI_Reduce(&timeB,&totTime,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);

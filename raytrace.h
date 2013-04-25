@@ -116,20 +116,12 @@
   MIN_SPLIT_TO_SMOOTH_RATIO - minimum ratio of (maximum smoothing scale) to (treePM split scale)
   MAX_RADTREEWALK_TO_SPLIT_RATIO - maxmimu radius for which tree walk is performed in units of treePM splitting scale
   SHTSPLITFACTOR - the treePM splitting scale is  SHTSPLITFACTOR*(HEALPix cell size) unless this is too small
-  HEALPIX_GRID_SMOOTH_FACT - fraction of grid cell added in quadrature to splitting scale for tree walk
-  MIN_TREE_OPEN_FAC - tree nodes with sizes greater than SHT splitting scale divided by MIN_TREE_OPEN_FAC are 
-                      forced to be opened even if satisfy BH crit
-  MAX_SMOOTH_TO_TREENODE_FAC - tree nodes with max smoothing length greater than their size divided by MAX_SMOOTH_TO_TREENODE_FAC
-                               are forced to be opened even if satisfy BH crit
   HEALPIX_WINDOWFUNC_POWER - power used to account for smoothing and interp over pixels (i.e., 
                              phi(l,m) = phi(l,m)/W(l,m)^(HEALPIX_WINDOWFUNC_POWER) where W(l,m) is the HEALPix window function)
 */
 #define MIN_SPLIT_TO_SMOOTH_RATIO        5.0
-#define MAX_RADTREEWALK_TO_SPLIT_RATIO   15.0
+#define MAX_RADTREEWALK_TO_SPLIT_RATIO   30.0
 #define SHTSPLITFACTOR                   3.0
-#define HEALPIX_GRID_SMOOTH_FACT         0.0
-#define MIN_TREE_OPEN_FAC                2.0
-#define MAX_SMOOTH_TO_TREENODE_FAC       2.0
 #define HEALPIX_WINDOWFUNC_POWER         5.3
 
 /* macros for bit flags */

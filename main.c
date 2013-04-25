@@ -119,12 +119,9 @@ int main(int argc, char **argv)
 #else
   
 #ifdef POINTMASSTEST
-  if(ThisTask == 0)
-    {
-      fprintf(stderr,"making lensing planes for a point mass or NFW test...\n");
-      make_lensplanes_pointmass_test();
-    }    
-  
+  //if(ThisTask == 0)
+  //FIXME make_lensplanes_pointmass_test();
+    
   ////////////////////////////
   MPI_Barrier(MPI_COMM_WORLD);
   ////////////////////////////
