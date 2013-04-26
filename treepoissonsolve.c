@@ -59,7 +59,18 @@ void do_tree_poisson_solve(double densfact)
 #else
               twd = computePotentialForceShearTree(vec,rayTraceData.BHCrit*rayTraceData.BHCrit,td);
 #endif
+
+#ifdef DSUM_NOSHT
+	      bundleCells[i].rays[j].phi = twd.pot*densfact;
 	      
+	      bundleCells[i].rays[j].alpha[0] = -1.0*twd.alpha[0]*densfact;
+	      bundleCells[i].rays[j].alpha[1] = -1.0*twd.alpha[1]*densfact;
+	      
+	      bundleCells[i].rays[j].U[0] = twd.U[0]*densfact;
+	      bundleCells[i].rays[j].U[1] = twd.U[1]*densfact;
+	      bundleCells[i].rays[j].U[2] = twd.U[2]*densfact;
+	      bundleCells[i].rays[j].U[3] = twd.U[3]*densfact;
+#else	      
 	      bundleCells[i].rays[j].phi += twd.pot*densfact;
 	      
 	      bundleCells[i].rays[j].alpha[0] -= twd.alpha[0]*densfact;
@@ -69,6 +80,7 @@ void do_tree_poisson_solve(double densfact)
 	      bundleCells[i].rays[j].U[1] += twd.U[1]*densfact;
 	      bundleCells[i].rays[j].U[2] += twd.U[2]*densfact;
 	      bundleCells[i].rays[j].U[3] += twd.U[3]*densfact;
+#endif
 	      
 #ifdef GET_TREE_STATS	      
 	      Nf += twd.NumInteractTreeWalk;

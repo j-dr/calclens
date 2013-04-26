@@ -422,11 +422,13 @@ inline void force_shear_parang_ppshort_sigma(double vec[3], double vnorm, double
       fr = -mass_4pi_cosrm1*sinr;
       two_gammaE = mass_4pi_cosrm1*crp1;
     }
-  
+
+#ifndef DSUM_NOSHT  
   double expf;
   expf = exp(crm1/td->thetaS2);
   fr *= expf;
   two_gammaE *= expf*(1.0 + sinr*sinr/td->thetaS2/crp1);
+#endif
   
   twd->alpha[0] += fr*cosp;
   twd->alpha[1] += fr*sinp;

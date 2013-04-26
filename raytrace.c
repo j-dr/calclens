@@ -234,7 +234,9 @@ void raytrace(void)
 
 	     3) do the mg patch solver
 	  */
+#ifndef DSUM_NOSHT
 	  do_healpix_sht_poisson_solve(rayTraceData.densfact,rayTraceData.backdens);
+#endif
 	  
 #ifndef SHTONLY
 #ifdef USE_FULLSKY_PARTDIST
@@ -422,6 +424,10 @@ static void set_plane_params(void)
     rayTraceData.TreePMOnlyDoSHT = 1;
   else
     rayTraceData.TreePMOnlyDoSHT = 0;
+
+#ifdef DSUM_NOSHT  
+  rayTraceData.TreePMOnlyDoSHT = 0;
+#endif
   
   if(!rayTraceData.TreePMOnlyDoSHT)
     {
@@ -442,8 +448,20 @@ static void set_plane_params(void)
       if(thetaS/rayTraceData.maxSL < MIN_SPLIT_TO_SMOOTH_RATIO)
 	thetaS = rayTraceData.maxSL*MIN_SPLIT_TO_SMOOTH_RATIO;
       rayTraceData.TreePMSplitScale = thetaS;
-      
+
+#ifndef DSUM_NOSHT      
       rayTraceData.partBuffRad = MAX_RADTREEWALK_TO_SPLIT_RATIO*rayTraceData.TreePMSplitScale + 2.0*bundleLength + rayTraceData.maxSL*2.0;
+#else
+      rayTraceData.poissonOrder = rayTraceData.SHTOrder;
+      
+      thetaS = sqrt(4.0*M_PI/order2npix(rayTraceData.poissonOrder))*SHTSPLITFACTOR;
+      
+      if(thetaS/rayTraceData.maxSL < MIN_SPLIT_TO_SMOOTH_RATIO)
+        thetaS = rayTraceData.maxSL*MIN_SPLIT_TO_SMOOTH_RATIO;
+      
+      rayTraceData.TreePMSplitScale = thetaS;
+      rayTraceData.partBuffRad = M_PI;
+#endif
     }
   else
     {

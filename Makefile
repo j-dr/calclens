@@ -7,7 +7,8 @@ OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
 #OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
 #OPTS += -DSHTONLY
 OPTS += -DTREEPM          #define to use TREEPM
-#OPTS += -DDIRECTSUMMATION #define with TREEPM option to do direct summation
+#OPTS += -DDIRECTSUMMATION #define with TREEPM option to do direct summation instead of tree on small scales
+OPTS += -DDSUM_NOSHT #define to do pure direct summation
 
 #testing options
 #OPTS += -DNFWHALOTEST #define to write lensplanes and do test with an NFW halo - need POINTMASSTEST defined as well 
