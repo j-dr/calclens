@@ -3,7 +3,8 @@ Authors
 /////////////////////////////////////////////
 All of the code in CALCLENS was written by myself (Matthew R. Becker)
 over a period of three years starting in the winter of 2009 through
-the fall of 2012. However there are three important exceptions.
+the fall of 2012. Development has been continuing past the fall of 
+2012 through 2014. However there are three important exceptions.
 
 1) Most of the HEALPix routines (http://healpix.jpl.nasa.gov/)
 have been modified and translated from C++ and F90 to C under the GNU

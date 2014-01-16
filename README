@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////
 CALCLENS - Curved-sky grAvitational Lensing for Cosmological Light conE simulatioNS
-Copyright (C) 2009,2010,2011,2012 Matthew R. Becker
+Copyright (C) 2009,2010,2011,2012,2013,2014 Matthew R. Becker
 Released under GNU GPL v3 - see COPYING and AUTHORS for details.
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -32,7 +32,7 @@ here!) is
 If CALCLENS is used for any scientific work, I ask that you please
 cite the paper describing the code 
 
-    Becker 2012, arXiv:1210.3069 [astro-ph.CO]
+    Becker 2013, MNRAS, 435, 115 [arXiv:astro-ph/1210.3069]
 
 and also post your own work (and any updates) to the arXiv
 (http://arxiv.org/). I also ask that you notify me of any bugs once
