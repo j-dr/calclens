@@ -136,8 +136,6 @@ CALCLENS uses a configuration file to set most options for running the
 code.  Options *not* set in the configuration file, but in the
 Makefile, include
 
-    MAKE_LENSPLANES - makes lens planes from input light cone - must
-                      be done before ray tracing, see above
     BORNAPPRX - ray trace with born approximation
     OUTPUTRAYDEFLECTIONS - output ray deflections in ray output
     OUTPUTPHI - output lensing potential in ray output
@@ -287,6 +285,18 @@ one can extract the source galaxy file number and location like this
 CALCLENS can make lens planes as described above. For making lens
 planes, the following options must be set.
 
+    OutputPath - used to output information about lens planes
+    NumFilesIOInParallel - controlls I/O loading
+
+    OmegaM - see above
+    maxComvDistance - maximum distance to make planes
+    NumLensPlanes - number of lens planes
+    LensPlanePath - path to output lens planes
+    LensPlaneName - base name for lens planes
+
+    rayOrder - see above, not directly used
+    bundleOrder - see above, not directly used
+    
     LightConeFileList - file containing paths to light cone files
     LightConeFileType - I/O type for light cone file - see
                         lightconeio.c for examples
