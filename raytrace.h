@@ -21,7 +21,7 @@
 #ifndef _RAYTRACE_
 #define _RAYTRACE_
 
-#define RAYTRACEVERSION "CALCLENS v0.9a"
+#define RAYTRACEVERSION "CALCLENS v0.9c"
 
 /* Some debugging macros
    undef DEBUG for no debugging
@@ -110,20 +110,6 @@
 #define SMOOTHKERN_MGRESOLVE_FAC   4.0
 #define SMOOTHKERN_SHTRESOLVE_FAC  4.0
 
-/*
-  TreePM options
-
-  MIN_SPLIT_TO_SMOOTH_RATIO - minimum ratio of (maximum smoothing scale) to (treePM split scale)
-  MAX_RADTREEWALK_TO_SPLIT_RATIO - maxmimu radius for which tree walk is performed in units of treePM splitting scale
-  SHTSPLITFACTOR - the treePM splitting scale is  SHTSPLITFACTOR*(HEALPix cell size) unless this is too small
-  HEALPIX_WINDOWFUNC_POWER - power used to account for smoothing and interp over pixels (i.e., 
-                             phi(l,m) = phi(l,m)/W(l,m)^(HEALPIX_WINDOWFUNC_POWER) where W(l,m) is the HEALPix window function)
-*/
-#define MIN_SPLIT_TO_SMOOTH_RATIO        5.0
-#define MAX_RADTREEWALK_TO_SPLIT_RATIO   30.0
-#define SHTSPLITFACTOR                   3.0
-#define HEALPIX_WINDOWFUNC_POWER         5.3
-
 /* macros for bit flags */
 #define SETBITFLAG(x,b) ((x) |= (1 << (b)))
 #define CLEARBITFLAG(x,b) ((x) &= (~(1 << (b))))
@@ -164,8 +150,6 @@ typedef struct {
   char HEALPixWindowFunctionPath[MAX_FILENAME];
   long SHTOrder;
   double ComvSmoothingScale;
-  double BHCrit;
-  long minSHTOrder;
   
   /* for doing gals image search */
   char GalsFileList[MAX_FILENAME]; 
@@ -213,9 +197,6 @@ typedef struct {
   double maxComvSmoothingScale;
   double MGConvFact;
   long UseHEALPixLensPlaneMaps;
-  double TreePMSplitScale;
-  int TreePMOnlyDoSHT;
-  double treeAllocFactor;
 } RayTraceData;
 
 // 64 bytes
@@ -362,12 +343,6 @@ extern HEALPixMapCell *mapCellsGradPhi;
 extern HEALPixMapCell *mapCellsGradThetaTheta;
 extern HEALPixMapCell *mapCellsGradThetaPhi;
 extern HEALPixMapCell *mapCellsGradPhiPhi;
-
-/* in treepoissonsolve.c */
-void do_tree_poisson_solve(double densfact);
-
-/* in gridkappadens.c */
-void gridkappadens(double densfact, double backdens);
 
 /* in mgpoissonsolve.c */
 void mgpoissonsolve(double densfact, double backdens);

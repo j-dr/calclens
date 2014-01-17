@@ -6,9 +6,6 @@
 OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
 #OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
 #OPTS += -DSHTONLY
-OPTS += -DTREEPM          #define to use TREEPM
-#OPTS += -DDIRECTSUMMATION #define with TREEPM option to do direct summation instead of tree on small scales
-OPTS += -DDSUM_NOSHT #define to do pure direct summation
 
 #testing options
 #OPTS += -DNFWHALOTEST #define to write lensplanes and do test with an NFW halo - need POINTMASSTEST defined as well 
@@ -108,7 +105,7 @@ OBJS = $(MEMWATCH) $(TESTCODE) raytrace.o raytrace_utils.o healpix_utils.o confi
 	galsio.o restart.o rot_paratrans.o nnbrs_healpixtree.o \
 	healpix_plmgen.o healpix_shtrans.o shtpoissonsolve.o map_shuffle.o alm2map_transpose_mpi.o partsmoothdens.o \
 	gridsearch.o loadbalance.o alm2allmaps_transpose_mpi.o map2alm_transpose_mpi.o mgpoissonsolve.o mgpoissonsolve_utils.o \
-	treecode.o treepoissonsolve.o gridkappadens.o
+	gridkappadens.o
 
 EXEC = raytrace
 TEST = raytrace

@@ -43,9 +43,7 @@ void read_config(char *filename)
   rayTraceData.galRadPointNFWTest = -1.0;
   rayTraceData.MGConvFact = -1.0;
   rayTraceData.ComvSmoothingScale = -1.0;
-  rayTraceData.treeAllocFactor = 2.5;
-  rayTraceData.BHCrit = -1.0;
-
+  
   //make output dir
   mkdir(rayTraceData.OutputPath,02755);
   
@@ -230,11 +228,6 @@ void read_config(char *filename)
 	  rayTraceData.SHTOrder = atol(val);
 	  fprintf(usedfp,"%s %ld\n","SHTOrder",atol(val));
 	}
-      else if(strcmp_caseinsens(tag,"minSHTOrder") == 0)
-	{
-	  rayTraceData.minSHTOrder = atol(val);
-	  fprintf(usedfp,"%s %ld\n","minSHTOrder",atol(val));
-	}
       else if(strcmp_caseinsens(tag,"ComvSmoothingScale") == 0)
 	{
 	  rayTraceData.ComvSmoothingScale = atof(val);
@@ -244,11 +237,6 @@ void read_config(char *filename)
 	{
 	  rayTraceData.MGConvFact = atof(val);
 	  fprintf(usedfp,"%s %lf\n","MGConvFact",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"BHCrit") == 0)
-	{
-	  rayTraceData.BHCrit = atof(val);
-	  fprintf(usedfp,"%s %lf\n","BHCrit",atof(val));
 	}
       else if(strcmp_caseinsens(tag,"GalsFileList") == 0)
 	{
@@ -405,10 +393,6 @@ void read_config(char *filename)
       assert(rayTraceData.NumGalOutputFiles > 0);
     }
   
-#ifdef TREEPM
-  assert(rayTraceData.BHCrit > 0.0);
-#endif
-  
   if(strlen(rayTraceData.HEALPixLensPlaneMapPath) > 0 || strlen(rayTraceData.HEALPixLensPlaneMapName) > 0 || rayTraceData.HEALPixLensPlaneMapOrder >= 0)
     {
       assert(strlen(rayTraceData.HEALPixLensPlaneMapPath) > 0);
@@ -424,7 +408,7 @@ void read_config(char *filename)
   assert(rayTraceData.MaxNumLensPlaneInMem > 0);
   assert(rayTraceData.LightConePartChunkFactor > 0);
 #endif
-
+  
   /* set gal image search rads */
   rayTraceData.galImageSearchRad = 10.0*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder));
   if(rayTraceData.galImageSearchRad < GRIDSEARCH_RADIUS_ARCMIN/60.0/180.0*M_PI)

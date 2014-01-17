@@ -245,27 +245,21 @@ void raytrace(void)
 
 	     3) do the mg patch solver
 	  */
-#ifndef DSUM_NOSHT
 	  do_healpix_sht_poisson_solve(rayTraceData.densfact,rayTraceData.backdens);
-#endif
 	  
 #ifndef SHTONLY
+
 #ifdef USE_FULLSKY_PARTDIST
 	  logProfileTag(PROFILETAG_PARTIO);
 	  read_lcparts_at_planenum(rayTraceData.CurrentPlaneNum);
 	  get_smoothing_lengths();
 	  logProfileTag(PROFILETAG_PARTIO);
 #endif
+
 #ifdef DEBUG_IO_DD
 	  write_bundlecells2ascii("preMGPS");
 #endif
-#ifdef TREEPM
-	  if(!rayTraceData.TreePMOnlyDoSHT)
-	    do_tree_poisson_solve(rayTraceData.densfact);
-	  gridkappadens(rayTraceData.densfact,rayTraceData.backdens);
-#else
 	  mgpoissonsolve(rayTraceData.densfact,rayTraceData.backdens);
-#endif
 #endif
 	}
       
@@ -425,77 +419,6 @@ static void set_plane_params(void)
 	      rayTraceData.densfact,rayTraceData.backdens,rayTraceData.maxComvSmoothingScale/rayTraceData.planeRad,rayTraceData.planeRad);
       fprintf(stderr,"SHT order = %ld, partBuffRad = %lg\n",rayTraceData.poissonOrder
 	      ,rayTraceData.partBuffRad);
-    }
-#elif defined(TREEPM)
-  double thetaS;
-  long testOrder;
-  long minOrder;
-  
-  if(rayTraceData.bundleOrder < rayTraceData.minSHTOrder)
-    minOrder = rayTraceData.bundleOrder;
-  else if(rayTraceData.minSHTOrder > 0)
-    minOrder = rayTraceData.minSHTOrder;
-  else
-    minOrder = rayTraceData.bundleOrder;
-  
-  if(rayTraceData.minSL >= MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.SHTOrder)))
-    rayTraceData.TreePMOnlyDoSHT = 1;
-  else
-    rayTraceData.TreePMOnlyDoSHT = 0;
-
-#ifdef DSUM_NOSHT  
-  rayTraceData.TreePMOnlyDoSHT = 0;
-#endif
-  
-  if(!rayTraceData.TreePMOnlyDoSHT)
-    {
-      testOrder = rayTraceData.SHTOrder+1;
-      do
-	{
-	  --testOrder;
-	      
-	  thetaS = sqrt(4.0*M_PI/order2npix(testOrder))*SHTSPLITFACTOR;
-	      
-	  if(thetaS/rayTraceData.maxSL >= MIN_SPLIT_TO_SMOOTH_RATIO)
-	    break;
-	}
-      while(testOrder > minOrder);
-      
-      rayTraceData.poissonOrder = testOrder;
-      
-      if(thetaS/rayTraceData.maxSL < MIN_SPLIT_TO_SMOOTH_RATIO)
-	thetaS = rayTraceData.maxSL*MIN_SPLIT_TO_SMOOTH_RATIO;
-      rayTraceData.TreePMSplitScale = thetaS;
-
-#ifndef DSUM_NOSHT      
-      rayTraceData.partBuffRad = MAX_RADTREEWALK_TO_SPLIT_RATIO*rayTraceData.TreePMSplitScale + 2.0*bundleLength + rayTraceData.maxSL*2.0;
-#else
-      rayTraceData.poissonOrder = rayTraceData.SHTOrder;
-      
-      thetaS = sqrt(4.0*M_PI/order2npix(rayTraceData.poissonOrder))*SHTSPLITFACTOR;
-      
-      if(thetaS/rayTraceData.maxSL < MIN_SPLIT_TO_SMOOTH_RATIO)
-        thetaS = rayTraceData.maxSL*MIN_SPLIT_TO_SMOOTH_RATIO;
-      
-      rayTraceData.TreePMSplitScale = thetaS;
-      rayTraceData.partBuffRad = M_PI;
-#endif
-    }
-  else
-    {
-      if(ThisTask == 0)
-	fprintf(stderr,"only doing SHT for this lens plane!\n");
-      
-      rayTraceData.poissonOrder = rayTraceData.SHTOrder;
-      rayTraceData.partBuffRad = sqrt(4.0*M_PI/order2npix(rayTraceData.poissonOrder))*10.0 + 2.0*bundleLength + rayTraceData.maxSL*2.0;
-    }
-
-  if(ThisTask == 0)
-    {
-      fprintf(stderr,"densfact = %le, backdens = %le, max smoothing scale = %le, cmv dist. = %lg\n",
-	      rayTraceData.densfact,rayTraceData.backdens,rayTraceData.maxComvSmoothingScale/rayTraceData.planeRad,rayTraceData.planeRad);
-      fprintf(stderr,"SHT order = %ld, partBuffRad = %lg, splitScale = %le [%f SHT cells sizes]\n",rayTraceData.poissonOrder
-	      ,rayTraceData.partBuffRad,rayTraceData.TreePMSplitScale,rayTraceData.TreePMSplitScale/sqrt(4.0*M_PI/order2npix(testOrder)));
     }
 #else
   rayTraceData.poissonOrder = rayTraceData.SHTOrder;

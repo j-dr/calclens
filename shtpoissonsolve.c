@@ -11,7 +11,7 @@
 #include "raytrace.h"
 #include "healpix_shtrans.h"
 
-#if defined(SHTONLY) || defined(TREEPM)
+#ifdef SHTONLY
 static int shearinterp_comp(double rvec[3], double *pot, double alpha[2], double U[4]);
 //static int shearinterp_poly(double rvec[3], double *pot, double alpha[2], double U[4]);
 #endif
@@ -26,7 +26,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   long i,j,k,n;
   long bundleMapShift,mapNest,bundleNest;
   float *mapvec;
-#if defined(SHTONLY) || defined(TREEPM)
+#ifdef SHTONLY
   float *mapvec_gradtheta,*mapvec_gradphi;
   float *mapvec_gradthetatheta,*mapvec_gradthetaphi,*mapvec_gradphiphi;
 #endif
@@ -54,9 +54,6 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   char name[MAX_FILENAME];
 #endif            
   double alm2mapTime,map2almTime;
-#ifdef TREEPM
-  double thetaS2 = rayTraceData.TreePMSplitScale*rayTraceData.TreePMSplitScale;
-#endif
   
   logProfileTag(PROFILETAG_SHT);
   
@@ -138,35 +135,32 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 		  //END OF FIXME NGP SHT step
 		  */
 		  
-#ifdef TREEPM
-		  if(!rayTraceData.TreePMOnlyDoSHT)
-		    {
-		      long wgtpix[4];
-		      double wgt[4];
-		      get_interpol(theta,phi,wgtpix,wgt,rayTraceData.poissonOrder);
-		      for(m=0;m<4;++m)
-			{
-			  mapNest = ring2nest(wgtpix[m],rayTraceData.poissonOrder);
-			  bundleNest = (mapNest >> bundleMapShift);
-			  j = (bundleNest << bundleMapShift);
-			  if(
-#ifdef USE_FULLSKY_PARTDIST
-			     (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
-#else
-			     (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
-#endif
-			     && bundleCells[bundleNest].firstMapCell >= 0)
-			    {
-			      mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
-				(float) (lensPlaneParts[k+bundleCells[i].firstPart].mass*wgt[m]);
-			      
-			      assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
-			    }
-			}
-		      
-		      continue;
-		    }
-#endif
+		  /*
+		  //CIC SHT STEP
+		  long wgtpix[4];
+		  double wgt[4];
+		  get_interpol(theta,phi,wgtpix,wgt,rayTraceData.poissonOrder);
+		  for(m=0;m<4;++m)
+		  {
+		  mapNest = ring2nest(wgtpix[m],rayTraceData.poissonOrder);
+		  bundleNest = (mapNest >> bundleMapShift);
+		  j = (bundleNest << bundleMapShift);
+		  if(
+		  #ifdef USE_FULLSKY_PARTDIST
+		  (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+		  #else
+		  (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+		  #endif
+		  && bundleCells[bundleNest].firstMapCell >= 0)
+		  {
+		  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
+		  (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass*wgt[m]);
+		  
+		  assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
+		  }
+		  }
+		  continue;
+		  */
 		  
 		  //use smoothing lengths otherwise
 		  smoothingRad = lensPlaneParts[k+bundleCells[i].firstPart].smoothingLength;
@@ -308,7 +302,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
       if(ThisTask == 0)
 	fprintf(stderr,"using ring weights!\n");
     }
-#ifdef TREEPM
+  /*
   if(strlen(rayTraceData.HEALPixWindowFunctionPath) > 0)
     {
       read_window_function(rayTraceData.HEALPixWindowFunctionPath,&plan);
@@ -316,7 +310,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
       if(ThisTask == 0)
 	fprintf(stderr,"using pixel window!\n");
     }
-#endif
+  */
   assert(plan.Nmapvec);
   mapvec = (float*)malloc(sizeof(fftwf_complex)*plan.Nmapvec);
   assert(mapvec != NULL);
@@ -435,25 +429,19 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 	    alm_real[i] *= (double) (-1.0/((double) l)/(((double) l)+1.0));
 	    alm_imag[i] *= (double) (-1.0/((double) l)/(((double) l)+1.0));
 	    
-#ifdef TREEPM
-	    if(!rayTraceData.TreePMOnlyDoSHT)
-	      {
-		alm_real[i] *= exp(-0.5*l*(l+1.0)*thetaS2);
-		alm_imag[i] *= exp(-0.5*l*(l+1.0)*thetaS2);
-	      }
-
+	    /*
 	    if(strlen(rayTraceData.HEALPixWindowFunctionPath) > 0)
 	      {
 		alm_real[i] /= pow(plan.window_function[l],HEALPIX_WINDOWFUNC_POWER);
 		alm_imag[i] /= pow(plan.window_function[l],HEALPIX_WINDOWFUNC_POWER);
 	      }
-#endif
+	    */
 	  }
 	
 	++i;
       }
   
-#if defined(SHTONLY) || defined(TREEPM)
+#ifdef SHTONLY
   //compute phi and derivs
   mapvec_gradtheta = (float*)malloc(sizeof(fftwf_complex)*plan.Nmapvec);
   assert(mapvec_gradtheta != NULL);
@@ -489,7 +477,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   sprintf(name,"%s/shtlenspot%ld.%d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
   write_ringmap(name,mapvec,plan);
   
-#if defined(SHTONLY) || defined(TREEPM)
+#ifdef SHTONLY
   sprintf(name,"%s/shtgradtheta%ld.%d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
   write_ringmap(name,mapvec_gradtheta,plan);
   
@@ -504,7 +492,6 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   
   sprintf(name,"%s/shtgradphiphi%ld.%d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
   write_ringmap(name,mapvec_gradphiphi,plan);
-#endif
 #endif
   
 #ifdef DEBUG_IO_DD
@@ -521,7 +508,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   write_bundlecells2ascii("step5SHT");
 #endif
   
-#if defined(SHTONLY) || defined(TREEPM)
+#ifdef SHTONLY
   healpixmap_ring2peano_shuffle(&mapvec_gradtheta,plan);
   mapCellsGradTheta = mapCells;
   
@@ -567,7 +554,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   
   healpixsht_destroy_plan(plan);
   
-#if defined(SHTONLY) || defined(TREEPM)
+#ifdef SHTONLY
   //now set ray defl and shear comps with long range part
   long doNotHaveCell;
   double rvec[3],alpha[2] = {0.0,0.0},U[4] = {0.0,0.0,0.0,0.0},lenspot = 0.0;
@@ -611,7 +598,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   logProfileTag(PROFILETAG_SHT);
 }
 
-#if defined(SHTONLY) || defined(TREEPM)
+#ifdef SHTONLY
 
 /*
 static int compLong(const void *a, const void *b)
