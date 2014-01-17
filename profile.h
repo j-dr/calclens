@@ -40,11 +40,7 @@
 #define PROFILETAG_GRIDSEARCH_GALGRIDSEARCH          16  //this tag is a subset of GRIDSEARCH
 #define PROFILETAG_GRIDSEARCH_IMAGEGALIO             17  //this tag is NOT a subset of GRIDSEARCH, but is a subset of GALIO
 
-#define PROFILETAG_GRIDKAPPADENS  18
-#define PROFILETAG_TREEBUILD      19
-#define PROFILETAG_TREEWALK       20
-
-#define NUM_PROFILE_TAGS          21
+#define NUM_PROFILE_TAGS          18
 
 void logProfileTag(int tag);
 void printProfileInfo(const char name[], const char *ProfileTagNames[]);
