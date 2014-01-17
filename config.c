@@ -24,6 +24,10 @@ void read_config(char *filename)
   char *tag,*val;
   
   //set defaults
+  rayTeaceData.HEALPixLensPlaneMapPath[0] = '\0';
+  rayTeaceData.HEALPixLensPlaneMapName[0] = '\0';
+  rayTeaceData.HEALPixLensPlaneMapOrder = -1;
+  rayTraceData.UseHEALPixLensPlaneMaps = 0;
   rayTraceData.RayOutputName[0] = '\0';
   rayTraceData.GalsFileList[0] = '\0';
   rayTraceData.GalOutputName[0] = '\0';
@@ -141,6 +145,21 @@ void read_config(char *filename)
 	  strcpy(rayTraceData.LensPlaneName,val);
 	  fprintf(usedfp,"%s %s\n","LensPlaneName",val);
 	}
+      else if(strcmp_caseinsens(tag,"HEALPixLensPlaneMapPath") == 0)
+	{
+	  strcpy(rayTraceData.HEALPixLensPlaneMapPath,val);
+	  fprintf(usedfp,"%s %s\n","HEALPixLensPlaneMapPath",val);
+	}      
+      else if(strcmp_caseinsens(tag,"HEALPixLensPlaneMapName") == 0)
+	{
+	  strcpy(rayTraceData.HEALPixLensPlaneMapName,val);
+	  fprintf(usedfp,"%s %s\n","HEALPixLensPlaneMapName",val);
+	}
+      else if(strcmp_caseinsens(tag,"HEALPixLensPlaneMapOrder") == 0)
+	{
+	  rayTraceData.HEALPixLensPlaneMapOrder = atol(val);
+	  fprintf(usedfp,"%s %ld\n","HEALPixLensPlaneMapOrder",atol(val));
+	} 
       else if(strcmp_caseinsens(tag,"OutputPath") == 0)
 	{
 	  strcpy(rayTraceData.OutputPath,val);
@@ -389,6 +408,14 @@ void read_config(char *filename)
 #ifdef TREEPM
   assert(rayTraceData.BHCrit > 0.0);
 #endif
+  
+  if(strlen(rayTraceData.HEALPixLensPlaneMapPath) > 0 || strlen(rayTraceData.HEALPixLensPlaneMapName) > 0 || rayTraceData.HEALPixLensPlaneMapOrder >= 0)
+    {
+      assert(strlen(rayTraceData.HEALPixLensPlaneMapPath) > 0);
+      assert(strlen(rayTraceData.HEALPixLensPlaneMapName) > 0);
+      assert(rayTraceData.HEALPixLensPlaneMapOrder >= 0);
+      rayTraceData.UseHEALPixLensPlaneMaps = 1;
+    }
   
 #else
   assert(readLightConeOrigin[0] == 1);

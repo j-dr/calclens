@@ -161,11 +161,22 @@ void raytrace(void)
       time = -MPI_Wtime();
       logProfileTag(PROFILETAG_PARTIO);
 #ifdef USE_FULLSKY_PARTDIST
-      read_lcparts_at_planenum_fullsky_partdist(rayTraceData.CurrentPlaneNum);
+      if(!rayTraceData.UseHEALPixLensPlaneMaps)
+	{
+	  read_lcparts_at_planenum_fullsky_partdist(rayTraceData.CurrentPlaneNum);
+	  get_smoothing_lengths();
+	}
 #else
-      read_lcparts_at_planenum(rayTraceData.CurrentPlaneNum);
+#ifdef SHTONLY
+      if(!rayTraceData.UseHEALPixLensPlaneMaps)
+	{
 #endif
-      get_smoothing_lengths();
+	  read_lcparts_at_planenum(rayTraceData.CurrentPlaneNum);
+	  get_smoothing_lengths();
+#ifdef SHTONLY
+	}
+#endif
+#endif
       logProfileTag(PROFILETAG_PARTIO);
       time += MPI_Wtime();
       
@@ -259,7 +270,14 @@ void raytrace(void)
 	}
       
       //free parts since we do not need them anymore
-      destroy_parts();
+#ifdef SHTONLY
+      if(!rayTraceData.UseHEALPixLensPlaneMaps)
+	{
+#endif
+	  destroy_parts();
+#ifdef SHTONLY
+	}
+#endif
       
       //write rays
       if((rayTraceData.Restart == 0 || rayTraceData.CurrentPlaneNum >= rayTraceData.Restart) && strlen(rayTraceData.RayOutputName) > 0)

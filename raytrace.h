@@ -146,6 +146,9 @@ typedef struct {
   long NumLensPlanes;
   char LensPlanePath[MAX_FILENAME];
   char LensPlaneName[MAX_FILENAME];
+  char HEALPixLensPlaneMapPath[MAX_FILENAME];
+  char HEALPixLensPlaneMapName[MAX_FILENAME];
+  long HEALPixLensPlaneMapOrder;
   char OutputPath[MAX_FILENAME];
   char RayOutputName[MAX_FILENAME];
   long NumRayOutputFiles;
@@ -209,6 +212,7 @@ typedef struct {
   double minComvSmoothingScale;
   double maxComvSmoothingScale;
   double MGConvFact;
+  long UseHEALPixLensPlaneMaps;
   double TreePMSplitScale;
   int TreePMOnlyDoSHT;
   double treeAllocFactor;

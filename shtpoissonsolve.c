@@ -80,215 +80,222 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   mapbuffrad = rayTraceData.partBuffRad + rayTraceData.maxSL*2.0;
   mark_bundlecells(mapbuffrad,PRIMARY_BUNDLECELL,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL);
 #ifdef USE_FULLSKY_PARTDIST
-  mark_bundlecells(mapbuffrad,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL);
-  alloc_mapcells(FULLSKY_PARTDIST_PRIMARY_BUNDLECELL,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL);
+  if(!rayTraceData.UseHEALPixLensPlaneMaps) 
+    {
+      mark_bundlecells(mapbuffrad,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL);
+      alloc_mapcells(FULLSKY_PARTDIST_PRIMARY_BUNDLECELL,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL);
+    }
 #else
   alloc_mapcells(PRIMARY_BUNDLECELL,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL);
 #endif
-  
-  /* step 1 - grid parts*/
-  for(i=0;i<NmapCells;++i)
-    mapCells[i].val = 0.0;
-  for(i=0;i<NbundleCells;++i)
-    {
-      if(
-#ifdef USE_FULLSKY_PARTDIST
-	 ISSETBITFLAG(bundleCells[i].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL)
-#else
-	 ISSETBITFLAG(bundleCells[i].active,PRIMARY_BUNDLECELL)
-#endif
-	 && bundleCells[i].Nparts > 0)
-	{
-	  for(k=0;k<bundleCells[i].Nparts;++k)
-	    {
-	      vec[0] = (double) (lensPlaneParts[k+bundleCells[i].firstPart].pos[0]);
-	      vec[1] = (double) (lensPlaneParts[k+bundleCells[i].firstPart].pos[1]);
-	      vec[2] = (double) (lensPlaneParts[k+bundleCells[i].firstPart].pos[2]);
-	      
-	      r = sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
-	      vec2ang(vec,&theta,&phi);
-	      
-	      /*
-	      //FIXME NGP SHT step - comment this out!
-	      mapNest = ang2nest(theta,phi,rayTraceData.poissonOrder);
-	      bundleNest = (mapNest >> bundleMapShift);
-	      j = (bundleNest << bundleMapShift);
-	      
-	      if(
-	      #ifdef USE_FULLSKY_PARTDIST
-	      (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
-	      #else
-	      (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
-	      #endif
-	      && bundleCells[bundleNest].firstMapCell >= 0)
-	      {
-	      mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
-	      (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass);
-	      
-	      assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
-	      }
-	      
-	      continue;
-	      //END OF FIXME NGP SHT step
-	      */
 
-#ifdef TREEPM
-	      if(!rayTraceData.TreePMOnlyDoSHT)
-		{
-		  long wgtpix[4];
-		  double wgt[4];
-		  get_interpol(theta,phi,wgtpix,wgt,rayTraceData.poissonOrder);
-		  for(m=0;m<4;++m)
-		    {
-		      mapNest = ring2nest(wgtpix[m],rayTraceData.poissonOrder);
-		      bundleNest = (mapNest >> bundleMapShift);
-		      j = (bundleNest << bundleMapShift);
-		      if(
+  /* step 1 - grid parts*/  
+  if(!rayTraceData.UseHEALPixLensPlaneMaps) 
+    {
+      for(i=0;i<NmapCells;++i)
+	mapCells[i].val = 0.0;
+      
+      for(i=0;i<NbundleCells;++i)
+	{
+	  if(
 #ifdef USE_FULLSKY_PARTDIST
-			 (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+	     ISSETBITFLAG(bundleCells[i].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL)
 #else
-			 (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+	     ISSETBITFLAG(bundleCells[i].active,PRIMARY_BUNDLECELL)
 #endif
-			 && bundleCells[bundleNest].firstMapCell >= 0)
-			{
-			  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
-			    (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass*wgt[m]);
-			  
-			  assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
-			}
-		    }
+	     && bundleCells[i].Nparts > 0)
+	    {
+	      for(k=0;k<bundleCells[i].Nparts;++k)
+		{
+		  vec[0] = (double) (lensPlaneParts[k+bundleCells[i].firstPart].pos[0]);
+		  vec[1] = (double) (lensPlaneParts[k+bundleCells[i].firstPart].pos[1]);
+		  vec[2] = (double) (lensPlaneParts[k+bundleCells[i].firstPart].pos[2]);
 		  
-		  continue;
-		}
-#endif
-	      
-	      //use smoothing lengths otherwise
-	      smoothingRad = lensPlaneParts[k+bundleCells[i].firstPart].smoothingLength;
-	      
-	      queryOrder = 0;
-	      while(gs[queryOrder] > smoothingRad/SMOOTHKERN_SHTRESOLVE_FAC && queryOrder < rayTraceData.poissonOrder)
-		++queryOrder;
-	      
-	      shift = 2*(rayTraceData.poissonOrder-queryOrder);
-	      numQueryPixPerGridPix = (1ll) << shift;
-	      assert(numQueryPixPerGridPix >= 1);
-	      
-	      Nlistpix = query_disc_inclusive_nest_fast(theta,phi,smoothingRad,&listpix,&NlistpixMax,queryOrder);
-	      
-	      if(Nlistdens < Nlistpix)
-		{
-		  tmp = (double*)realloc(listdens,sizeof(double)*Nlistpix);
+		  r = sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+		  vec2ang(vec,&theta,&phi);
 		  
-		  if(tmp != NULL)
-		    {
-		      listdens = tmp;
-		      Nlistdens = Nlistpix;
-		    }
-		  else
-		    {
-		      fprintf(stderr,"%d: could not realloc memory for list dens!\n",ThisTask);
-		      MPI_Abort(MPI_COMM_WORLD,123);
-		    }
-		}
-	      
-	      totmass = 0.0;
-	      Ntotmass = 0;
-	      for(n=0;n<Nlistpix;++n)
-		{
-		  nest2vec(listpix[n],nvec,queryOrder);
-		  cosdis = (vec[0]*nvec[0] + vec[1]*nvec[1] + vec[2]*nvec[2])/r;
-		  listdens[n] = spline_part_dens(cosdis,smoothingRad);
-		  if(listdens[n] > 0.0)
-		    {
-		      listpix[Ntotmass] = listpix[n];
-		      listdens[Ntotmass] = listdens[n];
-		      totmass += listdens[Ntotmass];
-		      ++Ntotmass;
-		    }
-		}
-	      
-	      for(n=0;n<Ntotmass;++n)
-		{
-		  queryNest = listpix[n];
-		  
-		  for(m=0;m<numQueryPixPerGridPix;++m)
-		    {
-		      mapNest = (queryNest << shift) + m;
-		      bundleNest = (mapNest >> bundleMapShift);
-		      j = (bundleNest << bundleMapShift);
-		      
-		      if(
-#ifdef USE_FULLSKY_PARTDIST
-			 (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
-#else
-			 (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
-#endif
-			 && bundleCells[bundleNest].firstMapCell >= 0)
-			{
-			  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
-			    (float) (listdens[n]/totmass/numQueryPixPerGridPix*lensPlaneParts[k+bundleCells[i].firstPart].mass);
-			  
-			  assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
-			}
-		      
-		      // this error no longer applies since we are reading a different range of particle and map cells to save memory
-		      // else
-		      // {
-			 //this error happens if bit 0 set and bit 1 set cells are no in the cells returned by get_interpol
-		      // fprintf(stderr,"%d: map buffer zones for patches are not big enough for kappa dens!\n",ThisTask);
-		      // MPI_Abort(MPI_COMM_WORLD,123);
-		      // }
-		      //
-		    }
-		}
-	      
-	      //could be that part is in map, but smoothing rad is too small to find any pixels above.  
-	      //if so, this code catches it and puts its mass on grid with NGP
-	      if(Ntotmass == 0)
-		{
-		  mapNest = vec2nest(vec,rayTraceData.poissonOrder);
+		  /*
+		  //FIXME NGP SHT step - comment this out!
+		  mapNest = ang2nest(theta,phi,rayTraceData.poissonOrder);
 		  bundleNest = (mapNest >> bundleMapShift);
 		  j = (bundleNest << bundleMapShift);
 		  
 		  if(
-#ifdef USE_FULLSKY_PARTDIST
-		     (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
-#else
-		     (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
-#endif
-		     && bundleCells[bundleNest].firstMapCell >= 0)
+		  #ifdef USE_FULLSKY_PARTDIST
+		  (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+		  #else
+		  (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+		  #endif
+		  && bundleCells[bundleNest].firstMapCell >= 0)
+		  {
+		  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
+		  (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass);
+		  
+		  assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
+		  }
+		  
+		  continue;
+		  //END OF FIXME NGP SHT step
+		  */
+		  
+#ifdef TREEPM
+		  if(!rayTraceData.TreePMOnlyDoSHT)
 		    {
-		      mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val += (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass);
+		      long wgtpix[4];
+		      double wgt[4];
+		      get_interpol(theta,phi,wgtpix,wgt,rayTraceData.poissonOrder);
+		      for(m=0;m<4;++m)
+			{
+			  mapNest = ring2nest(wgtpix[m],rayTraceData.poissonOrder);
+			  bundleNest = (mapNest >> bundleMapShift);
+			  j = (bundleNest << bundleMapShift);
+			  if(
+#ifdef USE_FULLSKY_PARTDIST
+			     (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+#else
+			     (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+#endif
+			     && bundleCells[bundleNest].firstMapCell >= 0)
+			    {
+			      mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
+				(float) (lensPlaneParts[k+bundleCells[i].firstPart].mass*wgt[m]);
+			      
+			      assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
+			    }
+			}
 		      
-		      assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
+		      continue;
 		    }
-		}
-	      
-	    }//for(k=0;k<bundleCells[i].Nparts;++k)
-	}
-    }//for(i=0;i<NbundleCells;++i)
-  
-  if(Nlistdens > 0)
-    free(listdens);
-
-  if(NlistpixMax > 0)
-    free(listpix);
+#endif
+		  
+		  //use smoothing lengths otherwise
+		  smoothingRad = lensPlaneParts[k+bundleCells[i].firstPart].smoothingLength;
+		  
+		  queryOrder = 0;
+		  while(gs[queryOrder] > smoothingRad/SMOOTHKERN_SHTRESOLVE_FAC && queryOrder < rayTraceData.poissonOrder)
+		    ++queryOrder;
+		  
+		  shift = 2*(rayTraceData.poissonOrder-queryOrder);
+		  numQueryPixPerGridPix = (1ll) << shift;
+		  assert(numQueryPixPerGridPix >= 1);
+		  
+		  Nlistpix = query_disc_inclusive_nest_fast(theta,phi,smoothingRad,&listpix,&NlistpixMax,queryOrder);
+		  
+		  if(Nlistdens < Nlistpix)
+		    {
+		      tmp = (double*)realloc(listdens,sizeof(double)*Nlistpix);
+		      
+		      if(tmp != NULL)
+			{
+			  listdens = tmp;
+			  Nlistdens = Nlistpix;
+			}
+		      else
+			{
+			  fprintf(stderr,"%d: could not realloc memory for list dens!\n",ThisTask);
+			  MPI_Abort(MPI_COMM_WORLD,123);
+			}
+		    }
+		  
+		  totmass = 0.0;
+		  Ntotmass = 0;
+		  for(n=0;n<Nlistpix;++n)
+		    {
+		      nest2vec(listpix[n],nvec,queryOrder);
+		      cosdis = (vec[0]*nvec[0] + vec[1]*nvec[1] + vec[2]*nvec[2])/r;
+		      listdens[n] = spline_part_dens(cosdis,smoothingRad);
+		      if(listdens[n] > 0.0)
+			{
+			  listpix[Ntotmass] = listpix[n];
+			  listdens[Ntotmass] = listdens[n];
+			  totmass += listdens[Ntotmass];
+			  ++Ntotmass;
+			}
+		    }
+		  
+		  for(n=0;n<Ntotmass;++n)
+		    {
+		      queryNest = listpix[n];
+		      
+		      for(m=0;m<numQueryPixPerGridPix;++m)
+			{
+			  mapNest = (queryNest << shift) + m;
+			  bundleNest = (mapNest >> bundleMapShift);
+			  j = (bundleNest << bundleMapShift);
+			  
+			  if(
+#ifdef USE_FULLSKY_PARTDIST
+			     (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+#else
+			     (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+#endif
+			     && bundleCells[bundleNest].firstMapCell >= 0)
+			    {
+			      mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
+				(float) (listdens[n]/totmass/numQueryPixPerGridPix*lensPlaneParts[k+bundleCells[i].firstPart].mass);
+			      
+			      assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
+			    }
+			  
+			  // this error no longer applies since we are reading a different range of particle and map cells to save memory
+			  // else
+			  // {
+			  //this error happens if bit 0 set and bit 1 set cells are no in the cells returned by get_interpol
+			  // fprintf(stderr,"%d: map buffer zones for patches are not big enough for kappa dens!\n",ThisTask);
+			  // MPI_Abort(MPI_COMM_WORLD,123);
+			  // }
+			  //
+			}
+		    }
+		  
+		  //could be that part is in map, but smoothing rad is too small to find any pixels above.  
+		  //if so, this code catches it and puts its mass on grid with NGP
+		  if(Ntotmass == 0)
+		    {
+		      mapNest = vec2nest(vec,rayTraceData.poissonOrder);
+		      bundleNest = (mapNest >> bundleMapShift);
+		      j = (bundleNest << bundleMapShift);
+		      
+		      if(
+#ifdef USE_FULLSKY_PARTDIST
+			 (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+#else
+			 (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+#endif
+			 && bundleCells[bundleNest].firstMapCell >= 0)
+			{
+			  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val += (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass);
+			  
+			  assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
+			}
+		    }
+		  
+		}//for(k=0;k<bundleCells[i].Nparts;++k)
+	    }
+	}//for(i=0;i<NbundleCells;++i)
+      
+      if(Nlistdens > 0)
+	free(listdens);
+      
+      if(NlistpixMax > 0)
+	free(listpix);
+      
+#ifdef USE_FULLSKY_PARTDIST
+      /* free parts since we do not need them anymore */
+      destroy_parts();
+#endif
   
 #ifdef DEBUG_IO
-  //print out map cells
-  sprintf(name,"%s/localmap%ld.%d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
-  write_localmap(name,mapCells,NmapCells);
+      //print out map cells
+      sprintf(name,"%s/localmap%ld.%d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
+      write_localmap(name,mapCells,NmapCells);
 #endif
-  
+    } /* if(!rayTraceData.UseHEALPixLensPlaneMaps) */
+
 #ifdef DEBUG_IO_DD
   write_bundlecells2ascii("step1SHT");
 #endif
-  
-#ifdef USE_FULLSKY_PARTDIST
-  /* free parts since we do not need them anymore */
-  destroy_parts();
-#endif
-  
+      
   logProfileTag(PROFILETAG_SHT);
   
   /* step 2  - get map rings on correct nodes */
@@ -313,7 +320,15 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   assert(plan.Nmapvec);
   mapvec = (float*)malloc(sizeof(fftwf_complex)*plan.Nmapvec);
   assert(mapvec != NULL);
-  healpixmap_peano2ring_shuffle(mapvec,plan);
+  if(!rayTraceData.UseHEALPixLensPlaneMaps) 
+    {
+      healpixmap_peano2ring_shuffle(mapvec,plan);
+    }
+  else
+    {
+      //read maps now if needed
+      //FIXME - start here! - code up reading of maps
+    }
   logProfileTag(PROFILETAG_MAPSUFFLE);
   
   logProfileTag(PROFILETAG_SHT);
@@ -326,9 +341,12 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 #ifdef DEBUG_IO_DD
   write_bundlecells2ascii("step2SHT");
 #endif
-  
-#ifdef USE_FULLSKY_PARTDIST
-  free_mapcells();
+
+#ifdef USE_FULLSKY_PARTDIST  
+  if(!rayTraceData.UseHEALPixLensPlaneMaps) 
+    {
+      free_mapcells();
+    }
 #endif
   
   /* step 3 - multiply by densfact and subtract backdens */
