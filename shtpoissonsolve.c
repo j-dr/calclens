@@ -55,6 +55,9 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 #endif            
   double alm2mapTime,map2almTime;
   
+  FILE *fp;
+  char fname[MAX_FILENAME];
+  
   logProfileTag(PROFILETAG_SHT);
   
   /* init vars*/
@@ -290,10 +293,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   write_bundlecells2ascii("step1SHT");
 #endif
       
-  logProfileTag(PROFILETAG_SHT);
-  
   /* step 2  - get map rings on correct nodes */
-  logProfileTag(PROFILETAG_MAPSUFFLE);
   plan = healpixsht_plan(rayTraceData.poissonOrder);
   if(strlen(rayTraceData.HEALPixRingWeightPath) > 0)
     {
@@ -316,16 +316,77 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   assert(mapvec != NULL);
   if(!rayTraceData.UseHEALPixLensPlaneMaps) 
     {
+      logProfileTag(PROFILETAG_MAPSUFFLE);
       healpixmap_peano2ring_shuffle(mapvec,plan);
+      logProfileTag(PROFILETAG_MAPSUFFLE);
     }
   else
     {
+      logProfileTag(PROFILETAG_SHT);
+      
+      logProfileTag(PROFILETAG_PARTIO);
+      
       //read maps now if needed
-      //FIXME - start here! - code up reading of maps
+      j = NTasks/rayTraceData.NumFilesIOInParallel;
+      if(j*rayTraceData.NumFilesIOInParallel < NTasks)
+	++j;
+      k = ThisTask/rayTraceData.NumFilesIOInParallel;
+      for(i=0;i<j;++i)
+	{
+	  if(i == k)
+	    {
+	      firstRing = plan.firstRingTasks[ThisTask];
+	      lastRing = plan.lastRingTasks[ThisTask];
+	      mapvec_complex = (fftwf_complex*) mapvec;
+	      
+	      sprintf(fname,"%s/%s.%d",rayTraceData.HEALPixLensPlaneMapPath,
+		      rayTraceData.HEALPixLensPlaneMapName,rayTraceData.CurrentPlaneNum);
+	      fp = fopen(fname,"r");
+	      fseek(fp,plan.northStartIndGlobalMap[nring-firstRing],SEEK_SET);
+	      
+	      //read all of the northern rings
+	      for(nring=firstRing;nring<=lastRing;++nring)
+		{
+		  if(nring < Nside)
+		    ringpix = 4*nring;
+		  else
+		    ringpix = 4*Nside;
+		  
+		  mapvec = (float*) (mapvec_complex+plan.northStartIndMapvec[nring-firstRing]);
+		  fread(mapvec,(size_t) ringpix,sizeof(float),fp);
+		}
+	      
+	      //now read southern rings - they are opposite order since HEALPix reflects
+	      // over the equator
+	      fseek(fp,plan.southStartIndGlobalMap[lastRing-firstRing],SEEK_SET);
+	      for(nring=lastRing;nring>=firstRing;nring--)
+		{
+		  if(nring < Nside)
+		    ringpix = 4*nring;
+		  else
+		    ringpix = 4*Nside;
+		  
+		  //ring on equator doesn't have a reflection
+		  if(nring != 2*Nside)
+		    {
+		      mapvec = (float*) (mapvec_complex+plan.southStartIndMapvec[nring-firstRing]);
+		      fread(mapvec,(size_t) ringpix,sizeof(float),fp);
+		    }
+		}
+	      
+	      fclose(fp);
+	      mapvec = (float*) mapvec_complex;
+	    }
+	  
+	  ////////////////////////////////////
+	  MPI_Barrier(MPI_COMM_WORLD);
+	  ////////////////////////////////////
+	}
+      
+      logProfileTag(PROFILETAG_PARTIO);
+      
+      logProfileTag(PROFILETAG_SHT);
     }
-  logProfileTag(PROFILETAG_MAPSUFFLE);
-  
-  logProfileTag(PROFILETAG_SHT);
   
 #ifdef DEBUG_IO
   sprintf(name,"%s/ringmap%ld.%d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
