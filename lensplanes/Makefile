@@ -85,7 +85,8 @@ endif
 
 OBJS = $(MEMWATCH) $(TESTCODE) config.o cosmocalc.o globalvars.o \
 	healpix_utils.o ioutils.o lightconeio.o make_lensplanes_hdf5.o \
-	make_lensplanes_pointmass_test.o makemaps.o profile.o
+	make_lensplanes_pointmass_test.o makemaps.o profile.o \
+	read_lensplanes_hdf5.o
 
 EXEC = makelensplanes
 TEST = makelensplanes

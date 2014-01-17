@@ -28,9 +28,9 @@ void read_config(char *filename)
   char *tag,*val;
   
   //set defaults
-  rayTeaceData.HEALPixLensPlaneMapPath[0] = '\0';
-  rayTeaceData.HEALPixLensPlaneMapName[0] = '\0';
-  rayTeaceData.HEALPixLensPlaneMapOrder = -1;
+  rayTraceData.HEALPixLensPlaneMapPath[0] = '\0';
+  rayTraceData.HEALPixLensPlaneMapName[0] = '\0';
+  rayTraceData.HEALPixLensPlaneMapOrder = -1;
   rayTraceData.UseHEALPixLensPlaneMaps = 0;
   rayTraceData.RayOutputName[0] = '\0';
   rayTraceData.GalsFileList[0] = '\0';

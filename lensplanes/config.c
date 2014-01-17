@@ -106,6 +106,9 @@ void read_config(char *filename)
       ASSIGN_CONFIG_STR(LensPlanePath);
       ASSIGN_CONFIG_STR(LensPlaneName);
       
+      ASSIGN_CONFIG_LONG(rayOrder);
+      ASSIGN_CONFIG_LONG(bundleOrder);
+      
       ASSIGN_CONFIG_STR(LightConeFileList);
       ASSIGN_CONFIG_STR(LightConeFileType);
       

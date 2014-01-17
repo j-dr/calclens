@@ -3,7 +3,6 @@
 
 #include "profile.h"
 #include "healpix_utils.h"
-#include "healpix_shtrans.h"
 
 #ifdef MEMWATCH
 #include "memwatch.h"
@@ -61,6 +60,8 @@ typedef struct {
   char LensPlaneName[MAX_FILENAME];
   char OutputPath[MAX_FILENAME];
   long NumFilesIOInParallel;
+  long rayOrder;
+  long bundleOrder;
   
   /* for making lens planes */
   char LightConeFileList[MAX_FILENAME]; 
@@ -97,6 +98,16 @@ typedef struct {
   float vz;
   float mass;
 } LCParticle;
+
+//36 bytes
+typedef struct {
+  float pos[3];
+  float mass;
+  float smoothingLength;
+  float cosSmoothingLength;
+  long nest;
+  double r;
+} Part;
 
 typedef struct {
   long NumRayTracingPlanes;
@@ -154,5 +165,8 @@ long fnumlines(FILE *fp);
 
 /* in makemaps.c */
 void mark_bundlecells(double mapbuffrad, int searchTag, int markTag);
+
+/* in read_lensplanes_hdf5.c */
+void readRayTracingPlaneAtPeanoInds(hid_t *file_id, long HEALPixOrder, long *PeanoIndsToRead, long NumPeanoIndsToRead, Part **LCParts, long *NumLCParts);
 
 #endif /* _RAYTRACE_ */

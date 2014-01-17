@@ -493,6 +493,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
   sprintf(name,"%s/shtgradphiphi%ld.%d",rayTraceData.OutputPath,rayTraceData.CurrentPlaneNum,ThisTask);
   write_ringmap(name,mapvec_gradphiphi,plan);
 #endif
+#endif
   
 #ifdef DEBUG_IO_DD
   write_bundlecells2ascii("step4SHT");
