@@ -105,10 +105,9 @@ be ray traced.
 
 1) Making the indexed light cone files.
    
-   Code to rewrite your light cone is included in the code.  To run
-   it, compile the code above with the compile flag
-   MAKE_LENSPLANES. Then you will need to setup the configuration file
-   properly as described in Configuration.
+   Code to make lens planes is in the lensplanes directory. You will 
+   need to setup the configuration file properly as described in Configuration
+   below.
    
    Making lens planes is a purely serial operation, but requires a lot
    of memory (though you do not need to have the *entire* light cone in
@@ -120,9 +119,9 @@ be ray traced.
 
 2) Ray Tracing
    
-   Make sure to compile the code *without* the MAKE_LENSPLANES
-   flag. Then you will need to setup your configuration file properly
-   (see Configuration) and the run the code as described above.
+   The ray tracing code is included in the main diretcory. You will need 
+   to setup your configuration file properly (see Configuration) and 
+   then run the code as described above.
 
    I would recommend, depending on resolution, at least 128 cores for
    220 deg^2 patch and then small increases after that as the area gets
