@@ -114,7 +114,7 @@ OBJS1=$(OBJS) main.o
 $(EXEC): $(OBJS1)
 	$(CLINK) $(CFLAGS) -o $@ $(OBJS1) $(CLIB)
 
-$(OBJS1): healpix_shtrans.h  healpix_utils.h  profile.h  raytrace.h mgpoissonsolve.h treecode.h Makefile
+$(OBJS1): healpix_shtrans.h  healpix_utils.h  profile.h  raytrace.h mgpoissonsolve.h Makefile
 
 .PHONY : clean
 clean: 
