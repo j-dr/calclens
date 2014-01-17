@@ -14,6 +14,10 @@
 
 static int strcmp_caseinsens(const char *s1, const char *s2);
 
+#define ASSIGN_CONFIG_STR(TAG) if(strcmp_caseinsens(tag,#TAG) == 0) { strcpy(rayTraceData.TAG,val); fprintf(usedfp,"%s %s\n",#TAG,rayTraceData.TAG); continue; }
+#define ASSIGN_CONFIG_LONG(TAG) if(strcmp_caseinsens(tag,#TAG) == 0) { rayTraceData.TAG = atol(val); fprintf(usedfp,"%s %ld\n",#TAG,rayTraceData.TAG); continue; }
+#define ASSIGN_CONFIG_DOUBLE(TAG) if(strcmp_caseinsens(tag,#TAG) == 0) { rayTraceData.TAG = atof(val); fprintf(usedfp,"%s %lg\n",#TAG,rayTraceData.TAG); continue; }
+
 void read_config(char *filename)
 {
   char usedfile[MAX_FILENAME];
@@ -108,255 +112,77 @@ void read_config(char *filename)
       fline[loc] = '\0';
       
       //now test tag against structr and get value
-      if(strcmp_caseinsens(tag,"WallTimeLimit") == 0)
-	{
-	  rayTraceData.WallTimeLimit = atof(val);
-	  fprintf(usedfp,"%s %lf\n","WallTimeLimit",atof(val));
-	} 
-      else if(strcmp_caseinsens(tag,"WallTimeBetweenRestart") == 0)
-	{
-	  rayTraceData.WallTimeBetweenRestart = atof(val);
-	  fprintf(usedfp,"%s %lf\n","WallTimeBetweenRestart",atof(val));
-	} 
-      else if(strcmp_caseinsens(tag,"OmegaM") == 0)
-	{
-	  rayTraceData.OmegaM = atof(val);
-	  fprintf(usedfp,"%s %lf\n","OmegaM",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"maxComvDistance") == 0)
-	{
-	  rayTraceData.maxComvDistance = atof(val);
-	  fprintf(usedfp,"%s %lf\n","maxComvDistance",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"NumLensPlanes") == 0)
-	{
-	  rayTraceData.NumLensPlanes = atol(val);
-	  fprintf(usedfp,"%s %ld\n","NumLensPlanes",atol(val));
-	} 
-      else if(strcmp_caseinsens(tag,"LensPlanePath") == 0)
-	{
-	  strcpy(rayTraceData.LensPlanePath,val);
-	  fprintf(usedfp,"%s %s\n","LensPlanePath",val);
-	}
-      else if(strcmp_caseinsens(tag,"LensPlaneName") == 0)
-	{
-	  strcpy(rayTraceData.LensPlaneName,val);
-	  fprintf(usedfp,"%s %s\n","LensPlaneName",val);
-	}
-      else if(strcmp_caseinsens(tag,"HEALPixLensPlaneMapPath") == 0)
-	{
-	  strcpy(rayTraceData.HEALPixLensPlaneMapPath,val);
-	  fprintf(usedfp,"%s %s\n","HEALPixLensPlaneMapPath",val);
-	}      
-      else if(strcmp_caseinsens(tag,"HEALPixLensPlaneMapName") == 0)
-	{
-	  strcpy(rayTraceData.HEALPixLensPlaneMapName,val);
-	  fprintf(usedfp,"%s %s\n","HEALPixLensPlaneMapName",val);
-	}
-      else if(strcmp_caseinsens(tag,"HEALPixLensPlaneMapOrder") == 0)
-	{
-	  rayTraceData.HEALPixLensPlaneMapOrder = atol(val);
-	  fprintf(usedfp,"%s %ld\n","HEALPixLensPlaneMapOrder",atol(val));
-	} 
-      else if(strcmp_caseinsens(tag,"OutputPath") == 0)
-	{
-	  strcpy(rayTraceData.OutputPath,val);
-	  fprintf(usedfp,"%s %s\n","OutputPath",val);
-	}
-      else if(strcmp_caseinsens(tag,"RayOutputName") == 0)
-	{
-	  strcpy(rayTraceData.RayOutputName,val);
-	  fprintf(usedfp,"%s %s\n","RayOutputName",val);
-	}
-      else if(strcmp_caseinsens(tag,"NumRayOutputFiles") == 0)
-	{
-	  rayTraceData.NumRayOutputFiles = atol(val);
-	  fprintf(usedfp,"%s %ld\n","NumRayOutputFiles",atol(val));
-	} 
-      else if(strcmp_caseinsens(tag,"NumFilesIOInParallel") == 0)
-	{
-	  rayTraceData.NumFilesIOInParallel = atol(val);
-	  fprintf(usedfp,"%s %ld\n","NumFilesIOInParallel",atol(val));
-	} 
-      else if(strcmp_caseinsens(tag,"bundleOrder") == 0)
-	{
-	  rayTraceData.bundleOrder = atol(val);
-	  fprintf(usedfp,"%s %ld\n","bundleOrder",atol(val));
-	} 
-      else if(strcmp_caseinsens(tag,"rayOrder") == 0)
-	{
-	  rayTraceData.rayOrder = atol(val);
-	  fprintf(usedfp,"%s %ld\n","rayOrder",atol(val));
-	} 
-      else if(strcmp_caseinsens(tag,"minRa") == 0)
-	{
-	  rayTraceData.minRa = atof(val);
-	  fprintf(usedfp,"%s %lf\n","minRa",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"maxRa") == 0)
-	{
-	  rayTraceData.maxRa = atof(val);
-	  fprintf(usedfp,"%s %lf\n","maxRa",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"minDec") == 0)
-	{
-	  rayTraceData.minDec = atof(val);
-	  fprintf(usedfp,"%s %lf\n","minDec",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"maxDec") == 0)
-	{
-	  rayTraceData.maxDec = atof(val);
-	  fprintf(usedfp,"%s %lf\n","maxDec",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"maxRayMemImbalance") == 0)
-	{
-	  rayTraceData.maxRayMemImbalance = atof(val);
-	  fprintf(usedfp,"%s %lf\n","maxRayMemImbalance",atof(val));
-	} 
-      else if(strcmp_caseinsens(tag,"HEALPixRingWeightPath") == 0)
-	{
-	  strcpy(rayTraceData.HEALPixRingWeightPath,val);
-	  fprintf(usedfp,"%s %s\n","HEALPixRingWeightPath",val);
-	} 
-      else if(strcmp_caseinsens(tag,"HEALPixWindowFunctionPath") == 0)
-	{
-	  strcpy(rayTraceData.HEALPixWindowFunctionPath,val);
-	  fprintf(usedfp,"%s %s\n","HEALPixWindowFunctionPath",val);
-	} 
-      else if(strcmp_caseinsens(tag,"SHTOrder") == 0)
-	{
-	  rayTraceData.SHTOrder = atol(val);
-	  fprintf(usedfp,"%s %ld\n","SHTOrder",atol(val));
-	}
-      else if(strcmp_caseinsens(tag,"ComvSmoothingScale") == 0)
-	{
-	  rayTraceData.ComvSmoothingScale = atof(val);
-	  fprintf(usedfp,"%s %lf\n","ComvSmoothingScale",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"MGConvFact") == 0)
-	{
-	  rayTraceData.MGConvFact = atof(val);
-	  fprintf(usedfp,"%s %lf\n","MGConvFact",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"GalsFileList") == 0)
-	{
-	  strcpy(rayTraceData.GalsFileList,val);
-	  fprintf(usedfp,"%s %s\n","GalsFileList",val);
-	}
-      else if(strcmp_caseinsens(tag,"GalOutputName") == 0)
-	{
-	  strcpy(rayTraceData.GalOutputName,val);
-	  fprintf(usedfp,"%s %s\n","GalOutputName",val);
-	}
-      else if(strcmp_caseinsens(tag,"NumGalOutputFiles") == 0)
-	{
-	  rayTraceData.NumGalOutputFiles = atol(val);
-	  fprintf(usedfp,"%s %ld\n","NumGalOutputFiles",atol(val));
-	} 
-      else if(strcmp_caseinsens(tag,"LightConeFileList") == 0)
-	{
-	  strcpy(rayTraceData.LightConeFileList,val);
-	  fprintf(usedfp,"%s %s\n","LightConeFileList",val);
-	}
-      else if(strcmp_caseinsens(tag,"LightConeFileType") == 0)
-	{
-	  strcpy(rayTraceData.LightConeFileType,val);
-	  fprintf(usedfp,"%s %s\n","LightConeFileType",val);
-	}
-      else if(strcmp_caseinsens(tag,"LightConeOriginX") == 0)
-	{
-#ifdef MAKE_LENSPLANES  
-	  readLightConeOrigin[0] = 1;
+      ASSIGN_CONFIG_DOUBLE(WallTimeLimit);
+      ASSIGN_CONFIG_DOUBLE(WallTimeBetweenRestart);
+      
+      ASSIGN_CONFIG_STR(OutputPath);
+      ASSIGN_CONFIG_STR(RayOutputName);
+      ASSIGN_CONFIG_LONG(NumRayOutputFiles);
+      ASSIGN_CONFIG_LONG(NumFilesIOInParallel);
+
+      ASSIGN_CONFIG_DOUBLE(OmegaM);
+      ASSIGN_CONFIG_DOUBLE(maxComvDistance);
+      ASSIGN_CONFIG_LONG(NumLensPlanes);
+      ASSIGN_CONFIG_STR(LensPlanePath);
+      ASSIGN_CONFIG_STR(LensPlaneName);
+      
+      ASSIGN_CONFIG_STR(HEALPixLensPlaneMapPath);
+      ASSIGN_CONFIG_STR(HEALPixLensPlaneMapName);
+      ASSIGN_CONFIG_LONG(HEALPixLensPlaneMapOrder);
+      
+      ASSIGN_CONFIG_LONG(bundleOrder);
+      ASSIGN_CONFIG_LONG(rayOrder);
+      ASSIGN_CONFIG_DOUBLE(minRa);
+      ASSIGN_CONFIG_DOUBLE(maxRa);
+      ASSIGN_CONFIG_DOUBLE(minDec);
+      ASSIGN_CONFIG_DOUBLE(maxDec);
+      
+      ASSIGN_CONFIG_LONG(SHTOrder);
+      ASSIGN_CONFIG_STR(HEALPixRingWeightPath);
+      ASSIGN_CONFIG_STR(HEALPixWindowFunctionPath);
+      
+      ASSIGN_CONFIG_DOUBLE(ComvSmoothingScale);
+      ASSIGN_CONFIG_DOUBLE(maxRayMemImbalance);
+      ASSIGN_CONFIG_DOUBLE(MGConvFact);
+      
+      ASSIGN_CONFIG_STR(GalsFileList);
+      ASSIGN_CONFIG_STR(GalOutputName);
+      ASSIGN_CONFIG_LONG(NumGalOutputFiles);
+
+      ASSIGN_CONFIG_STR(LightConeFileList);
+      ASSIGN_CONFIG_STR(LightConeFileType);
+      
+#ifdef MAKE_LENSPLANES        
+      if(strcmp_caseinsens(tag,"LightConeOriginX") == 0)
+	readLightConeOrigin[0] = 1;
+      if(strcmp_caseinsens(tag,"LightConeOriginY") == 0)
+	readLightConeOrigin[1] = 1;
+      if(strcmp_caseinsens(tag,"LightConeOriginZ") == 0)
+	readLightConeOrigin[2] = 1;
 #endif
-	  rayTraceData.LightConeOriginX = atof(val);
-	  fprintf(usedfp,"%s %lf\n","LightConeOriginX",atof(val));
-	} 
-      else if(strcmp_caseinsens(tag,"LightConeOriginY") == 0)
-	{
-#ifdef MAKE_LENSPLANES  
-	  readLightConeOrigin[1] = 1;
-#endif
-	  rayTraceData.LightConeOriginY = atof(val);
-	  fprintf(usedfp,"%s %lf\n","LightConeOriginY",atof(val));
-	} 
-      else if(strcmp_caseinsens(tag,"LightConeOriginZ") == 0)
-	{
-#ifdef MAKE_LENSPLANES  
-	  readLightConeOrigin[2] = 1;
-#endif
-	  rayTraceData.LightConeOriginZ = atof(val);
-	  fprintf(usedfp,"%s %lf\n","LightConeOriginZ",atof(val));
-	} 
-      else if(strcmp_caseinsens(tag,"LensPlaneOrder") == 0)
-	{
-	  rayTraceData.LensPlaneOrder = atol(val);
-	  fprintf(usedfp,"%s %ld\n","LensPlaneOrder",atol(val));
-	} 
-      else if(strcmp_caseinsens(tag,"NumDivLensPlane") == 0)
-	{
-	  rayTraceData.NumDivLensPlane = atol(val);
-	  fprintf(usedfp,"%s %ld\n","NumDivLensPlane",atol(val));
-	} 
-      else if(strcmp_caseinsens(tag,"memBuffSizeInMB") == 0)
-	{
-	  rayTraceData.memBuffSizeInMB = atof(val);
-	  fprintf(usedfp,"%s %lf\n","memBuffSizeInMB",atof(val));
-	} 
-      else if(strcmp_caseinsens(tag,"MaxNumLensPlaneInMem") == 0)
-	{
-	  rayTraceData.MaxNumLensPlaneInMem = atol(val);
-	  fprintf(usedfp,"%s %ld\n","MaxNumLensPlaneInMem",atol(val));
-	} 
-      else if(strcmp_caseinsens(tag,"LightConePartChunkFactor") == 0)
-	{
-	  rayTraceData.LightConePartChunkFactor = atof(val);
-	  fprintf(usedfp,"%s %lf\n","LightConePartChunkFactor",atof(val));
-	} 
-      else if(strcmp_caseinsens(tag,"partMass") == 0)
-	{
-	  rayTraceData.partMass = atof(val);
-	  fprintf(usedfp,"%s %le\n","partMass",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"MassConvFact") == 0)
-	{
-	  rayTraceData.MassConvFact = atof(val);
-	  fprintf(usedfp,"%s %le\n","MassConvFact",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"LengthConvFact") == 0)
-	{
-	  rayTraceData.LengthConvFact = atof(val);
-	  fprintf(usedfp,"%s %lf\n","LengthConvFact",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"VelocityConvFact") == 0)
-	{
-	  rayTraceData.VelocityConvFact = atof(val);
-	  fprintf(usedfp,"%s %lf\n","VelocityConvFact",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"raPointMass") == 0)
-	{
-	  rayTraceData.raPointMass = atof(val);
-	  fprintf(usedfp,"%s %lf\n","raPointMass",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"decPointMass") == 0)
-	{
-	  rayTraceData.decPointMass = atof(val);
-	  fprintf(usedfp,"%s %lf\n","decPointMass",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"radPointMass") == 0)
-	{
-	  rayTraceData.radPointMass = atof(val);
-	  fprintf(usedfp,"%s %lf\n","radPointMass",atof(val));
-	}
-      else if(strcmp_caseinsens(tag,"galRadPointNFWTest") == 0)
-	{
-	  rayTraceData.galRadPointNFWTest = atof(val);
-	  fprintf(usedfp,"%s %lf\n","galRadPointNFWTest",atof(val));
-	}
-      else
-	{
-	  fprintf(stderr,"Tag-value pair ('%s','%s') not found in config file '%s'!\n",tag,val,filename);
-	  assert(0);
-	}
+      ASSIGN_CONFIG_DOUBLE(LightConeOriginX);
+      ASSIGN_CONFIG_DOUBLE(LightConeOriginY);
+      ASSIGN_CONFIG_DOUBLE(LightConeOriginZ);
+
+      ASSIGN_CONFIG_LONG(LensPlaneOrder);
+      ASSIGN_CONFIG_LONG(NumDivLensPlane);
+      ASSIGN_CONFIG_DOUBLE(memBuffSizeInMB);
+      
+      ASSIGN_CONFIG_LONG(MaxNumLensPlaneInMem);
+      ASSIGN_CONFIG_DOUBLE(LightConePartChunkFactor);
+      
+      ASSIGN_CONFIG_DOUBLE(partMass);
+      ASSIGN_CONFIG_DOUBLE(MassConvFact);
+      ASSIGN_CONFIG_DOUBLE(LengthConvFact);
+      ASSIGN_CONFIG_DOUBLE(VelocityConvFact);
+      
+      ASSIGN_CONFIG_DOUBLE(raPointMass);
+      ASSIGN_CONFIG_DOUBLE(decPointMass);
+      ASSIGN_CONFIG_DOUBLE(radPointMass);
+      ASSIGN_CONFIG_DOUBLE(galRadPointNFWTest);
+      
+      fprintf(stderr,"Tag-value pair ('%s','%s') not found in config file '%s'!\n",tag,val,filename);
+      assert(0);
     }
   
   //close files
