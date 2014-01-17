@@ -142,8 +142,8 @@ void read_config(char *filename)
       ASSIGN_CONFIG_STR(GalOutputName);
       ASSIGN_CONFIG_LONG(NumGalOutputFiles);
 
-      fprintf(stderr,"Tag-value pair ('%s','%s') not found in config file '%s'!\n",tag,val,filename);
-      assert(0);
+      //fprintf(stderr,"Tag-value pair ('%s','%s') not found in config file '%s'!\n",tag,val,filename);
+      //assert(0);
     }
   
   //close files
