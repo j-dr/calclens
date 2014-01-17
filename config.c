@@ -37,14 +37,7 @@ void read_config(char *filename)
   rayTraceData.GalOutputName[0] = '\0';
   rayTraceData.HEALPixRingWeightPath[0] = '\0';
   rayTraceData.HEALPixWindowFunctionPath[0] = '\0';
-#ifdef MAKE_LENSPLANES  
-  int readLightConeOrigin[3] = {0,0,0};
-#endif
-  rayTraceData.MaxNumLensPlaneInMem = -1;
-  rayTraceData.LightConePartChunkFactor = -1.0;
-  rayTraceData.partMass = -1.0;
   rayTraceData.maxRayMemImbalance = 0.25;
-  rayTraceData.galRadPointNFWTest = -1.0;
   rayTraceData.MGConvFact = -1.0;
   rayTraceData.ComvSmoothingScale = -1.0;
   
@@ -149,38 +142,6 @@ void read_config(char *filename)
       ASSIGN_CONFIG_STR(GalOutputName);
       ASSIGN_CONFIG_LONG(NumGalOutputFiles);
 
-      ASSIGN_CONFIG_STR(LightConeFileList);
-      ASSIGN_CONFIG_STR(LightConeFileType);
-      
-#ifdef MAKE_LENSPLANES        
-      if(strcmp_caseinsens(tag,"LightConeOriginX") == 0)
-	readLightConeOrigin[0] = 1;
-      if(strcmp_caseinsens(tag,"LightConeOriginY") == 0)
-	readLightConeOrigin[1] = 1;
-      if(strcmp_caseinsens(tag,"LightConeOriginZ") == 0)
-	readLightConeOrigin[2] = 1;
-#endif
-      ASSIGN_CONFIG_DOUBLE(LightConeOriginX);
-      ASSIGN_CONFIG_DOUBLE(LightConeOriginY);
-      ASSIGN_CONFIG_DOUBLE(LightConeOriginZ);
-
-      ASSIGN_CONFIG_LONG(LensPlaneOrder);
-      ASSIGN_CONFIG_LONG(NumDivLensPlane);
-      ASSIGN_CONFIG_DOUBLE(memBuffSizeInMB);
-      
-      ASSIGN_CONFIG_LONG(MaxNumLensPlaneInMem);
-      ASSIGN_CONFIG_DOUBLE(LightConePartChunkFactor);
-      
-      ASSIGN_CONFIG_DOUBLE(partMass);
-      ASSIGN_CONFIG_DOUBLE(MassConvFact);
-      ASSIGN_CONFIG_DOUBLE(LengthConvFact);
-      ASSIGN_CONFIG_DOUBLE(VelocityConvFact);
-      
-      ASSIGN_CONFIG_DOUBLE(raPointMass);
-      ASSIGN_CONFIG_DOUBLE(decPointMass);
-      ASSIGN_CONFIG_DOUBLE(radPointMass);
-      ASSIGN_CONFIG_DOUBLE(galRadPointNFWTest);
-      
       fprintf(stderr,"Tag-value pair ('%s','%s') not found in config file '%s'!\n",tag,val,filename);
       assert(0);
     }
@@ -194,7 +155,6 @@ void read_config(char *filename)
   system(cmd);
   
   //error check
-#ifndef MAKE_LENSPLANES
   assert(rayTraceData.maxRayMemImbalance > 0.0);
   
   assert(rayTraceData.ComvSmoothingScale > 0.0);
@@ -227,29 +187,11 @@ void read_config(char *filename)
       rayTraceData.UseHEALPixLensPlaneMaps = 1;
     }
   
-#else
-  assert(readLightConeOrigin[0] == 1);
-  assert(readLightConeOrigin[1] == 1);
-  assert(readLightConeOrigin[2] == 1);
-  assert(rayTraceData.MaxNumLensPlaneInMem > 0);
-  assert(rayTraceData.LightConePartChunkFactor > 0);
-#endif
-  
   /* set gal image search rads */
   rayTraceData.galImageSearchRad = 10.0*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder));
   if(rayTraceData.galImageSearchRad < GRIDSEARCH_RADIUS_ARCMIN/60.0/180.0*M_PI)
     rayTraceData.galImageSearchRad = GRIDSEARCH_RADIUS_ARCMIN/60.0/180.0*M_PI; 
   rayTraceData.galImageSearchRayBufferRad = sqrt(4.0*M_PI/order2npix(rayTraceData.bundleOrder)) + RAYBUFF_RADIUS_ARCMIN/60.0/180.0*M_PI;
-    
-  //error check for point mass test
-#ifdef POINTMASSTEST
-  if(strlen(rayTraceData.GalOutputName) > 0)
-    assert(rayTraceData.galRadPointNFWTest > 0.0);
-#endif
-#ifdef NFWHALOTEST
-  if(strlen(rayTraceData.GalOutputName) > 0)
-    assert(rayTraceData.galRadPointNFWTest > 0.0);
-#endif
 }
 
 //routine to do case insens. string comp.

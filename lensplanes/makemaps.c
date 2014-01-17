@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-#include <fftw3.h>
 #include <mpi.h>
 #include <hdf5.h>
 #include <hdf5_hl.h>

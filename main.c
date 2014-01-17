@@ -78,58 +78,8 @@ int main(int argc, char **argv)
       fprintf(stderr,"\n");
     }
   
-  /* code will either make the lens planes or do raytracing depending on configuration */
-#ifdef MAKE_LENSPLANES
-#ifdef POINTMASSTEST
-  if(ThisTask == 0)
-    {
-      fprintf(stderr,"making lensing planes for a point mass or NFW test...\n");
-      make_lensplanes_pointmass_test();
-    }    
-  
-  ////////////////////////////
-  MPI_Barrier(MPI_COMM_WORLD);
-  ////////////////////////////
-#else
-  //even if the code is called with more than 1 MPI task, only task zero will make the lens planes
-  if(ThisTask == 0)
-    {
-      fprintf(stderr,"lens plane path/name: '%s/%s'\n",rayTraceData.LensPlanePath,rayTraceData.LensPlaneName);
-      fprintf(stderr,"lens plane HEALPix order = %ld\n",rayTraceData.LensPlaneOrder);
-      fprintf(stderr,"light cone file list: '%s'\n",rayTraceData.LightConeFileList);
-      fprintf(stderr,"light cone file type: '%s'\n",rayTraceData.LightConeFileType);
-      fprintf(stderr,"light cone origin: x,y,z = %f|%f|%f\n",rayTraceData.LightConeOriginX,rayTraceData.LightConeOriginY,rayTraceData.LightConeOriginZ);
-      fprintf(stderr,"light cone unit conv. factors: mass = %le, length = %le, velocity  = %le\n",
-	      rayTraceData.MassConvFact,rayTraceData.LengthConvFact,rayTraceData.VelocityConvFact);
-      fprintf(stderr,"partMass (may not be used) = %le\n",rayTraceData.partMass);
-      fprintf(stderr,"mem. buff. size = %lf MB, max. # of planes in mem = %ld, plane chunk alloc. factor = %lf\n",
-	      rayTraceData.memBuffSizeInMB,rayTraceData.MaxNumLensPlaneInMem,rayTraceData.LightConePartChunkFactor);
-      makeRayTracingPlanesHDF5();
-      
-    }
-  
-  ////////////////////////////
-  MPI_Barrier(MPI_COMM_WORLD);
-  ////////////////////////////
-  
-  long i;
-  for(i=0;i<rayTraceData.NumLensPlanes;++i)
-    make_lensplane_map(i);
-#endif /* POINTMASSTEST */
-#else
-  
-#ifdef POINTMASSTEST
-  if(ThisTask == 0)
-    make_lensplanes_pointmass_test();
-    
-  ////////////////////////////
-  MPI_Barrier(MPI_COMM_WORLD);
-  ////////////////////////////
-#endif
-	
   /* do ray tracing */
   raytrace();
-#endif /* MAKE_LENSPLANES */
   
   /* finish profiling info*/
   logProfileTag(PROFILETAG_TOTTIME);

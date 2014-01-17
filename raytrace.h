@@ -156,28 +156,6 @@ typedef struct {
   char GalOutputName[MAX_FILENAME];
   long NumGalOutputFiles;
   
-  /* for making lens planes */
-  char LightConeFileList[MAX_FILENAME]; 
-  char LightConeFileType[MAX_FILENAME]; 
-  double LightConeOriginX;  /* used to make lens planes from the light cone */
-  double LightConeOriginY;
-  double LightConeOriginZ;
-  long LensPlaneOrder; 
-  long NumDivLensPlane; /* not currently used */ 
-  double memBuffSizeInMB; 
-  long MaxNumLensPlaneInMem;
-  double LightConePartChunkFactor;
-  double partMass;            /* particle mass that can be used in writing lens planes - have to use it in read_lightcone.c file for it to take effect*/
-  double MassConvFact;        /* conversion factors that can be used if needed in read_lightcone.c file */
-  double LengthConvFact;      /* conversion factors that can be used if needed in read_lightcone.c file */
-  double VelocityConvFact;    /* conversion factors that can be used if needed in read_lightcone.c file */
-  
-  /* for the point mass or NFW test */
-  double raPointMass;
-  double decPointMass;
-  double radPointMass;
-  double galRadPointNFWTest;
-  
   //internal params for code
   long Restart; /* set to index of ray plane to start with if you want to restart*/
   long CurrentPlaneNum;
@@ -293,24 +271,6 @@ typedef struct {
   double cpuTime;
 } HEALPixBundleCell;
 
-typedef struct {
-  long NumRayTracingPlanes;
-  long HEALPixOrder;
-  long NPix;
-  long MaxTotNumLCParts;
-  long ChunkSizeLCParts;
-  long *NumLCParts;
-  long *NumLCPartsUsed;
-  LCParticle **LCParts;
-  long *TotNumLCPartsInPlane;
-  long *NumLCPartsInPix;
-  long *NumLCPartsInPixUpdate;
-  long NumLCPartWriteBuff;
-  LCParticle *LCPartWriteBuff;
-  long *PeanoInds;
-  size_t *PeanoSortInds;
-} WriteBuffData;
-
 /* extern defs of global vars in globalvars.c */
 extern const char *ProfileTagNames[];
 extern RayTraceData rayTraceData;                        /* global struct with all vars from config file */
@@ -375,27 +335,8 @@ void rot_ray_radec2ang(HEALPixRay *ray);
 void paratrans_ray_curr2obs(HEALPixRay *ray);
 void paratrans_ray_obs2curr(HEALPixRay *ray);
 
-/* in make_lensplanes_hdf5.c */
-void makeRayTracingPlanesHDF5(void);
-
 /* in read_lensplanes_hdf5.c */
 void readRayTracingPlaneAtPeanoInds(hid_t *file_id, long HEALPixOrder, long *PeanoIndsToRead, long NumPeanoIndsToRead, Part **LCParts, long *NumLCParts);
-
-/* in verifyindex_lensplanes_hdf5.c */
-long verifyIndexRayTracingPlane(char planename[]);
-
-/* in make_lensplanes_pointmass_test.c */
-void make_lensplanes_pointmass_test(void);
-
-/* in lightconeio.c */
-long getNumLCPartsFile(FILE *infp);
-LCParticle getLCPartFromFile(long i, long Np, FILE *infp, int freeBuff);
-long getNumLCPartsFile_ARTLC(FILE *infp);
-LCParticle getLCPartFromFile_ARTLC(long i, long Np, FILE *infp, int freeBuff);
-long getNumLCPartsFile_GADGET2(FILE *infp);
-LCParticle getLCPartFromFile_GADGET2(long i, long Np, FILE *infp, int freeBuff);
-long getNumLCPartsFile_LGADGET(FILE *infp);
-LCParticle getLCPartFromFile_LGADGET(long i, long Np, FILE *infp, int freeBuff);
 
 /* in rayio.c */
 void write_rays(void);
@@ -428,7 +369,6 @@ long fnumlines(FILE *fp);
 void mark_bundlecells(double mapbuffrad, int searchTag, int markTag);
 void alloc_mapcells(int searchTag, int markTag);
 void free_mapcells(void);
-void make_lensplane_map(long planeNum);
 int test_vaccell_boundary(double ra, double dec, double radius);
 int test_vaccell(double ra, double dec);
 void alloc_rays(void);

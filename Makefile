@@ -1,5 +1,4 @@
 # compile time options
-#OPTS += -DMAKE_LENSPLANES #makes lens planes from input light cone - must be done before ray tracing 
 #OPTS += -DBORNAPPRX #ray trace with born approximation
 #OPTS += -DOUTPUTRAYDEFLECTIONS #output ray deflections
 #OPTS += -DOUTPUTPHI #output lensing potential at ray position
@@ -101,11 +100,10 @@ TESTCODE=test_code.o
 endif
 
 OBJS = $(MEMWATCH) $(TESTCODE) raytrace.o raytrace_utils.o healpix_utils.o config.o profile.o globalvars.o cosmocalc.o healpix_fastdiscquery.o \
-	make_lensplanes_hdf5.o lightconeio.o read_lensplanes_hdf5.o make_lensplanes_pointmass_test.o rayio.o partio.o rayprop.o \
+	read_lensplanes_hdf5.o rayio.o partio.o rayprop.o \
 	galsio.o restart.o rot_paratrans.o nnbrs_healpixtree.o \
 	healpix_plmgen.o healpix_shtrans.o shtpoissonsolve.o map_shuffle.o alm2map_transpose_mpi.o partsmoothdens.o \
-	gridsearch.o loadbalance.o alm2allmaps_transpose_mpi.o map2alm_transpose_mpi.o mgpoissonsolve.o mgpoissonsolve_utils.o \
-	gridkappadens.o
+	gridsearch.o loadbalance.o alm2allmaps_transpose_mpi.o map2alm_transpose_mpi.o mgpoissonsolve.o mgpoissonsolve_utils.o
 
 EXEC = raytrace
 TEST = raytrace

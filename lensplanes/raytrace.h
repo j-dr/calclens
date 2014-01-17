@@ -1,4 +1,3 @@
-#include <fftw3.h>
 #include <mpi.h>
 #include <hdf5.h>
 
