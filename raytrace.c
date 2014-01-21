@@ -158,31 +158,50 @@ void raytrace(void)
 	}
       
       //read in new parts
-      time = -MPI_Wtime();
-      logProfileTag(PROFILETAG_PARTIO);
 #ifdef USE_FULLSKY_PARTDIST
       if(!rayTraceData.UseHEALPixLensPlaneMaps)
 	{
+	  time = -MPI_Wtime();
+	  logProfileTag(PROFILETAG_PARTIO);
+	  
+	  if(ThisTask == 0)
+	    fprintf(stderr,"reading parts from '%s/%s%04ld.h5'\n",
+		    rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,rayTraceData.CurrentPlaneNum);
+	  
 	  read_lcparts_at_planenum_fullsky_partdist(rayTraceData.CurrentPlaneNum);
 	  get_smoothing_lengths();
+	  
+	  logProfileTag(PROFILETAG_PARTIO);
+	  time += MPI_Wtime();
+	  
+	  if(ThisTask == 0)
+	    fprintf(stderr,"read %ld parts in %g seconds.\n",NlensPlaneParts,time);
 	}
 #else
 #ifdef SHTONLY
       if(!rayTraceData.UseHEALPixLensPlaneMaps)
 	{
 #endif
+	  time = -MPI_Wtime();
+	  logProfileTag(PROFILETAG_PARTIO);
+	  
+	  if(ThisTask == 0)
+	    fprintf(stderr,"reading parts from '%s/%s%04ld.h5'\n",
+		    rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,rayTraceData.CurrentPlaneNum);
+	  
 	  read_lcparts_at_planenum(rayTraceData.CurrentPlaneNum);
 	  get_smoothing_lengths();
+	  
+	  logProfileTag(PROFILETAG_PARTIO);
+	  time += MPI_Wtime();
+	  
+	  if(ThisTask == 0)
+	    fprintf(stderr,"read %ld parts in %g seconds.\n",NlensPlaneParts,time);
 #ifdef SHTONLY
 	}
 #endif
 #endif
-      logProfileTag(PROFILETAG_PARTIO);
-      time += MPI_Wtime();
       
-      if(ThisTask == 0)
-	fprintf(stderr,"read %ld parts in %g seconds.\n",NlensPlaneParts,time);
-
 #ifdef NOBACKDENS      
       /* if there are particles read into memory, then we need to solve the poisson equation 
 	 otherwise, there are two cases

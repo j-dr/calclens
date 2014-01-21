@@ -21,6 +21,8 @@ OPTS += -DSHTONLY
 #OPTS += -DUSEMEMCHECK #define to test for memory leaks, out of bounds, etc. for memory used in this code
 #OPTS += -DDMALLOC -DDMALLOC_FUNC_CHECK #define to test for memory leaks, out of bounds, etc. for memory used in this code
 #OPTS += -DDEF_GSL_IEEE_ENV #define the GSL IEEE environment variables - for debugging
+OPTS += -DNGPSHTDENS
+#OPTS += -DCICSHTDENS 
 
 #select your computer
 COMP="orange"

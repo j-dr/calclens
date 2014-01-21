@@ -11,9 +11,6 @@
 #include "raytrace.h"
 #include "healpix_shtrans.h"
 
-#define NGPSHTDENS
-//#define CICSHTDENS
-
 #ifdef SHTONLY
 static int shearinterp_comp(double rvec[3], double *pot, double alpha[2], double U[4]);
 //static int shearinterp_poly(double rvec[3], double *pot, double alpha[2], double U[4]);
@@ -349,8 +346,10 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 	      
 	      sprintf(fname,"%s/%s.%ld",rayTraceData.HEALPixLensPlaneMapPath,
 		      rayTraceData.HEALPixLensPlaneMapName,rayTraceData.CurrentPlaneNum);
+	      
 	      fp = fopen(fname,"r");
-	      fseek(fp,plan.northStartIndGlobalMap[nring-firstRing],SEEK_SET);
+	      assert(fp != NULL);
+	      fseek(fp,plan.northStartIndGlobalMap[0]*sizeof(float),SEEK_SET);
 	      
 	      //read all of the northern rings
 	      for(nring=firstRing;nring<=lastRing;++nring)
@@ -366,7 +365,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 	      
 	      //now read southern rings - they are opposite order since HEALPix reflects
 	      // over the equator
-	      fseek(fp,plan.southStartIndGlobalMap[lastRing-firstRing],SEEK_SET);
+	      fseek(fp,plan.southStartIndGlobalMap[lastRing-firstRing]*sizeof(float),SEEK_SET);
 	      for(nring=lastRing;nring>=firstRing;nring--)
 		{
 		  if(nring < Nside)
@@ -392,6 +391,9 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 	}
       
       logProfileTag(PROFILETAG_PARTIO);
+      
+      if(ThisTask == 0)
+	fprintf(stderr,"read HEALPix lens plane maps in %lf seconds.\n",getTimeProfileTag(PROFILETAG_PARTIO));
       
       logProfileTag(PROFILETAG_SHT);
       
