@@ -41,7 +41,7 @@ void read_config(char *filename)
   rayTraceData.maxRayMemImbalance = 0.25;
   rayTraceData.MGConvFact = -1.0;
   rayTraceData.ComvSmoothingScale = -1.0;
-  rayTraceData.partMass < 0.0;
+  rayTraceData.partMass = -1.0;
   
   //make output dir
   mkdir(rayTraceData.OutputPath,02755);
