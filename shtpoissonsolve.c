@@ -11,6 +11,9 @@
 #include "raytrace.h"
 #include "healpix_shtrans.h"
 
+#define NGPSHTDENS
+//#define CICSHTDENS
+
 #ifdef SHTONLY
 static int shearinterp_comp(double rvec[3], double *pot, double alpha[2], double U[4]);
 //static int shearinterp_poly(double rvec[3], double *pot, double alpha[2], double U[4]);
@@ -53,7 +56,11 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 #ifdef DEBUG_IO
   char name[MAX_FILENAME];
 #endif            
-  double alm2mapTime,map2almTime;
+  double alm2mapTime,map2almTime;  
+#ifdef CICSHTDENS
+  long wgtpix[4];
+  double wgt[4];
+#endif
   
   FILE *fp;
   char fname[MAX_FILENAME];
@@ -114,56 +121,57 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 		  r = sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
 		  vec2ang(vec,&theta,&phi);
 		  
-		  /*
-		  //FIXME NGP SHT step - comment this out!
+#ifdef NGPSHTDENS
+		  //NGP SHT STEP
 		  mapNest = ang2nest(theta,phi,rayTraceData.poissonOrder);
 		  bundleNest = (mapNest >> bundleMapShift);
 		  j = (bundleNest << bundleMapShift);
 		  
 		  if(
-		  #ifdef USE_FULLSKY_PARTDIST
-		  (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
-		  #else
-		  (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
-		  #endif
-		  && bundleCells[bundleNest].firstMapCell >= 0)
-		  {
-		  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
-		  (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass);
+#ifdef USE_FULLSKY_PARTDIST
+		     (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+#else
+		     (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+#endif
+		     && bundleCells[bundleNest].firstMapCell >= 0)
+		    {
+		      mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
+			(float) (lensPlaneParts[k+bundleCells[i].firstPart].mass);
 		  
-		  assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
-		  }
+		      assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
+		    }
 		  
 		  continue;
-		  //END OF FIXME NGP SHT step
-		  */
-		  
-		  /*
+#endif
+ 
+
+#ifdef CICSHTDENS
 		  //CIC SHT STEP
 		  long wgtpix[4];
 		  double wgt[4];
 		  get_interpol(theta,phi,wgtpix,wgt,rayTraceData.poissonOrder);
 		  for(m=0;m<4;++m)
-		  {
-		  mapNest = ring2nest(wgtpix[m],rayTraceData.poissonOrder);
-		  bundleNest = (mapNest >> bundleMapShift);
-		  j = (bundleNest << bundleMapShift);
-		  if(
-		  #ifdef USE_FULLSKY_PARTDIST
-		  (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
-		  #else
-		  (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
-		  #endif
-		  && bundleCells[bundleNest].firstMapCell >= 0)
-		  {
-		  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
-		  (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass*wgt[m]);
-		  
-		  assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
-		  }
-		  }
+		    {
+		      mapNest = ring2nest(wgtpix[m],rayTraceData.poissonOrder);
+		      bundleNest = (mapNest >> bundleMapShift);
+		      j = (bundleNest << bundleMapShift);
+		      if(
+#ifdef USE_FULLSKY_PARTDIST
+			 (ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+#else
+			 (ISSETBITFLAG(bundleCells[bundleNest].active,PRIMARY_BUNDLECELL) || ISSETBITFLAG(bundleCells[bundleNest].active,NON_FULLSKY_PARTDIST_MAPBUFF_BUNDLECELL))
+#endif
+			 && bundleCells[bundleNest].firstMapCell >= 0)
+			{
+			  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
+			    (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass*wgt[m]);
+			  
+			  assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
+			}
+		    }
+
 		  continue;
-		  */
+#endif
 		  
 		  //use smoothing lengths otherwise
 		  smoothingRad = lensPlaneParts[k+bundleCells[i].firstPart].smoothingLength;
@@ -386,6 +394,29 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
       logProfileTag(PROFILETAG_PARTIO);
       
       logProfileTag(PROFILETAG_SHT);
+      
+      firstRing = plan.firstRingTasks[ThisTask];
+      lastRing = plan.lastRingTasks[ThisTask];
+      mapvec_complex = (fftwf_complex*) mapvec;
+      for(nring=firstRing;nring<=lastRing;++nring)
+	{
+	  if(nring < Nside)
+	    ringpix = 4*nring;
+	  else
+	    ringpix = 4*Nside;
+	  
+	  mapvec = (float*) (mapvec_complex+plan.northStartIndMapvec[nring-firstRing]);
+	  for(i=0;i<ringpix;++i)
+	    mapvec[i] *= (float) (rayTraceData.partMass);
+      
+	  if(nring != 2*Nside)
+	    {
+	      mapvec = (float*) (mapvec_complex+plan.southStartIndMapvec[nring-firstRing]);
+	      for(i=0;i<ringpix;++i)
+		mapvec[i] *= (float) (rayTraceData.partMass);
+	    }
+	}
+      mapvec = (float*) mapvec_complex;
     }
   
 #ifdef DEBUG_IO

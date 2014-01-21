@@ -3,8 +3,8 @@
 #OPTS += -DOUTPUTRAYDEFLECTIONS #output ray deflections
 #OPTS += -DOUTPUTPHI #output lensing potential at ray position
 OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
-#OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
-#OPTS += -DSHTONLY
+OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
+OPTS += -DSHTONLY
 
 #testing options
 #OPTS += -DNFWHALOTEST #define to write lensplanes and do test with an NFW halo - need POINTMASSTEST defined as well 
@@ -23,10 +23,10 @@ OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
 #OPTS += -DDEF_GSL_IEEE_ENV #define the GSL IEEE environment variables - for debugging
 
 #select your computer
-#COMP="orange"
+COMP="orange"
 #COMP="orion-gcc"
 #COMP="midway"
-COMP="home"
+#COMP="home"
 
 ################################
 #edit/add to match your machine
@@ -45,14 +45,14 @@ endif
 ifeq ($(COMP),"orange")
 CC          =  mpicc
 OPTIMIZE    =  -g -O3 #-Wall -wd981 #-wd1419 -wd810
-GSLI        =  -I/afs/slac.stanford.edu/g/ki/software/gsl/1.15/include
-GSLL        =  -L/afs/slac.stanford.edu/g/ki/software/gsl/1.15/lib
-FFTWI       =  -I/afs/slac.stanford.edu/g/ki/software/fftw/3.3/include 
-FFTWL       =  -L/afs/slac.stanford.edu/g/ki/software/fftw/3.3/lib
-HDF5I       =  -I/afs/slac.stanford.edu/g/ki/software/hdf5/1.8.8/include 
-HDF5L       =  -L/afs/slac.stanford.edu/g/ki/software/hdf5/1.8.8/lib
-FITSI       =  -I/afs/slac.stanford.edu/g/ki/software/cfitsio/3.29/include
-FITSL       =  -L/afs/slac.stanford.edu/g/ki/software/cfitsio/3.29/lib
+GSLI        =  -I$(SLAC_GSL_DIR)/include
+GSLL        =  -L$(SLAC_GSL_DIR)/lib
+FFTWI       =  -I$(MATTS_FFTW3_DIR)/include 
+FFTWL       =  -L$(MATTS_FFTW3_DIR)/lib
+HDF5I       =  -I$(SLAC_HDF5_DIR)/include 
+HDF5L       =  -L$(SLAC_HDF5_DIR)/lib
+FITSI       =  -I$(SLAC_CFITSIO_DIR)/include
+FITSL       =  -L$(SLAC_CFITSIO_DIR)/lib
 EXTRACFLAGS =
 EXTRACLIB   =
 endif

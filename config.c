@@ -41,6 +41,7 @@ void read_config(char *filename)
   rayTraceData.maxRayMemImbalance = 0.25;
   rayTraceData.MGConvFact = -1.0;
   rayTraceData.ComvSmoothingScale = -1.0;
+  rayTraceData.partMass < 0.0;
   
   //make output dir
   mkdir(rayTraceData.OutputPath,02755);
@@ -123,6 +124,7 @@ void read_config(char *filename)
       ASSIGN_CONFIG_STR(HEALPixLensPlaneMapPath);
       ASSIGN_CONFIG_STR(HEALPixLensPlaneMapName);
       ASSIGN_CONFIG_LONG(HEALPixLensPlaneMapOrder);
+      ASSIGN_CONFIG_DOUBLE(partMass);
       
       ASSIGN_CONFIG_LONG(bundleOrder);
       ASSIGN_CONFIG_LONG(rayOrder);
@@ -185,6 +187,7 @@ void read_config(char *filename)
       assert(strlen(rayTraceData.HEALPixLensPlaneMapPath) > 0);
       assert(strlen(rayTraceData.HEALPixLensPlaneMapName) > 0);
       assert(rayTraceData.HEALPixLensPlaneMapOrder >= 0);
+      assert(rayTraceData.partMass > 0);
       rayTraceData.UseHEALPixLensPlaneMaps = 1;
     }
   

@@ -264,6 +264,7 @@ void raytrace(void)
 	}
       
       //free parts since we do not need them anymore
+#ifndef USE_FULLSKY_PARTDIST
 #ifdef SHTONLY
       if(!rayTraceData.UseHEALPixLensPlaneMaps)
 	{
@@ -271,6 +272,7 @@ void raytrace(void)
 	  destroy_parts();
 #ifdef SHTONLY
 	}
+#endif
 #endif
       
       //write rays
@@ -405,9 +407,14 @@ static void set_plane_params(void)
   if(rayTraceData.minSL > M_PI)
     rayTraceData.minSL = M_PI;
 #endif
+
+  if(!rayTraceData.UseHEALPixLensPlaneMaps)
+    rayTraceData.poissonOrder = rayTraceData.SHTOrder;
+  else
+    rayTraceData.poissonOrder = rayTraceData.HEALPixLensPlaneMapOrder;
+  
   
 #ifdef SHTONLY  
-  rayTraceData.poissonOrder = rayTraceData.SHTOrder;
   rayTraceData.minSL = MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.poissonOrder));
   rayTraceData.maxSL = MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.poissonOrder));
   
@@ -421,14 +428,12 @@ static void set_plane_params(void)
 	      ,rayTraceData.partBuffRad);
     }
 #else
-  rayTraceData.poissonOrder = rayTraceData.SHTOrder;
   rayTraceData.NumMGPatch = MGPATCH_SIZE_FAC*bundleLength/(rayTraceData.minSL/SMOOTHKERN_MGRESOLVE_FAC);
   if(rayTraceData.NumMGPatch < NUM_MGPATCH_MIN)
     rayTraceData.NumMGPatch = NUM_MGPATCH_MIN;
     
   //big enough to make sure we get all parts needed
   rayTraceData.partBuffRad = MGPATCH_SIZE_FAC*bundleLength + 2.0*bundleLength + rayTraceData.maxSL*2.0;
-  
   if(ThisTask == 0)
     {
       fprintf(stderr,"densfact = %le, backdens = %le, max smoothing scale = %le, cmv dist. = %lg\n",
