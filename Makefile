@@ -23,9 +23,10 @@ OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
 #OPTS += -DDEF_GSL_IEEE_ENV #define the GSL IEEE environment variables - for debugging
 
 #select your computer
-COMP="orange"
+#COMP="orange"
 #COMP="orion-gcc"
 #COMP="midway"
+COMP="home"
 
 ################################
 #edit/add to match your machine
@@ -35,17 +36,22 @@ COMP="orange"
 CC          =  mpicc
 OPTIMIZE    =  -g -O3 #-Wall -wd981 #-wd1419 -wd810
 
+ifeq ($(COMP),"home")
+EXTRACFLAGS =  -L/opt/local/include
+EXTRACLIB   =  -L/opt/local/lib
+endif
+
 ifeq ($(COMP),"orange")
 CC          =  mpicc
 OPTIMIZE    =  -g -O3 #-Wall -wd981 #-wd1419 -wd810
 GSLI        =  -I/afs/slac.stanford.edu/g/ki/software/gsl/1.15/include
-GSLL        =  -L/afs/slac.stanford.edu/g/ki/software/gsl/1.15/lib -lgsl -lgslcblas
+GSLL        =  -L/afs/slac.stanford.edu/g/ki/software/gsl/1.15/lib
 FFTWI       =  -I/afs/slac.stanford.edu/g/ki/software/fftw/3.3/include 
-FFTWL       =  -L/afs/slac.stanford.edu/g/ki/software/fftw/3.3/lib -lfftw3 -lfftw3f 
+FFTWL       =  -L/afs/slac.stanford.edu/g/ki/software/fftw/3.3/lib
 HDF5I       =  -I/afs/slac.stanford.edu/g/ki/software/hdf5/1.8.8/include 
-HDF5L       =  -L/afs/slac.stanford.edu/g/ki/software/hdf5/1.8.8/lib -lz -lhdf5_hl -lhdf5 
+HDF5L       =  -L/afs/slac.stanford.edu/g/ki/software/hdf5/1.8.8/lib
 FITSI       =  -I/afs/slac.stanford.edu/g/ki/software/cfitsio/3.29/include
-FITSL       =  -L/afs/slac.stanford.edu/g/ki/software/cfitsio/3.29/lib -lcfitsio
+FITSL       =  -L/afs/slac.stanford.edu/g/ki/software/cfitsio/3.29/lib
 EXTRACFLAGS =
 EXTRACLIB   =
 endif
