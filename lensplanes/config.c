@@ -3,6 +3,7 @@
 #include <math.h>
 #include <assert.h>
 #include <string.h>
+#include <ctype.h>
 #include <mpi.h>
 #include <hdf5.h>
 #include <gsl/gsl_math.h>

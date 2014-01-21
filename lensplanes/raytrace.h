@@ -2,7 +2,7 @@
 #include <hdf5.h>
 
 #include "profile.h"
-#include "healpix_utils.h"
+#include "../healpix_utils.h"
 
 #ifdef MEMWATCH
 #include "memwatch.h"
@@ -18,8 +18,6 @@
 
 #ifndef _RAYTRACE_
 #define _RAYTRACE_
-
-#define RAYTRACEVERSION "CALCLENS v0.9c"
 
 /* Some debugging macros
    undef DEBUG for no debugging
@@ -164,7 +162,7 @@ void read_config(char *filename);
 long fnumlines(FILE *fp);
 
 /* in makemaps.c */
-void mark_bundlecells(double mapbuffrad, int searchTag, int markTag);
+void make_lensplane_map(long planeNum);
 
 /* in read_lensplanes_hdf5.c */
 void readRayTracingPlaneAtPeanoInds(hid_t *file_id, long HEALPixOrder, long *PeanoIndsToRead, long NumPeanoIndsToRead, Part **LCParts, long *NumLCParts);

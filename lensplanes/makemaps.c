@@ -100,7 +100,7 @@ void make_lensplane_map(long planeNum)
   
   if(ThisTask == 0)
     {
-      sprintf(file_name,"%s/%s_healpixmap.%d",rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,planeNum);
+      sprintf(file_name,"%s/%s_healpixmap.%ld",rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,planeNum);
       fp = fopen(file_name,"w");
       fwrite(totmap,(size_t) Npix,sizeof(float),fp);
       fclose(fp);

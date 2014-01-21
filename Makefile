@@ -37,7 +37,8 @@ CC          =  mpicc
 OPTIMIZE    =  -g -O3 #-Wall -wd981 #-wd1419 -wd810
 
 ifeq ($(COMP),"home")
-EXTRACFLAGS =  -L/opt/local/include
+CC          =  openmpicc
+EXTRACFLAGS =  -I/opt/local/include
 EXTRACLIB   =  -L/opt/local/lib
 endif
 

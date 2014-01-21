@@ -339,7 +339,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 	      lastRing = plan.lastRingTasks[ThisTask];
 	      mapvec_complex = (fftwf_complex*) mapvec;
 	      
-	      sprintf(fname,"%s/%s.%d",rayTraceData.HEALPixLensPlaneMapPath,
+	      sprintf(fname,"%s/%s.%ld",rayTraceData.HEALPixLensPlaneMapPath,
 		      rayTraceData.HEALPixLensPlaneMapName,rayTraceData.CurrentPlaneNum);
 	      fp = fopen(fname,"r");
 	      fseek(fp,plan.northStartIndGlobalMap[nring-firstRing],SEEK_SET);
