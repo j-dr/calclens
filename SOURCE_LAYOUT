@@ -2,8 +2,11 @@
 Source Layout
 /////////////////////////////////////////////
 
+//////////////////////
+Ray Tracing Code
+
 Main routines:
-main.c - base routine that either starts ray tracing or makes lens planes
+main.c - base routine that starts ray tracing
 raytrace.h - global header file with most variable defs and prototypes
 raytrace.c - main driver routine for ray tracing
 
@@ -44,13 +47,36 @@ map2alm_transpose_mpi.c - does map -> alm analysis operation
 
 I/O:
 galsio.c - I/O for galaxies
-lightconeio.c - I/O for light cones
 partio.c - I/O for particles
 rayio.c - I/O for rays
 restart.c - reads/writes restart files
+
+read_lensplanes_hdf5.c - reads lens planes
+
+//////////////////////
+Lens Plane Making Code
+
+main.c - base routine that starts making lens planes
+raytrace.h - global header file with most variable defs and prototypes
+
+Utilities:
+config.c - reads config files
+globalvars.c - contains defs of all global vars
+profile.h - header for profiling library for code
+profile.c - profiling routines for code
+
+I/O:
+lightconeio.c - I/O for light cones
+ioutils.c - I/O utilities
 
 Making Lens Planes:
 make_lensplanes_hdf5.c - makes lens planes
 make_lensplanes_pointmass_test.c - makes lens planes for point mass
                                    and NFW tests
-read_lensplanes_hdf5.c - reads lens planes
+makemaps.c - makes HEALPix maps of lens planes
+
+
+
+
+
+
