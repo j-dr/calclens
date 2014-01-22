@@ -305,6 +305,10 @@ extern HEALPixMapCell *mapCellsGradThetaTheta;
 extern HEALPixMapCell *mapCellsGradThetaPhi;
 extern HEALPixMapCell *mapCellsGradPhiPhi;
 
+/* in poissondrivers.c */
+void fullsky_partdist_poissondriver(void);
+void cutsky_partdist_poissondriver(void);
+
 /* in mgpoissonsolve.c */
 void mgpoissonsolve(double densfact, double backdens);
 

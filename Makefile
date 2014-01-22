@@ -25,10 +25,10 @@ OPTS += -DNGPSHTDENS
 #OPTS += -DCICSHTDENS 
 
 #select your computer
-COMP="orange"
+#COMP="orange"
 #COMP="orion-gcc"
 #COMP="midway"
-#COMP="home"
+COMP="home"
 
 ################################
 #edit/add to match your machine
@@ -112,7 +112,8 @@ OBJS = $(MEMWATCH) $(TESTCODE) raytrace.o raytrace_utils.o healpix_utils.o confi
 	read_lensplanes_hdf5.o rayio.o partio.o rayprop.o \
 	galsio.o restart.o rot_paratrans.o nnbrs_healpixtree.o \
 	healpix_plmgen.o healpix_shtrans.o shtpoissonsolve.o map_shuffle.o alm2map_transpose_mpi.o partsmoothdens.o \
-	gridsearch.o loadbalance.o alm2allmaps_transpose_mpi.o map2alm_transpose_mpi.o mgpoissonsolve.o mgpoissonsolve_utils.o
+	gridsearch.o loadbalance.o alm2allmaps_transpose_mpi.o map2alm_transpose_mpi.o mgpoissonsolve.o mgpoissonsolve_utils.o \
+	poissondrivers.o
 
 EXEC = raytrace
 TEST = raytrace

@@ -157,79 +157,6 @@ void raytrace(void)
 	  logProfileTag(PROFILETAG_GRIDSEARCH);
 	}
       
-      //read in new parts
-#ifdef USE_FULLSKY_PARTDIST
-      if(!rayTraceData.UseHEALPixLensPlaneMaps)
-	{
-	  time = -MPI_Wtime();
-	  logProfileTag(PROFILETAG_PARTIO);
-	  
-	  if(ThisTask == 0)
-	    fprintf(stderr,"reading parts from '%s/%s%04ld.h5'\n",
-		    rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,rayTraceData.CurrentPlaneNum);
-	  
-	  read_lcparts_at_planenum_fullsky_partdist(rayTraceData.CurrentPlaneNum);
-	  get_smoothing_lengths();
-	  
-	  logProfileTag(PROFILETAG_PARTIO);
-	  time += MPI_Wtime();
-	  
-	  if(ThisTask == 0)
-	    fprintf(stderr,"read %ld parts in %g seconds.\n",NlensPlaneParts,time);
-	}
-#else
-#ifdef SHTONLY
-      if(!rayTraceData.UseHEALPixLensPlaneMaps)
-	{
-#endif
-	  time = -MPI_Wtime();
-	  logProfileTag(PROFILETAG_PARTIO);
-	  
-	  if(ThisTask == 0)
-	    fprintf(stderr,"reading parts from '%s/%s%04ld.h5'\n",
-		    rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,rayTraceData.CurrentPlaneNum);
-	  
-	  read_lcparts_at_planenum(rayTraceData.CurrentPlaneNum);
-	  get_smoothing_lengths();
-	  
-	  logProfileTag(PROFILETAG_PARTIO);
-	  time += MPI_Wtime();
-	  
-	  if(ThisTask == 0)
-	    fprintf(stderr,"read %ld parts in %g seconds.\n",NlensPlaneParts,time);
-#ifdef SHTONLY
-	}
-#endif
-#endif
-      
-#ifdef NOBACKDENS      
-      /* if there are particles read into memory, then we need to solve the poisson equation 
-	 otherwise, there are two cases
-	 1) if backdens == 0, then rho == 0 everywhere and phi = 0 as well
-	 2) if backdens != 0, then rho is negative in the region being ray traced and zero elsewhere, so still need to solve the poisson equation
-	 If we are ray tracing the entire sphere, then case 2 reduces to case 1 even if backdens != 0.  We do not account for that here.
-      */
-      MPI_Allreduce(&NlensPlaneParts,&totNlensPlaneParts,1,MPI_LONG,MPI_SUM,MPI_COMM_WORLD);
-      
-      if(totNlensPlaneParts > 0)
-	doPoissonSolve = 1;
-      else
-	doPoissonSolve = 0;
-#else
-      doPoissonSolve = 1;
-#endif
-      
-#ifdef DEBUG 
-#if DEBUG_LEVEL > 1 
-      if(NlensPlaneParts > 0)
-	fprintf(stderr,"%d: pos,mass = %f|%f|%f|%e, total # of parts = %ld, # of parts on this task = %ld\n",
-		ThisTask,lensPlaneParts[0].pos[0],lensPlaneParts[0].pos[1],lensPlaneParts[0].pos[2],lensPlaneParts[0].mass,
-		totNlensPlaneParts,NlensPlaneParts);
-      else
-	fprintf(stderr,"%d: # of parts on this task = %ld\n",ThisTask,NlensPlaneParts);
-#endif
-#endif
-      
       //zero everything before force computation
       for(i=0;i<NbundleCells;++i)
 	{
@@ -248,50 +175,11 @@ void raytrace(void)
 	    }
 	}
       
-      if(doPoissonSolve)
-	{
-	  /* This goes like this
-	     1) prep the poisson solve - done in set_poisson_solve_params above
-	        a) set splitting scale and poisson order - happens based on max smoothing length of parts 
-		b) set the PARTBUFF_BUNDLECELLs based on the splitting scale
-
-	     2) do the SHT long-range poisson solve
-	        a) set the MAPBUFF_BUNDLECELLs based on the poisson order   
-		b) grid parts
-		c) solve poisson equation
-		d) get defl angles and shear
-		e) interp to rays
-
-	     3) do the mg patch solver
-	  */
-	  do_healpix_sht_poisson_solve(rayTraceData.densfact,rayTraceData.backdens);
-	  
-#ifndef SHTONLY
-
+      //run Poisson solver
 #ifdef USE_FULLSKY_PARTDIST
-	  logProfileTag(PROFILETAG_PARTIO);
-	  read_lcparts_at_planenum(rayTraceData.CurrentPlaneNum);
-	  get_smoothing_lengths();
-	  logProfileTag(PROFILETAG_PARTIO);
-#endif
-
-#ifdef DEBUG_IO_DD
-	  write_bundlecells2ascii("preMGPS");
-#endif
-	  mgpoissonsolve(rayTraceData.densfact,rayTraceData.backdens);
-#endif
-	}
-      
-      //free parts since we do not need them anymore
-#ifndef USE_FULLSKY_PARTDIST
-#ifdef SHTONLY
-      if(!rayTraceData.UseHEALPixLensPlaneMaps)
-	{
-#endif
-	  destroy_parts();
-#ifdef SHTONLY
-	}
-#endif
+      fullsky_partdist_poissondriver();
+#else
+      cutsky_partdist_poissondriver();
 #endif
       
       //write rays
