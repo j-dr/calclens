@@ -11,6 +11,18 @@
 #include "raytrace.h"
 #include "healpix_shtrans.h"
 
+//#define LOCAL_DEBUG_IO
+
+#ifdef DEBUG_IO
+#define GLOBAL_DEBUG_IO
+#else
+#undef GLOBAL_DEBUG_IO
+#endif
+
+#ifdef LOCAL_DEBUG_IO
+#define DEBUG_IO
+#endif
+
 #ifdef SHTONLY
 static int shearinterp_comp(double rvec[3], double *pot, double alpha[2], double U[4]);
 //static int shearinterp_poly(double rvec[3], double *pot, double alpha[2], double U[4]);
@@ -20,6 +32,8 @@ static int shearinterp_comp(double rvec[3], double *pot, double alpha[2], double
 static void write_ringmap(char name[], float *mapvec, HEALPixSHTPlan plan);
 static void write_localmap(char name[], HEALPixMapCell *localMapCells, long NumLocalMapCells);
 #endif
+
+#define MASS_SCALE 1e10
 
 void do_healpix_sht_poisson_solve(double densfact, double backdens)
 {
@@ -133,7 +147,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 		     && bundleCells[bundleNest].firstMapCell >= 0)
 		    {
 		      mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
-			(float) (lensPlaneParts[k+bundleCells[i].firstPart].mass);
+			(float) (lensPlaneParts[k+bundleCells[i].firstPart].mass/MASS_SCALE);
 		  
 		      assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
 		    }
@@ -161,7 +175,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 			 && bundleCells[bundleNest].firstMapCell >= 0)
 			{
 			  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
-			    (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass*wgt[m]);
+			    (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass*wgt[m]/MASS_SCALE);
 			  
 			  assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
 			}
@@ -234,7 +248,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 			     && bundleCells[bundleNest].firstMapCell >= 0)
 			    {
 			      mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val +=
-				(float) (listdens[n]/totmass/numQueryPixPerGridPix*lensPlaneParts[k+bundleCells[i].firstPart].mass);
+				(float) (listdens[n]/totmass/numQueryPixPerGridPix*lensPlaneParts[k+bundleCells[i].firstPart].mass/MASS_SCALE);
 			      
 			      assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
 			    }
@@ -266,7 +280,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 #endif
 			 && bundleCells[bundleNest].firstMapCell >= 0)
 			{
-			  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val += (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass);
+			  mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].val += (float) (lensPlaneParts[k+bundleCells[i].firstPart].mass/MASS_SCALE);
 			  
 			  assert(mapNest == mapCells[bundleCells[bundleNest].firstMapCell+mapNest-j].index);
 			}
@@ -409,13 +423,13 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 	  
 	  mapvec = (float*) (mapvec_complex+plan.northStartIndMapvec[nring-firstRing]);
 	  for(i=0;i<ringpix;++i)
-	    mapvec[i] *= (float) (rayTraceData.partMass);
+	    mapvec[i] *= (float) (rayTraceData.partMass/MASS_SCALE);
       
 	  if(nring != 2*Nside)
 	    {
 	      mapvec = (float*) (mapvec_complex+plan.southStartIndMapvec[nring-firstRing]);
 	      for(i=0;i<ringpix;++i)
-		mapvec[i] *= (float) (rayTraceData.partMass);
+		mapvec[i] *= (float) (rayTraceData.partMass/MASS_SCALE);
 	    }
 	}
       mapvec = (float*) mapvec_complex;
@@ -451,7 +465,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
       mapvec = (float*) (mapvec_complex+plan.northStartIndMapvec[nring-firstRing]);
       for(i=0;i<ringpix;++i)
 	{
-	  mapvec[i] *= (float) (densfact/poissonHEALPixArea);
+	  mapvec[i] *= (float) (densfact/poissonHEALPixArea*MASS_SCALE);
 #ifndef USE_FULLSKY_PARTDIST
 	  ring = i + plan.northStartIndGlobalMap[nring-firstRing];
 	  ring2ang(ring,&theta,&phi,rayTraceData.poissonOrder);
@@ -470,7 +484,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 	  mapvec = (float*) (mapvec_complex+plan.southStartIndMapvec[nring-firstRing]);
 	  for(i=0;i<ringpix;++i)
 	    {
-	      mapvec[i] *= (float) (densfact/poissonHEALPixArea);
+	      mapvec[i] *= (float) (densfact/poissonHEALPixArea*MASS_SCALE);
 #ifndef USE_FULLSKY_PARTDIST
 	      ring = i + plan.southStartIndGlobalMap[nring-firstRing];
 	      ring2ang(ring,&theta,&phi,rayTraceData.poissonOrder);
@@ -1292,3 +1306,8 @@ static void write_localmap(char name[], HEALPixMapCell *localMapCells, long NumL
 }
 #endif
 
+#ifdef LOCAL_DEBUG_IO
+#ifndef GLOBAL_DEBUG_IO
+#undef DEBUG_IO
+#endif
+#endif
