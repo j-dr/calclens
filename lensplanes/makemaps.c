@@ -34,6 +34,7 @@ void make_lensplane_map(long planeNum)
   long i,j;
   
   double vec[3];
+  double r,theta,phi;
   long ring;
   FILE *fp;
   
@@ -79,11 +80,20 @@ void make_lensplane_map(long planeNum)
       
       for(j=0;j<NumParts;++j)
         {
+          r = sqrt(Parts[j].pos[0]*Parts[j].pos[0] + 
+                   Parts[j].pos[1]*Parts[j].pos[1] + 
+	               Parts[j].pos[2]*Parts[j].pos[2]);
+          Parts[j].pos[0] /= r;
+          Parts[j].pos[1] /= r;
+          Parts[j].pos[2] /= r;
+
           vec[0] = (double) (Parts[j].pos[0]);
           vec[1] = (double) (Parts[j].pos[1]);
           vec[2] = (double) (Parts[j].pos[2]);
-                  
-          ring = vec2ring(vec,order);
+          
+          vec2ang(vec,&theta,&phi);
+          ring = ang2nest(theta,phi,order);
+          ring = nest2ring(ring,order);
           
           map[ring] += 1.0;
         }
