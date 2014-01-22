@@ -3,8 +3,9 @@
 #OPTS += -DOUTPUTRAYDEFLECTIONS #output ray deflections
 #OPTS += -DOUTPUTPHI #output lensing potential at ray position
 OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
-OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
-OPTS += -DSHTONLY
+#OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
+#OPTS += -DSHTONLY #set to only use SHT for lensing
+OPTS += -DTHREEDPOT #define to use 3D potential to move rays
 
 #testing options
 #OPTS += -DNFWHALOTEST #define to write lensplanes and do test with an NFW halo - need POINTMASSTEST defined as well 
@@ -21,14 +22,14 @@ OPTS += -DSHTONLY
 #OPTS += -DUSEMEMCHECK #define to test for memory leaks, out of bounds, etc. for memory used in this code
 #OPTS += -DDMALLOC -DDMALLOC_FUNC_CHECK #define to test for memory leaks, out of bounds, etc. for memory used in this code
 #OPTS += -DDEF_GSL_IEEE_ENV #define the GSL IEEE environment variables - for debugging
-OPTS += -DNGPSHTDENS
-#OPTS += -DCICSHTDENS 
+#OPTS += -DNGPSHTDENS #define to use NGP interp for SHT step
+#OPTS += -DCICSHTDENS #define to use CIC interp for SHT step
 
 #select your computer
 #COMP="orange"
 #COMP="orion-gcc"
 #COMP="midway"
-COMP="home"
+#COMP="home"
 
 ################################
 #edit/add to match your machine
