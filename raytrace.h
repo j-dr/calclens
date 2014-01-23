@@ -87,6 +87,9 @@
 #define TAG_NUMBUFF_GALSDIST  55
 #define TAG_BUFF_GALSDIST     56
 
+#define TAG_DENS_NUM          57
+#define TAG_DENS_RED          58
+
 //constants
 #define RHO_CRIT 2.77519737e11  /* Critial mass density in h^2 M_sun/Mpc^3 with H_{0} = h 100 km/s/Mpc*/
 #define CSOL 299792.458         /* velocity of light in km/s */
@@ -151,6 +154,9 @@ typedef struct {
   long SHTOrder;
   double ComvSmoothingScale;
   double partMass;
+  long NFFT;
+  char ThreeDPotSnapList[MAX_FILENAME];
+  double LengthConvFact;
   
   /* for doing gals image search */
   char GalsFileList[MAX_FILENAME]; 
@@ -370,7 +376,6 @@ long query_disc_inclusive_nest_fast(double theta, double phi, double radius, lon
 
 /* in raytrace_utils.c */
 void write_bundlecells2ascii(char fname_base[MAX_FILENAME]);
-long fnumlines(FILE *fp);
 void mark_bundlecells(double mapbuffrad, int searchTag, int markTag);
 void alloc_mapcells(int searchTag, int markTag);
 void free_mapcells(void);
@@ -383,6 +388,10 @@ void init_bundlecells(void);
 void destroy_bundlecells(void);
 void destroy_gals(void);
 void destroy_parts(void);
+
+/* in ioutils.c */
+long fnumlines(FILE *fp);
+FILE *fopen_retry(const char *filename, const char *mode);
 
 /* in rayprop.c */
 void rayprop_sphere(double wp, double wpm1, double wpm2, long bundleCellInd);

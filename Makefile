@@ -13,6 +13,7 @@ OPTS += -DTHREEDPOT #define to use 3D potential to move rays
 #OPTS += -DKEEP_RAND_FRAC -DRAND_FRAC_TO_KEEP=0.015625 #define to keep a random fraction of particles
 
 #!!! DO NOT CHANGE THESE UNLESS YOU ARE AN EXPERT !!!
+#OPTS += -DDOUBLEFFTW #define to use double FFTW for 3D pot
 #OPTS += -DNOBACKDENS #define to not subtract a background density from kappa grid - use for point mass test or NFW halo test
 #OPTS += -DDEBUG_IO #define for some debugging I/O
 #OPTS += -DDEBUG_IO_DD #output debug info for domain decomp
@@ -26,7 +27,7 @@ OPTS += -DTHREEDPOT #define to use 3D potential to move rays
 #OPTS += -DCICSHTDENS #define to use CIC interp for SHT step
 
 #select your computer
-#COMP="orange"
+COMP="orange"
 #COMP="orion-gcc"
 #COMP="midway"
 #COMP="home"
@@ -91,7 +92,7 @@ endif
 
 CLINK=$(CC)
 CFLAGS=$(OPTIMIZE) $(FFTWI) $(HDF5I) $(FITSI) $(GSLI) $(EXTRACFLAGS) $(OPTS)
-CLIB=$(EXTRACLIB) $(FFTWL) $(HDF5L) $(FITSL) $(GSLL) -lgsl -lgslcblas -lfftw3 -lfftw3f -lz -lhdf5_hl -lhdf5  -lcfitsio -lm
+CLIB=$(EXTRACLIB) $(FFTWL) $(HDF5L) $(FITSL) $(GSLL) -lgsl -lgslcblas -lfftw3_mpi -lfftw3f_mpi -lfftw3 -lfftw3f -lz -lhdf5_hl -lhdf5  -lcfitsio -lm
 
 ifeq (MEMWATCH,$(findstring MEMWATCH,$(CFLAGS)))
 MEMWATCH=memwatch.o
@@ -114,7 +115,7 @@ OBJS = $(MEMWATCH) $(TESTCODE) raytrace.o raytrace_utils.o healpix_utils.o confi
 	galsio.o restart.o rot_paratrans.o nnbrs_healpixtree.o \
 	healpix_plmgen.o healpix_shtrans.o shtpoissonsolve.o map_shuffle.o alm2map_transpose_mpi.o partsmoothdens.o \
 	gridsearch.o loadbalance.o alm2allmaps_transpose_mpi.o map2alm_transpose_mpi.o mgpoissonsolve.o mgpoissonsolve_utils.o \
-	poissondrivers.o
+	poissondrivers.o fftpoissonsolve.o inthash.o ioutils.o lgadgetio.o
 
 EXEC = raytrace
 TEST = raytrace
@@ -125,7 +126,7 @@ OBJS1=$(OBJS) main.o
 $(EXEC): $(OBJS1)
 	$(CLINK) $(CFLAGS) -o $@ $(OBJS1) $(CLIB)
 
-$(OBJS1): healpix_shtrans.h  healpix_utils.h  profile.h  raytrace.h mgpoissonsolve.h Makefile
+$(OBJS1): healpix_shtrans.h  healpix_utils.h  profile.h inthash.h fftpoissonsolve.h raytrace.h mgpoissonsolve.h lgadgetio.h Makefile
 
 .PHONY : clean
 clean: 

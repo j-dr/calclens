@@ -176,10 +176,14 @@ void raytrace(void)
 	}
       
       //run Poisson solver
+#ifndef THREEDPOT
 #ifdef USE_FULLSKY_PARTDIST
       fullsky_partdist_poissondriver();
 #else
       cutsky_partdist_poissondriver();
+#endif
+#else
+      threedpot_poissondriver(rayTraceData.CurrentPlaneNum);
 #endif
       
       //write rays

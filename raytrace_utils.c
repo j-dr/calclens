@@ -73,20 +73,6 @@ void write_bundlecells2ascii(char fname_base[MAX_FILENAME])
     }
 }
 
-/*gets the number of lines in a file*/
-long fnumlines(FILE *fp)
-{
-  long i=-1;
-  char c[5000];
-  while(!feof(fp))
-    {
-      ++i;
-      fgets(c,5000,fp);
-    }
-  rewind(fp);
-  return i;
-}
-
 /* makes map cells and creates and index through the bundle cells for searching */
 void mark_bundlecells(double mapbuffrad, int searchTag, int markTag)
 {

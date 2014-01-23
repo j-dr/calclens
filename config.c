@@ -42,6 +42,9 @@ void read_config(char *filename)
   rayTraceData.MGConvFact = -1.0;
   rayTraceData.ComvSmoothingScale = -1.0;
   rayTraceData.partMass = -1.0;
+  rayTraceData.NFFT = -1;
+  rayTraceData.ThreeDPotSnapList[0] = '\0';
+  rayTraceData.LengthConvFact = -1.0;
   
   //make output dir
   mkdir(rayTraceData.OutputPath,02755);
@@ -141,6 +144,10 @@ void read_config(char *filename)
       ASSIGN_CONFIG_DOUBLE(maxRayMemImbalance);
       ASSIGN_CONFIG_DOUBLE(MGConvFact);
       
+      ASSIGN_CONFIG_LONG(NFFT);
+      ASSIGN_CONFIG_STR(ThreeDPotSnapList);
+      ASSIGN_CONFIG_DOUBLE(LengthConvFact);
+      
       ASSIGN_CONFIG_STR(GalsFileList);
       ASSIGN_CONFIG_STR(GalOutputName);
       ASSIGN_CONFIG_LONG(NumGalOutputFiles);
@@ -190,6 +197,12 @@ void read_config(char *filename)
       assert(rayTraceData.partMass > 0);
       rayTraceData.UseHEALPixLensPlaneMaps = 1;
     }
+  
+#ifdef THREEDPOT
+  assert(strlen(rayTraceData.ThreeDPotSnapList) > 0);
+  assert(rayTraceData.NFFT > 0);
+  assert(rayTraceData.LengthConvFact > 0.0);
+#endif
   
   /* set gal image search rads */
   rayTraceData.galImageSearchRad = 10.0*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder));
