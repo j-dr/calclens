@@ -115,7 +115,7 @@ OBJS = $(MEMWATCH) $(TESTCODE) raytrace.o raytrace_utils.o healpix_utils.o confi
 	galsio.o restart.o rot_paratrans.o nnbrs_healpixtree.o \
 	healpix_plmgen.o healpix_shtrans.o shtpoissonsolve.o map_shuffle.o alm2map_transpose_mpi.o partsmoothdens.o \
 	gridsearch.o loadbalance.o alm2allmaps_transpose_mpi.o map2alm_transpose_mpi.o mgpoissonsolve.o mgpoissonsolve_utils.o \
-	poissondrivers.o fftpoissonsolve.o inthash.o ioutils.o lgadgetio.o
+	poissondrivers.o fftpoissonsolve.o inthash.o ioutils.o lgadgetio.o fftpoissondriver.o
 
 EXEC = raytrace
 TEST = raytrace
