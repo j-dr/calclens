@@ -43,10 +43,16 @@ typedef struct {
   double val;
 } GridCell;
 
+typedef struct {
+  GridCell *GridCells;
+  long NumGridCellsAlloc;
+  long NumGridCells;
+} GridCellResults;
+
 /* in fftpoissonsolve.c */
 void comp_pot_snap(char *fbase);
 long id2ijk(long id, long N, long *i, long *j, long *k);
-long getIDhash(struct inthash **ih, long id);
+long getIDhash(struct inthash **ih, long id, GridCellResults *gcr);
 int compGridCell(const void *a, const void *b);
 void init_ffts(void);
 void alloc_and_plan_ffts(void);

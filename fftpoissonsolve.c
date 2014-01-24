@@ -28,10 +28,6 @@ float *fftwrin;
 fftwf_complex *fftwcout;
 #endif
 
-static GridCell *GridCells = NULL;
-static long NumGridCellsAlloc = 0;
-static long NumGridCells = 0;
-
 static void get_partio_decomp(char *fbase, int *startFile, int *NumFiles);
 static void get_units(char *fbase, double *L, long *Ntot, double *a);
 
