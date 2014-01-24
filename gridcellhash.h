@@ -34,5 +34,8 @@ long getid_gchash(GridCellHash *gch, long id);
 void minmem_gchash(GridCellHash *gch);
 GridCellHash *init_gchash(void);
 void free_gchash(GridCellHash *gch);
+void sortcells_gchash(GridCellHash *gch);
+void destroyhash_gchash(GridCellHash *gch);
+void rebuildhash_gchash(GridCellHash *gch);
 
 #endif /* _GCHASH_ */

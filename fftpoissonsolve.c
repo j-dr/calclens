@@ -5,11 +5,11 @@
 #include <mpi.h>
 #include <fftw3-mpi.h>
 #include <gsl/gsl_math.h>
-#include "inthash.h"
 
 #include "raytrace.h"
 #include "fftpoissonsolve.h"
 #include "lgadgetio.h"
+#include "gridcellhash.h"
 
 //global defs for this file
 ptrdiff_t NFFT;
@@ -50,9 +50,9 @@ void comp_pot_snap(char *fbase)
   double time;
   double potfact;
   
-  //init hash table
-  struct inthash *ih = new_inthash();
-      
+  //init grid cell hash table
+  GridCellHash *gch = init_gchash();
+  
   //get units
   get_units(fbase,&L,&Ntot,&a);  
   dL = L/NFFT;
@@ -103,36 +103,36 @@ void comp_pot_snap(char *fbase)
 	    kk = kk%NFFT;
 	    
 	    id = (i*NFFT + j)*NFFT + k;
-	    ind = getIDhash(&ih,id);
-	    GridCells[ind].val += (1.0 - dx)*(1.0 - dy)*(1.0 - dz);
+	    ind = getid_gchash(gch,id);
+	    gch->GridCells[ind].val += (1.0 - dx)*(1.0 - dy)*(1.0 - dz);
 	    
 	    id = (i*NFFT + j)*NFFT + kk;
-	    ind = getIDhash(&ih,id);
-	    GridCells[ind].val += (1.0 - dx)*(1.0 - dy)*dz;
+	    ind = getid_gchash(gch,id);
+	    gch->GridCells[ind].val += (1.0 - dx)*(1.0 - dy)*dz;
 	    
 	    id = (i*NFFT + jj)*NFFT + k;
-	    ind = getIDhash(&ih,id);
-	    GridCells[ind].val += (1.0 - dx)*dy*(1.0 - dz);
+	    ind = getid_gchash(gch,id);
+	    gch->GridCells[ind].val += (1.0 - dx)*dy*(1.0 - dz);
 	    
 	    id = (i*NFFT + jj)*NFFT + kk;
-	    ind = getIDhash(&ih,id);
-	    GridCells[ind].val  += (1.0 - dx)*dy*dz;
+	    ind = getid_gchash(gch,id);
+	    gch->GridCells[ind].val  += (1.0 - dx)*dy*dz;
 	    
 	    id = (ii*NFFT + j)*NFFT + k;
-	    ind = getIDhash(&ih,id);
-	    GridCells[ind].val += dx*(1.0 - dy)*(1.0 - dz);
+	    ind = getid_gchash(gch,id);
+	    gch->GridCells[ind].val += dx*(1.0 - dy)*(1.0 - dz);
 	    
 	    id = (ii*NFFT + j)*NFFT + kk;
-	    ind = getIDhash(&ih,id);
-	    GridCells[ind].val  += dx*(1.0 - dy)*dz;
+	    ind = getid_gchash(gch,id);
+	    gch->GridCells[ind].val  += dx*(1.0 - dy)*dz;
 	    
 	    id = (ii*NFFT + jj)*NFFT + k;
-	    ind = getIDhash(&ih,id);
-	    GridCells[ind].val += dx*dy*(1.0 - dz);
+	    ind = getid_gchash(gch,id);
+	    gch->GridCells[ind].val += dx*dy*(1.0 - dz);
 	    
 	    id = (ii*NFFT + jj)*NFFT + kk;
-	    ind = getIDhash(&ih,id);
-	    GridCells[ind].val += dx*dy*dz;
+	    ind = getid_gchash(gch,id);
+	    gch->GridCells[ind].val += dx*dy*dz;
 	  }
 	
 	free(px);
@@ -140,9 +140,9 @@ void comp_pot_snap(char *fbase)
 	free(pz);
       }
   
-  if(NumGridCells > 0)
-    qsort(GridCells,NumGridCells,sizeof(GridCell),compGridCell);
-  free_inthash(ih);
+  minmem_gchash(gch);
+  sortcells_gchash(gch);
+  destroyhash_gchash(gch);
   logProfileTag(PROFILETAG_PARTIO);
   
   time += MPI_Wtime();
@@ -178,25 +178,25 @@ void comp_pot_snap(char *fbase)
 	  //comp offsets
 	  offset = -1;
 	  Nsend = 0;
-	  for(n=0;n<NumGridCells;++n)
+	  for(n=0;n<gch->NumGridCells;++n)
 	    {
-	      if(GridCells[n].id >= TaskN0LocalStart[recvTask]*NFFT*NFFT &&
-		 GridCells[n].id < TaskN0LocalStart[recvTask]*NFFT*NFFT + TaskN0Local[recvTask]*NFFT*NFFT
+	      if(gch->GridCells[n].id >= TaskN0LocalStart[recvTask]*NFFT*NFFT &&
+		 gch->GridCells[n].id < TaskN0LocalStart[recvTask]*NFFT*NFFT + TaskN0Local[recvTask]*NFFT*NFFT
 		 && offset < 0)
 		offset = n;
-	      if(GridCells[n].id >= TaskN0LocalStart[recvTask]*NFFT*NFFT &&
-		 GridCells[n].id < TaskN0LocalStart[recvTask]*NFFT*NFFT + TaskN0Local[recvTask]*NFFT*NFFT)
+	      if(gch->GridCells[n].id >= TaskN0LocalStart[recvTask]*NFFT*NFFT &&
+		 gch->GridCells[n].id < TaskN0LocalStart[recvTask]*NFFT*NFFT + TaskN0Local[recvTask]*NFFT*NFFT)
 		{
 		  Nsend += 1;
-		  id2ijk(GridCells[n].id,NFFT,&i,&j,&k);
+		  id2ijk(gch->GridCells[n].id,NFFT,&i,&j,&k);
 		  assert(i >= TaskN0LocalStart[recvTask] && i < TaskN0LocalStart[recvTask]+TaskN0Local[recvTask]);
 		}
-	      if(GridCells[n].id >= TaskN0LocalStart[recvTask]*NFFT*NFFT + TaskN0Local[recvTask]*NFFT*NFFT)
+	      if(gch->GridCells[n].id >= TaskN0LocalStart[recvTask]*NFFT*NFFT + TaskN0Local[recvTask]*NFFT*NFFT)
 		break;
 	    }
 	  
 	  if(!((offset >= 0 && Nsend > 0) || (offset == -1 && Nsend == 0)))
-	    fprintf(stderr,"%d->%d Nsend = %ld, offset = %ld, tot = %ld\n",sendTask,recvTask,Nsend,offset,NumGridCells);
+	    fprintf(stderr,"%d->%d Nsend = %ld, offset = %ld, tot = %ld\n",sendTask,recvTask,Nsend,offset,gch->NumGridCells);
 	  assert((offset >= 0 && Nsend > 0) || (offset == -1 && Nsend == 0));
 	  
 	  if(sendTask != recvTask)
@@ -215,7 +215,7 @@ void comp_pot_snap(char *fbase)
 		    }
 		  
 		  //get dens from other processor
-		  MPI_Sendrecv(GridCells+offset,sizeof(GridCell)*Nsend,MPI_BYTE,recvTask,TAG_DENS_RED,
+		  MPI_Sendrecv(gch->GridCells+offset,sizeof(GridCell)*Nsend,MPI_BYTE,recvTask,TAG_DENS_RED,
 			       gbuff,sizeof(GridCell)*Nrecv,MPI_BYTE,recvTask,TAG_DENS_RED,
 			       MPI_COMM_WORLD,&Stat);
 		  
@@ -233,13 +233,13 @@ void comp_pot_snap(char *fbase)
 	      //assign dens
 	      for(n=0;n<Nsend;++n)
 		{
-		  id2ijk(GridCells[n+offset].id,NFFT,&i,&j,&k);
+		  id2ijk(gch->GridCells[n+offset].id,NFFT,&i,&j,&k);
 		  if(!((i >= N0LocalStart && i < N0LocalStart+N0Local)))
 		    {
 		      fprintf(stderr,"%d: i = %ld, start = %ld, length = %ld\n",ThisTask,i,N0LocalStart,N0LocalStart+N0Local);
 		    }
 		  assert(i >= N0LocalStart && i < N0LocalStart+N0Local);
-		  fftwrin[((i-N0LocalStart)*NFFT + j) * (2*(NFFT/2+1)) + k] += GridCells[n+offset].val;
+		  fftwrin[((i-N0LocalStart)*NFFT + j) * (2*(NFFT/2+1)) + k] += gch->GridCells[n+offset].val;
 		}
 	    }
 	  
@@ -248,14 +248,8 @@ void comp_pot_snap(char *fbase)
   time += MPI_Wtime();
   if(ThisTask == 0)
     fprintf(stderr,"shared density in %lf seconds.\n",time);
-  
-  if(GridCells != NULL)
-    {
-      free(GridCells);
-      GridCells = NULL;
-      NumGridCells = 0;
-      NumGridCellsAlloc = 0;
-    }
+
+  free_gchash(gch);
   
   if(gbuff != NULL)
     {
@@ -330,58 +324,6 @@ void comp_pot_snap(char *fbase)
   time += MPI_Wtime();
   if(ThisTask == 0)
     fprintf(stderr,"finished backward FFT in %lf seconds.\n",time);
-}
-
-//support functions
-long id2ijk(long id, long N, long *i, long *j, long *k)
-{
-  //id = (i*N + j)*N + k
-  long tmp;
-  *k = id%N;
-  tmp = (id-(*k))/N;
-  *j = tmp%N;
-  tmp = tmp - (*j);
-  *i = tmp/N;
-  
-  if(id != ((*i)*N + (*j))*N + (*k))
-    {
-      fprintf(stderr,"%d: id = %ld, i,j,k = %ld|%ld|%ld\n",ThisTask,id,*i,*j,*k);
-      fflush(stderr);
-    }
-  assert(id == ((*i)*N + (*j))*N + (*k));
-}
-
-long getIDhash(struct inthash **ih, long id)
-{
-  long ind = ih_getint64(*ih,id);
-  if(ind == IH_INVALID)
-    {
-      if(NumGridCells == NumGridCellsAlloc)
-	{
-	  NumGridCellsAlloc += 10000;
-	  GridCells = (GridCell*)realloc(GridCells,sizeof(GridCell)*NumGridCellsAlloc);
-	  assert(GridCells != NULL);
-	}
-      ih_setint64(*ih,id,NumGridCells);
-      NumGridCells += 1;
-      ind = NumGridCells-1;
-      GridCells[ind].id = id;
-      GridCells[ind].val = 0.0;
-    }
-  assert(GridCells[ind].id == id);
-  return ind;
-}
-
-int compGridCell(const void *a, const void *b) 
-{
-  GridCell *g1 = (GridCell*)a;
-  GridCell *g2 = (GridCell*)b;
-  if (g1->id == g2->id)
-    return 0;
-  else if(g1->id < g2->id)
-    return -1;
-  else
-    return 1;
 }
 
 static void get_units(char *fbase, double *L, long *Ntot, double *a) 

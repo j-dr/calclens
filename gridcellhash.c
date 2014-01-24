@@ -6,7 +6,6 @@
 #include "inthash.h"
 #include "gridcellhash.h"
 
-//support functions
 long id2ijk(long id, long N, long *i, long *j, long *k)
 {
   //id = (i*N + j)*N + k
@@ -65,6 +64,35 @@ void minmem_gchash(GridCellHash *gch)
   gch->NumGridCellsAlloc = gch->NumGridCells;
 }
 
+void destroyhash_gchash(GridCellHash *gch)
+{
+  if(gch->ih != NULL)
+    free_inthash(gch->ih);
+  gch->ih = NULL;
+}
+
+void rebuildhash_gchash(GridCellHash *gch)
+{
+  long i;
+  if(gch->ih != NULL)
+    free_inthash(gch->ih);
+  gch->ih = new_inthash();
+  for(i=0;i<gch->NumGridCells;++i)
+    {
+      assert(ih_getint64(gch->ih,gch->GridCells[i].id) == IH_INVALID);
+      ih_setint64(gch->ih,gch->GridCells[i].id,i);
+    }
+}
+
+void sortcells_gchash(GridCellHash *gch)
+{
+  if(gch->NumGridCells > 0)
+    {
+      qsort(gch->GridCells,gch->NumGridCells,sizeof(GridCell),compGridCell);
+      rebuildhash_gchash(gch);
+    }
+}
+
 GridCellHash *init_gchash(void)
 {
   GridCellHash *gch;
@@ -77,7 +105,7 @@ GridCellHash *init_gchash(void)
 void free_gchash(GridCellHash *gch)
 {
   free(gch->GridCells);
-  free_inthash(gch->ih);
+  if(gch->ih != NULL)
+    free_inthash(gch->ih);
   free(gch);
-  gch = NULL;
 }
