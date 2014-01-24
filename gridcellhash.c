@@ -25,24 +25,24 @@ long id2ijk(long id, long N, long *i, long *j, long *k)
   assert(id == ((*i)*N + (*j))*N + (*k));
 }
 
-long getIDhash(struct inthash **ih, long id)
+long getid_gridcellhash(GridCellResults *gcr, long id)
 {
-  long ind = ih_getint64(*ih,id);
+  long ind = ih_getint64(gcr->ih,id);
   if(ind == IH_INVALID)
     {
-      if(NumGridCells == NumGridCellsAlloc)
+      if(gcr->NumGridCells == gcr->NumGridCellsAlloc)
 	{
-	  NumGridCellsAlloc += 10000;
-	  GridCells = (GridCell*)realloc(GridCells,sizeof(GridCell)*NumGridCellsAlloc);
-	  assert(GridCells != NULL);
+	  gcr->NumGridCellsAlloc += 10000;
+	  gcr->GridCells = (GridCell*)realloc(gcr->GridCells,sizeof(GridCell)*(gcr->NumGridCellsAlloc));
+	  assert(gcr->GridCells != NULL);
 	}
-      ih_setint64(*ih,id,NumGridCells);
-      NumGridCells += 1;
-      ind = NumGridCells-1;
-      GridCells[ind].id = id;
-      GridCells[ind].val = 0.0;
+      ih_setint64(gcr->ih,id,gcr->NumGridCells);
+      gcr->NumGridCells += 1;
+      ind = gcr->NumGridCells-1;
+      gcr->GridCells[ind].id = id;
+      gcr->GridCells[ind].val = 0.0;
     }
-  assert(GridCells[ind].id == id);
+  assert(gcr->GridCells[ind].id == id);
   return ind;
 }
 
@@ -58,18 +58,26 @@ int compGridCell(const void *a, const void *b)
     return 1;
 }
 
+void minmem_gridcellhash(GridCellResults *gcr)
+{
+  gcr->GridCells = (GridCell*)realloc(gcr->GridCells,sizeof(GridCell)*(gcr->NumGridCells));
+  assert(gcr->GridCells != NULL);
+  gcr->NumGridCellsAlloc = gcr->NumGridCells;
+}
+
 GridCellResults *init_gridcellhash(void)
 {
   GridCellResults *gcr;
   gcr = (GridCellResults*)malloc(sizeof(GridCellResults));
   assert(gcr != NULL);
-  gcr->ih = 
+  gcr->ih = new_inthash();
   return gcr;
 }
 
 void free_gridcellhash(GridCellResults *gcr)
 {
   free(gcr->GridCells);
+  free_inthash(gcr->ih);
   free(gcr);
   gcr = NULL;
 }
