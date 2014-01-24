@@ -22,20 +22,15 @@ int MaxN0Local;
 fftw_plan fplan,bplan;
 double *fftwrin;
 fftw_complex *fftwcout;
-#define FFT_TYPE double
 #else
 fftwf_plan fplan,bplan;
 float *fftwrin;
 fftwf_complex *fftwcout;
-#define FFT_TYPE float
 #endif
 
-GridCell *GridCells = NULL;
-long NumGridCellsAlloc = 0;
-long NumGridCells = 0;
-static int compGridCell(const void *a, const void *b);
-static long id2ijk(long id, long N, long *i, long *j, long *k);
-static long getIDhash(struct inthash **ih, long id);
+static GridCell *GridCells = NULL;
+static long NumGridCellsAlloc = 0;
+static long NumGridCells = 0;
 
 static void get_partio_decomp(char *fbase, int *startFile, int *NumFiles);
 static void get_units(char *fbase, double *L, long *Ntot, double *a);
@@ -342,7 +337,7 @@ void comp_pot_snap(char *fbase)
 }
 
 //support functions
-static long id2ijk(long id, long N, long *i, long *j, long *k)
+long id2ijk(long id, long N, long *i, long *j, long *k)
 {
   //id = (i*N + j)*N + k
   long tmp;
@@ -360,7 +355,7 @@ static long id2ijk(long id, long N, long *i, long *j, long *k)
   assert(id == ((*i)*N + (*j))*N + (*k));
 }
 
-static long getIDhash(struct inthash **ih, long id)
+long getIDhash(struct inthash **ih, long id)
 {
   long ind = ih_getint64(*ih,id);
   if(ind == IH_INVALID)
@@ -381,7 +376,7 @@ static long getIDhash(struct inthash **ih, long id)
   return ind;
 }
 
-static int compGridCell(const void *a, const void *b) 
+int compGridCell(const void *a, const void *b) 
 {
   GridCell *g1 = (GridCell*)a;
   GridCell *g2 = (GridCell*)b;
