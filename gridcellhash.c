@@ -25,24 +25,24 @@ long id2ijk(long id, long N, long *i, long *j, long *k)
   assert(id == ((*i)*N + (*j))*N + (*k));
 }
 
-long getid_gridcellhash(GridCellResults *gcr, long id)
+long getid_gchash(GridCellHash *gch, long id)
 {
-  long ind = ih_getint64(gcr->ih,id);
+  long ind = ih_getint64(gch->ih,id);
   if(ind == IH_INVALID)
     {
-      if(gcr->NumGridCells == gcr->NumGridCellsAlloc)
+      if(gch->NumGridCells == gch->NumGridCellsAlloc)
 	{
-	  gcr->NumGridCellsAlloc += 10000;
-	  gcr->GridCells = (GridCell*)realloc(gcr->GridCells,sizeof(GridCell)*(gcr->NumGridCellsAlloc));
-	  assert(gcr->GridCells != NULL);
+	  gch->NumGridCellsAlloc += 10000;
+	  gch->GridCells = (GridCell*)realloc(gch->GridCells,sizeof(GridCell)*(gch->NumGridCellsAlloc));
+	  assert(gch->GridCells != NULL);
 	}
-      ih_setint64(gcr->ih,id,gcr->NumGridCells);
-      gcr->NumGridCells += 1;
-      ind = gcr->NumGridCells-1;
-      gcr->GridCells[ind].id = id;
-      gcr->GridCells[ind].val = 0.0;
+      ih_setint64(gch->ih,id,gch->NumGridCells);
+      gch->NumGridCells += 1;
+      ind = gch->NumGridCells-1;
+      gch->GridCells[ind].id = id;
+      gch->GridCells[ind].val = 0.0;
     }
-  assert(gcr->GridCells[ind].id == id);
+  assert(gch->GridCells[ind].id == id);
   return ind;
 }
 
@@ -58,26 +58,26 @@ int compGridCell(const void *a, const void *b)
     return 1;
 }
 
-void minmem_gridcellhash(GridCellResults *gcr)
+void minmem_gchash(GridCellHash *gch)
 {
-  gcr->GridCells = (GridCell*)realloc(gcr->GridCells,sizeof(GridCell)*(gcr->NumGridCells));
-  assert(gcr->GridCells != NULL);
-  gcr->NumGridCellsAlloc = gcr->NumGridCells;
+  gch->GridCells = (GridCell*)realloc(gch->GridCells,sizeof(GridCell)*(gch->NumGridCells));
+  assert(gch->GridCells != NULL);
+  gch->NumGridCellsAlloc = gch->NumGridCells;
 }
 
-GridCellResults *init_gridcellhash(void)
+GridCellHash *init_gchash(void)
 {
-  GridCellResults *gcr;
-  gcr = (GridCellResults*)malloc(sizeof(GridCellResults));
-  assert(gcr != NULL);
-  gcr->ih = new_inthash();
-  return gcr;
+  GridCellHash *gch;
+  gch = (GridCellHash*)malloc(sizeof(GridCellHash));
+  assert(gch != NULL);
+  gch->ih = new_inthash();
+  return gch;
 }
 
-void free_gridcellhash(GridCellResults *gcr)
+void free_gchash(GridCellHash *gch)
 {
-  free(gcr->GridCells);
-  free_inthash(gcr->ih);
-  free(gcr);
-  gcr = NULL;
+  free(gch->GridCells);
+  free_inthash(gch->ih);
+  free(gch);
+  gch = NULL;
 }

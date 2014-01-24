@@ -25,13 +25,14 @@ typedef struct {
   long NumGridCellsAlloc;
   long NumGridCells;
   struct inthash *ih;
-} GridCellResults;
+} GridCellHash;
 
 /* in gridcellhash.c */
 long id2ijk(long id, long N, long *i, long *j, long *k);
-long getIDhash(struct inthash **ih, long id, GridCellResults *gcr);
 int compGridCell(const void *a, const void *b);
-GridCellResults *init_gridcellresults(void);
-void free_gridcellresults(GridCellResults *gcr);
+long getid_gchash(GridCellHash *gch, long id);
+void minmem_gchash(GridCellHash *gch);
+GridCellHash *init_gchash(void);
+void free_gchash(GridCellHash *gch);
 
 #endif /* _GCHASH_ */
