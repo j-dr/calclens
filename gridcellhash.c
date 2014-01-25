@@ -6,7 +6,7 @@
 #include "inthash.h"
 #include "gridcellhash.h"
 
-long id2ijk(long id, long N, long *i, long *j, long *k)
+void id2ijk(long id, long N, long *i, long *j, long *k)
 {
   //id = (i*N + j)*N + k
   long tmp;
@@ -18,7 +18,7 @@ long id2ijk(long id, long N, long *i, long *j, long *k)
   
   if(id != ((*i)*N + (*j))*N + (*k))
     {
-      fprintf(stderr,"%d: id = %ld, i,j,k = %ld|%ld|%ld\n",ThisTask,id,*i,*j,*k);
+      fprintf(stderr,"id = %ld, i,j,k = %ld|%ld|%ld, != %ld\n",id,*i,*j,*k,((*i)*N + (*j))*N + (*k));
       fflush(stderr);
     }
   assert(id == ((*i)*N + (*j))*N + (*k));

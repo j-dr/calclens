@@ -28,7 +28,7 @@ typedef struct {
 } GridCellHash;
 
 /* in gridcellhash.c */
-long id2ijk(long id, long N, long *i, long *j, long *k);
+void id2ijk(long id, long N, long *i, long *j, long *k);
 int compGridCell(const void *a, const void *b);
 long getid_gchash(GridCellHash *gch, long id);
 void minmem_gchash(GridCellHash *gch);

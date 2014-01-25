@@ -13,10 +13,6 @@
 #include "fftpoissonsolve.h"
 #include "inthash.h"
 
-static GridCell *GridCells = NULL;
-static long NumGridCellsAlloc = 0;
-static long NumGridCells = 0;
-
 /* Notes for how to do this
 
 1) compute for each bundle cell the range of grid cells needed
