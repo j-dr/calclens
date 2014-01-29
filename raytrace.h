@@ -90,6 +90,10 @@
 #define TAG_DENS_NUM          57
 #define TAG_DENS_RED          58
 
+#define TAG_POTCELL_NUM       60
+#define TAG_POTCELL_IDS       61
+#define TAG_POTCELL_VALS      62
+
 //constants
 #define RHO_CRIT 2.77519737e11  /* Critial mass density in h^2 M_sun/Mpc^3 with H_{0} = h 100 km/s/Mpc*/
 #define CSOL 299792.458         /* velocity of light in km/s */
@@ -417,6 +421,6 @@ void write_restart(void);
 void clean_gals_restart(void);
 
 /* in fftpoissondriver.c */
-void threedpot_poissondriver(long planeNum);
+void threedpot_poissondriver(long planeNum, char *fbase);
 
 #endif /* _RAYTRACE_ */

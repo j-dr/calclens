@@ -27,6 +27,8 @@ typedef struct {
   struct inthash *ih;
 } GridCellHash;
 
+#define GCH_INVALID IH_INVALID
+
 /* in gridcellhash.c */
 void id2ijk(long id, long N, long *i, long *j, long *k);
 int compGridCell(const void *a, const void *b);
