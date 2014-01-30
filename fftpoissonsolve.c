@@ -418,7 +418,10 @@ void init_ffts(void)
   MPI_Allreduce(&i,&MaxN0Local,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
   
   if(ThisTask == 0)
-    fprintf(stderr,"using %0.2lf MB of memory for FFT.\n",(2.0*AllocLocal)*sizeof(FFT_TYPE)/1024.0/1024.0);
+    {
+      fprintf(stderr,"using %0.2lf MB of memory for FFT.\n",(2.0*AllocLocal)*sizeof(FFT_TYPE)/1024.0/1024.0);
+      fflush(stderr);
+    }
 }
 
 void alloc_and_plan_ffts(void) 

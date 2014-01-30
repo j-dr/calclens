@@ -183,7 +183,7 @@ void raytrace(void)
       cutsky_partdist_poissondriver();
 #endif
 #else
-      threedpot_poissondriver(rayTraceData.CurrentPlaneNum);
+      threedpot_poissondriver();
 #endif
       
       //write rays

@@ -421,6 +421,6 @@ void write_restart(void);
 void clean_gals_restart(void);
 
 /* in fftpoissondriver.c */
-void threedpot_poissondriver(long planeNum, char *fbase);
+void threedpot_poissondriver(void);
 
 #endif /* _RAYTRACE_ */

@@ -15,6 +15,15 @@
 
 #define WRAPIF(id,N) if(id >= N) id -= N; if(id < 0) id += N;
 
+typedef struct {
+  char fname[MAX_FILENAME];
+  double a;
+  double chi;
+} NbodySnap;
+
+static void read_snaps(NbodySnap **snaps, long *Nsnaps);
+static void get_units(char *fbase, double *L, double *a);
+
 /* Notes for how to do this
 
 1) compute for each bundle cell the range of grid cells needed
@@ -28,11 +37,41 @@
 
 */
 
-void threedpot_poissondriver(long planeNum, char *fbase)
+void threedpot_poissondriver(void)
 {
-  if(ThisTask == 0)
-    fprintf(stderr,"FFT Poisson Driver is a stub!\n");
-
+  //make sure compute FFT of correct snap
+  static long currFTTsnap = -1;
+  static long initFTTsnaps = 1;
+  static long Nsnaps;
+  static NbodySnap *snaps;
+  char fbase[MAX_FILENAME];
+  
+  if(initFTTsnaps == 1) {
+    initFTTsnaps = 0;
+    
+    read_snap_info(&snaps,&Nsnaps);
+        
+    //init FFTs
+    init_ffts();
+    alloc_and_plan_ffts();
+  }
+  
+  long i;
+  long mysnap = 0;
+  double dsnap = fabs(snaps[mysnap].chi-rayTraceData.planeRad);
+  for(i=0;i<Nsnaps;++i) {
+    if(fabs(snaps[i].chi-rayTraceData.planeRad) < dsnap) {
+      mysnap = i;
+      dsnap = fabs(snaps[i].chi-rayTraceData.planeRad);
+    }
+  }
+  
+  if(mysnap != currFTTsnap) {
+    currFTTsnap = mysnap;
+    sprintf(fbase,"%s",snaps[mysnap].fname); 
+    comp_pot_snap(snaps[mysnap].fname);
+  }
+  
   //get units and lengths  
   double L,a,dL;
   get_units(fbase,&L,&a);
@@ -44,11 +83,10 @@ void threedpot_poissondriver(long planeNum, char *fbase)
   double dchi = (chimax-chimin)/Nint;
   
   //init grid cell hash table
-  GridCellHash *gch; = init_gchash();
+  GridCellHash *gch;
   
   double vec[3];
-  long i,j,k;
-  long im1,jm1,km1;
+  long j,k;
   long ip1,jp1,kp1;
   long id,n,m;
   long di,dj,dk;
@@ -57,6 +95,12 @@ void threedpot_poissondriver(long planeNum, char *fbase)
   long bind;
   long rind;
   long ind;
+  long pp[3],pm[3],mp[3],mm[3];
+  long indvec[3][3][3];
+  double cost,cosp,sint,sinp;
+  double theta,phi,r;
+  double dx,dy,dz;
+  double val,fac1,fac2;
   
   long MaxNbundleCells;
   MPI_Allreduce(&NbundleCells,&MaxNbundleCells,1,MPI_LONG,MPI_MAX,MPI_COMM_WORLD);
@@ -80,12 +124,17 @@ void threedpot_poissondriver(long planeNum, char *fbase)
     if(bind < NbundleCells) {
       if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL)) {
 	for(rind=0;rind<bundleCells[bind].Nrays;++rind) {
+	  r = sqrt(bundleCells[bind].rays[rind].n[0]*bundleCells[bind].rays[rind].n[0] + 
+		   bundleCells[bind].rays[rind].n[1]*bundleCells[bind].rays[rind].n[1] + 
+		   bundleCells[bind].rays[rind].n[2]*bundleCells[bind].rays[rind].n[2]);
+	  
 	  for(n=0;n<Nint;++n) {
 	    //comp 3D loc
 	    rad = chimin + n*dchi + 0.5*dchi;
-	    vec[0] = bundleCells[bind].rays[rind].n[0]*rad;
-	    vec[1] = bundleCells[bind].rays[rind].n[1]*rad;
-	    vec[2] = bundleCells[bind].rays[rind].n[2]*rad;
+	    
+	    vec[0] = bundleCells[bind].rays[rind].n[0]*rad/r;
+	    vec[1] = bundleCells[bind].rays[rind].n[1]*rad/r;
+	    vec[2] = bundleCells[bind].rays[rind].n[2]*rad/r;
 	    
 	    for(m=0;m<3;++m) {
 	      while(vec[m] < 0)
@@ -215,6 +264,190 @@ void threedpot_poissondriver(long planeNum, char *fbase)
 	gbuff = (GridCell*)realloc(gbuff,sizeof(GridCell)*Ngbuff);
 	assert(gbuff != NULL);
 	
+	//do first derivs
+	for(dind1=0;dind1<3;++dind1) {
+	  //comp deriv for this direction
+	  //mark cells with no deriv with -1 for id
+	  for(m=0;m<gch-NumGridCells;++m)
+	    {
+	      //get ids of nbr cells
+	      gbuff[m].id = -1;
+	      id2ijk(gch->GridCells[m].id,NFFT,&i,&j,&k);
+	      
+	      for(di=-1;di<=1;++di) {
+		ii = i + di;
+		WRAPIF(ii,NFFT);
+		for(dj=-1;dj<=1;++dj) {
+		  jj = j + dj;
+		  WRAPIF(jj,NFFT);
+		  for(dk=-1;dk<=1;++dk) {
+		    kk = k + dk;
+		    WRAPIF(kk,NFFT);
+		    
+		    indvec[di+1][dj+1][dk+1] = (ii*NFFT+jj)*NFFT+kk; 
+		  }
+		}
+	      }
+	      
+	      //get derivs
+	      //build the stencil
+	      for(n=0;n<3;++n) {
+		if(n == dind1) {
+		  pp[n] = 2;
+		  pm[n] = 0;
+		} 
+		else {
+		  pp[n] = 1;
+		  pm[n] = 1;
+		}
+	      }
+		  
+	      //eval stencil parts
+	      gbuff[m].val = 0.0;
+		  
+	      id = indvec[pp[0]][pp[1]][pp[2]];
+	      ind = getonlyid_gchash(gch,id);
+	      if(ind == GCH_INVALID)
+		continue;
+	      gbuff[m].val += gch->GridCells[ind].val;
+		  
+	      id = indvec[pm[0]][pm[1]][pm[2]];
+	      ind = getonlyid_gchash(gch,id);
+	      if(ind == GCH_INVALID)
+		continue;
+	      gbuff[m].val -= gch->GridCells[ind].val;
+	      
+	      gbuff[m].val /= dL;
+	      gbuff[m].val /= 2.0;
+	      gbuff[m].id = gch->Gridells[m].id;
+	    }//for(m=0;m<gch-NumGridCells;++m)
+	
+	  //now add part needed to the rays
+	  for(rind=0;rind<bundleCells[bind].Nrays;++rind) {
+	    //comp jacobian matrix
+	    vec2ang(bundleCells[bind].rays[rind].n,&theta,&phi);
+	    cost = cos(theta);
+	    sint = sin(theta);
+	    cosp = cos(phi);
+	    sinp = sin(phi);
+	    
+	    jac[0][0] = cosp*cost;
+	    jac[0][1] = -sinp;
+	    jac[0][2] = cosp*sint;
+	    
+	    jac[1][0] = sinp*cost;
+	    jac[1][1] = cosp;
+	    jac[1][2] = sinp*sint;
+	    
+	    jac[2][0] = -sint;
+	    jac[2][1] = 0.0;
+	    jac[2][2] = cost;
+	    
+	    r = sqrt(bundleCells[bind].rays[rind].n[0]*bundleCells[bind].rays[rind].n[0] +
+		     bundleCells[bind].rays[rind].n[1]*bundleCells[bind].rays[rind].n[1] +
+		     bundleCells[bind].rays[rind].n[2]*bundleCells[bind].rays[rind].n[2]);
+	    
+	    for(n=0;n<Nint;++n) {
+	      //comp 3D loc
+	      rad = chimin + n*dchi + 0.5*dchi;
+	      
+	      vec[0] = bundleCells[bind].rays[rind].n[0]*rad/r;
+	      vec[1] = bundleCells[bind].rays[rind].n[1]*rad/r;
+	      vec[2] = bundleCells[bind].rays[rind].n[2]*rad/r;
+	      
+	      for(m=0;m<3;++m) {
+		while(vec[m] < 0)
+		  vec[m] += L;
+		while(vec[m] >= L)
+		  vec[m] -= L;
+	      }
+	      
+	      i = (long) (vec[0]/dL);
+	      dx = (vec[0] - i*dL)/dL;
+	      WRAPIF(i,NFFT);
+	      ip1 = i + 1;
+	      WRAPIF(ip1,NFFT);
+	      
+	      j = (long) (vec[1]/dL);
+	      dy = (vec[1] - j*dL)/dL;
+	      WRAPIF(j,NFFT);
+	      jp1 = j + 1;
+	      WRAPIF(jp1,NFFT);
+	      
+	      k = (long) (vec[2]/dL);
+	      dz = (vec[2] - k*dL)/dL;
+	      WRAPIF(k,NFFT);
+	      kp1 = k + 1;
+	      WRAPIF(kp1,NFFT);
+	      
+	      //interp deriv val
+	      val = 0.0;
+	      
+	      id = (i*NFFT + j)*NFFT + k;
+	      ind = getonlyid_gchash(gch,id);
+	      assert(ind != GCH_INVALID);
+	      assert(gbuff[ind].id != -1);
+	      assert(gbuff[ind].id == gch->GridCells[ind].id);
+	      val += gbuff[ind].val*(1.0 - dx)*(1.0 - dy)*(1.0 - dz);
+	      
+	      id = (i*NFFT + j)*NFFT + kp1;
+	      ind = getonlyid_gchash(gch,id);
+	      assert(ind != GCH_INVALID);
+	      assert(gbuff[ind].id != -1);
+	      assert(gbuff[ind].id == gch->GridCells[ind].id);
+	      val += gbuff[ind].val*(1.0 - dx)*(1.0 - dy)*dz;
+	      
+	      id = (i*NFFT + jp1)*NFFT + k;
+	      ind = getonlyid_gchash(gch,id);
+	      assert(ind != GCH_INVALID);
+	      assert(gbuff[ind].id != -1);
+	      assert(gbuff[ind].id == gch->GridCells[ind].id);
+	      val += gbuff[ind].val*(1.0 - dx)*dy*(1.0 - dz);
+	      
+	      id = (i*NFFT + jp1)*NFFT + kp1;
+	      ind = getonlyid_gchash(gch,id);
+	      assert(ind != GCH_INVALID);
+	      assert(gbuff[ind].id != -1);
+	      assert(gbuff[ind].id == gch->GridCells[ind].id);
+	      val += gbuff[ind].val*(1.0 - dx)*dy*dz;
+	      
+	      
+	      id = (ip1*NFFT + j)*NFFT + k;
+	      ind = getonlyid_gchash(gch,id);
+	      assert(ind != GCH_INVALID);
+	      assert(gbuff[ind].id != -1);
+	      assert(gbuff[ind].id == gch->GridCells[ind].id);
+	      val += gbuff[ind].val*dx*(1.0 - dy)*(1.0 - dz);
+	      
+	      id = (ip1*NFFT + j)*NFFT + kp1;
+	      ind = getonlyid_gchash(gch,id);
+	      assert(ind != GCH_INVALID);
+	      assert(gbuff[ind].id != -1);
+	      assert(gbuff[ind].id == gch->GridCells[ind].id);
+	      val += gbuff[ind].val*dx*(1.0 - dy)*dz;
+	      
+	      id = (ip1*NFFT + jp1)*NFFT + k;
+	      ind = getonlyid_gchash(gch,id);
+	      assert(ind != GCH_INVALID);
+	      assert(gbuff[ind].id != -1);
+	      assert(gbuff[ind].id == gch->GridCells[ind].id);
+	      val += gbuff[ind].val*dx*dy*(1.0 - dz);
+	      
+	      id = (ip1*NFFT + jp1)*NFFT + kp1;
+	      ind = getonlyid_gchash(gch,id);
+	      assert(ind != GCH_INVALID);
+	      assert(gbuff[ind].id != -1);
+	      assert(gbuff[ind].id == gch->GridCells[ind].id);
+	      val += gbuff[ind].val*dx*dy*dz;
+	      
+	      //do the projections and add to ray
+	      for(ii=0;ii<2;++ii)
+		bundleCells[bind].rays[rind].alpha[ii] += val*jac[dind1][ii];
+		
+	    }//for(n=0;n<Nint;++n)
+	  }//for(rind=0;rind<bundleCells[bind].Nrays;++rind)
+	}//for(dind1=0;dind1<3;++dind1)
+	
 	//do second derivs
 	for(dind1=0;dind1<3;++dind1)
 	  for(dind2=dind1;dind2<3;++dind2) {
@@ -222,73 +455,268 @@ void threedpot_poissondriver(long planeNum, char *fbase)
 	    //mark cells with no deriv with -1 for id
 	    for(m=0;m<gch-NumGridCells;++m)
 	      {
+		//get ids of nbr cells
 		gbuff[m].id = -1;
-		id2ijk(gch->GridCells[m].id,NFFT,&i,&j&k);
+		id2ijk(gch->GridCells[m].id,NFFT,&i,&j,&k);
 		
-		im1 = i-1;
-		WRAPIF(im1,NFFT);
-		ip1 = i+1;
-		WRAPIF(ip1,NFFT);
-		
-		jm1 = j-1;
-		WRAPIF(jm1,NFFT);
-		jp1 = j+1;
-		WRAPIF(jp1,NFFT);
-		
-		km1 = k-1;
-		WRAPIF(km1,NFFT);
-		kp1 = k+1;
-		WRAPIF(kp1,NFFT);
-		
-		if(dind1 == dind2) {
-		  if(dind1 == 0) {
-		    //FIXME start here
-		    id = (i*NFFT+j)*NFFT+k;
-		    ind = getonlyid_gchash(gch,id);
-		    if(ind == GCH_INVALID)
-		      continue;
-		    gbuff[m].val = -2.0*(gch->GridCells[ind].val);
-		    
-		    id = (im1*NFFT+j)*NFFT+k;
-		    ind = getonlyid_gchash(gch,id);
-		    if(ind == GCH_INVALID)
-		      continue;
-		    gbuff[m].val += gch->GridCells[ind].val;
+		for(di=-1;di<=1;++di) {
+		  ii = i + di;
+		  WRAPIF(ii,NFFT);
+		  for(dj=-1;dj<=1;++dj) {
+		    jj = j + dj;
+		    WRAPIF(jj,NFFT);
+		    for(dk=-1;dk<=1;++dk) {
+		      kk = k + dk;
+		      WRAPIF(kk,NFFT);
 		      
-		    id = (ip1*NFFT+j)*NFFT+k;
-		    ind = getonlyid_gchash(gch,id);
-		    if(ind == GCH_INVALID)
-		      continue;
-		    gbuff[m].val += gch->GridCells[ind].val;
-		    
-		    gbuff[m].val /= dL;
+		      indvec[di+1][dj+1][dk+1] = (ii*NFFT+jj)*NFFT+kk; 
+		    }
 		  }
-		  else if(dind1 == 1) {
-		    
+		}
+		
+		//get derivs
+		if(dind1 == dind2) {
+		  //build the stencil
+		  for(n=0;n<3;++n) {
+		    if(n == dind1) {
+		      pp[n] = 2;
+		      pm[n] = 0;
+		    } 
+		    else {
+		      pp[n] = 1;
+		      pm[n] = 1;
+		    }
 		  }
-		  else if(dind1 == 2) {
-		    
-		  }
+		  
+		  //eval stencil parts
+		  gbuff[m].val = -2.0*(gch->GridCells[m].val);
+		  
+		  id = indvec[pp[0]][pp[1]][pp[2]];
+		  ind = getonlyid_gchash(gch,id);
+		  if(ind == GCH_INVALID)
+		    continue;
+		  gbuff[m].val += gch->GridCells[ind].val;
+		  
+		  id = indvec[pm[0]][pm[1]][pm[2]];
+		  ind = getonlyid_gchash(gch,id);
+		  if(ind == GCH_INVALID)
+		    continue;
+		  gbuff[m].val += gch->GridCells[ind].val;
+		  
+		  gbuff[m].val /= dL;
+		  gbuff[m].id = gch->Gridells[m].id;
 		}
 		else {
-		  //do first direction, then second
+		  //build the stencil
+		  for(n=0;n<3;++n) {
+		    if(n == dind1) {
+		      pp[n] = 2;
+		      pm[n] = 2;
+		      mp[n] = 0;
+		      mm[n] = 0;
+		    }
+		    else if(n == dind2) {
+		      pp[n] = 2;
+		      pm[n] = 0;
+		      mp[n] = 2;
+		      mm[n] = 0;
+		    }
+		    else {
+		      pp[n] = 1;
+		      pm[n] = 1;
+		      mp[n] = 1;
+		      mm[n] = 1;
+		    }
+		  }
 		  
-		}
-	      }
+		  //eval stencil parts
+		  gbuff[n].val = 0.0;
+		  
+		  id = indvec[pp[0]][pp[1]][pp[2]];
+                  ind = getonlyid_gchash(gch,id);
+                  if(ind == GCH_INVALID)
+                    continue;
+                  gbuff[m].val += gch->GridCells[ind].val;
+		  
+                  id = indvec[pm[0]][pm[1]][pm[2]];
+                  ind = getonlyid_gchash(gch,id);
+                  if(ind == GCH_INVALID)
+                    continue;
+                  gbuff[m].val -= gch->GridCells[ind].val;
+		  
+		  id = indvec[mp[0]][mp[1]][mp[2]];
+                  ind = getonlyid_gchash(gch,id);
+                  if(ind == GCH_INVALID)
+                    continue;
+                  gbuff[m].val -= gch->GridCells[ind].val;
+		  
+		  id = indvec[mm[0]][mm[1]][mm[2]];
+                  ind = getonlyid_gchash(gch,id);
+                  if(ind == GCH_INVALID)
+                    continue;
+                  gbuff[m].val += gch->GridCells[ind].val;
+		  
+                  gbuff[m].val /= dL;
+		  gbuff[m].val /= 2.0;
+                  gbuff[m].id = gch->Gridells[m].id;
+		}//end of else
+		
+	      }//for(m=0;m<gch-NumGridCells;++m)
 	    
 	    //now add part needed to the rays
 	    for(rind=0;rind<bundleCells[bind].Nrays;++rind) {
-	      //comp projection matrix
+	      //comp jacobian matrix
+	      vec2ang(bundleCells[bind].rays[rind].n,&theta,&phi);
+	      cost = cos(theta);
+	      sint = sin(theta);
+	      cosp = cos(phi);
+	      sinp = sin(phi);
+	      
+	      jac[0][0] = cosp*cost;
+	      jac[0][1] = -sinp;
+	      jac[0][2] = cosp*sint;
+	      
+	      jac[1][0] = sinp*cost;
+	      jac[1][1] = cosp;
+	      jac[1][2] = sinp*sint;
+	      
+	      jac[2][0] = -sint;
+	      jac[2][1] = 0.0;
+	      jac[2][2] = cost;
+	      
+	      r = sqrt(bundleCells[bind].rays[rind].n[0]*bundleCells[bind].rays[rind].n[0] +
+		       bundleCells[bind].rays[rind].n[1]*bundleCells[bind].rays[rind].n[1] +
+		       bundleCells[bind].rays[rind].n[2]*bundleCells[bind].rays[rind].n[2]);
 	      
 	      for(n=0;n<Nint;++n) {
-		//do projetcion
+		//comp 3D loc
+		rad = chimin + n*dchi + 0.5*dchi;
 		
-		//add to ray
+		vec[0] = bundleCells[bind].rays[rind].n[0]*rad/r;
+		vec[1] = bundleCells[bind].rays[rind].n[1]*rad/r;
+		vec[2] = bundleCells[bind].rays[rind].n[2]*rad/r;
+		
+		for(m=0;m<3;++m) {
+		  while(vec[m] < 0)
+		    vec[m] += L;
+		  while(vec[m] >= L)
+		    vec[m] -= L;
+		}
+		
+		i = (long) (vec[0]/dL);
+		dx = (vec[0] - i*dL)/dL;
+		WRAPIF(i,NFFT);
+		ip1 = i + 1;
+		WRAPIF(ip1,NFFT);
+		
+		j = (long) (vec[1]/dL);
+		dy = (vec[1] - j*dL)/dL;
+		WRAPIF(j,NFFT);
+		jp1 = j + 1;
+		WRAPIF(jp1,NFFT);
+		
+		k = (long) (vec[2]/dL);
+		dz = (vec[2] - k*dL)/dL;
+		WRAPIF(k,NFFT);
+		kp1 = k + 1;
+		WRAPIF(kp1,NFFT);
+		
+		//interp deriv val
+		val = 0.0;
+		
+		id = (i*NFFT + j)*NFFT + k;
+		ind = getonlyid_gchash(gch,id);
+		assert(ind != GCH_INVALID);
+		assert(gbuff[ind].id != -1);
+		assert(gbuff[ind].id == gch->GridCells[ind].id);
+		val += gbuff[ind].val*(1.0 - dx)*(1.0 - dy)*(1.0 - dz);
+		
+		id = (i*NFFT + j)*NFFT + kp1;
+		ind = getonlyid_gchash(gch,id);
+		assert(ind != GCH_INVALID);
+		assert(gbuff[ind].id != -1);
+		assert(gbuff[ind].id == gch->GridCells[ind].id);
+		val += gbuff[ind].val*(1.0 - dx)*(1.0 - dy)*dz;
+		
+		id = (i*NFFT + jp1)*NFFT + k;
+		ind = getonlyid_gchash(gch,id);
+		assert(ind != GCH_INVALID);
+		assert(gbuff[ind].id != -1);
+		assert(gbuff[ind].id == gch->GridCells[ind].id);
+		val += gbuff[ind].val*(1.0 - dx)*dy*(1.0 - dz);
+		
+		id = (i*NFFT + jp1)*NFFT + kp1;
+		ind = getonlyid_gchash(gch,id);
+		assert(ind != GCH_INVALID);
+		assert(gbuff[ind].id != -1);
+		assert(gbuff[ind].id == gch->GridCells[ind].id);
+		val += gbuff[ind].val*(1.0 - dx)*dy*dz;
+		
+		
+		id = (ip1*NFFT + j)*NFFT + k;
+		ind = getonlyid_gchash(gch,id);
+		assert(ind != GCH_INVALID);
+		assert(gbuff[ind].id != -1);
+		assert(gbuff[ind].id == gch->GridCells[ind].id);
+		val += gbuff[ind].val*dx*(1.0 - dy)*(1.0 - dz);
+		
+		id = (ip1*NFFT + j)*NFFT + kp1;
+		ind = getonlyid_gchash(gch,id);
+		assert(ind != GCH_INVALID);
+		assert(gbuff[ind].id != -1);
+		assert(gbuff[ind].id == gch->GridCells[ind].id);
+		val += gbuff[ind].val*dx*(1.0 - dy)*dz;
+		
+		id = (ip1*NFFT + jp1)*NFFT + k;
+		ind = getonlyid_gchash(gch,id);
+		assert(ind != GCH_INVALID);
+		assert(gbuff[ind].id != -1);
+		assert(gbuff[ind].id == gch->GridCells[ind].id);
+		val += gbuff[ind].val*dx*dy*(1.0 - dz);
+		
+		id = (ip1*NFFT + jp1)*NFFT + kp1;
+		ind = getonlyid_gchash(gch,id);
+		assert(ind != GCH_INVALID);
+		assert(gbuff[ind].id != -1);
+		assert(gbuff[ind].id == gch->GridCells[ind].id);
+		val += gbuff[ind].val*dx*dy*dz;
+		
+		//do the projections and add to ray
+		for(ii=0;ii<2;++ii)
+		  for(jj=0;jj<2;++jj)
+		    bundleCells[bind].rays[rind].U[ii*2+jj] += val*jac[dind1][ii]*jac[dind2][jj];
+		
+		if(dind1 != dind2) {
+		  for(ii=0;ii<2;++ii)
+		    for(jj=0;jj<2;++jj)
+		      bundleCells[bind].rays[rind].U[ii*2+jj] += val*jac[dind2][ii]*jac[dind1][jj];
+		}
 		
 	      }//for(n=0;n<Nint;++n)
 	    }//for(rind=0;rind<bundleCells[bind].Nrays;++rind)
 	
 	  }// for(dind2=dind1;dind2<3;++dind2)
+      }//if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL))
+    }//if(bind < NbundleCells)
+    
+    //get units right
+    if(bind < NbundleCells) {
+      if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL)) {
+	//fac for second derivs 2.0/CSOL/CSOL*dchi/chi*chi*chi
+	fac2 = 2.0/CSOL/CSOL*dchi*rayTraceData.planeRad;
+	
+	//fac for first derivs 2.0/CSOL/CSOL*dchi/chi*chi
+	fac1 = 2.0/CSOL/CSOL*dchi;
+
+	for(rind=0;rind<bundleCells[bind].Nrays;++rind) {
+	  for(ii=0;ii<2;++ii)
+	    for(jj=0;jj<2;++jj)
+	      bundleCells[bind].rays[rind].U[ii*2+jj] *= fac2;
+	  
+	  for(ii=0;ii<2;++ii)
+	    bundleCells[bind].rays[rind].alpha[ii] *= fac1;
+	  
+	}//for(rind=0;rind<bundleCells[bind].Nrays;++rind)
       }//if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL))
     }//if(bind < NbundleCells)
     
@@ -298,7 +726,7 @@ void threedpot_poissondriver(long planeNum, char *fbase)
       Ngbuff = 0;
       free(gbuff);
     }
-  
+    
   }//for(bind=0;bind<MaxNbundleCells;++bind)
 }
 
@@ -316,4 +744,50 @@ static void get_units(char *fbase, double *L, double *a)
   if(ThisTask == 0)
     *a = get_scale_factor_LGADGET(fname);
   MPI_Bcast(a,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+}
+
+static void read_snaps(NbodySnap **snaps, long *Nsnaps) {
+  char line[MAX_FILENAME];
+  FILE *fp;
+  long n = 0;
+  
+  if(ThisTask == 0) {
+    fp = fopen(rayTraceData.ThreeDPotSnapList,"r");
+    assert(fp != NULL);
+    while(fgets(line,1024,fp) != NULL) {
+      if(line[0] == '#')
+	continue;
+      ++n;
+    }
+    fclose(fp);
+    
+    *snaps = (NovdySnap*)malloc(sizeof(NbodySnap)*n);
+    assert((*snaps) != NULL);
+    *Nsnaps = n;
+    
+    n = 0;
+    fp = fopen(rayTraceData.ThreeDPotSnapList,"r");
+    assert(fp != NULL);
+    while(fgets(line,1024,fp) != NULL) {
+      if(line[0] == '#')
+	continue;
+      assert(n < (*Nsnaps));
+      sprintf((*snaps)[n].fname,"%s",line);
+      ++n;
+    }
+    fclose(fp);
+    
+    for(n=0;n<(*Nsnaps);++n) {
+      (*snaps)[n].a = get_scale_factor_LGADGET((*snaps)[n].fname);
+      (*snaps)[n].chi = comvdist((*snaps)[n].a);
+    }
+  }//if(ThisTask == 0)
+  
+  //send to other tasks
+  MPI_Bcast(Nsnaps,1,MPI_LONG,0,MPI_COMM_WORLD);
+  if(ThisTask != 0) {
+    *snaps = (NbodySnap*)malloc(sizeof(NbodySnap)*(*Nsnaps));
+    assert((*snaps) != NULL);
+  }
+  MPI_Bcast(*snaps,sizeof(NbodySnap)*(*Nsnaps),MPI_BYTE,0,MPI_COMM_WORLD);
 }
