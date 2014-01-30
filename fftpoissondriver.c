@@ -56,6 +56,7 @@ void threedpot_poissondriver(void)
     alloc_and_plan_ffts();
   }
   
+  //get closest snap
   long i;
   long mysnap = 0;
   double dsnap = fabs(snaps[mysnap].chi-rayTraceData.planeRad);
@@ -66,6 +67,7 @@ void threedpot_poissondriver(void)
     }
   }
   
+  //solve for potential
   if(mysnap != currFTTsnap) {
     currFTTsnap = mysnap;
     sprintf(fbase,"%s",snaps[mysnap].fname); 
