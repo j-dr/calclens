@@ -50,7 +50,7 @@ void threedpot_poissondriver(void)
     initFTTsnaps = 0;
     
     read_snap_info(&snaps,&Nsnaps);
-        
+    
     //init FFTs
     init_ffts();
     alloc_and_plan_ffts();
