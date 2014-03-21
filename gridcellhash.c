@@ -24,6 +24,14 @@ void id2ijk(long id, long N, long *i, long *j, long *k)
   assert(id == ((*i)*N + (*j))*N + (*k));
 }
 
+long getonlyid_gchash(GridCellHash *gch, long id)
+{
+  long ind = ih_getint64(gch->ih,id);
+  if(ind != IH_INVALID)
+    assert(gch->GridCells[ind].id == id);
+  return ind;
+}
+
 long getid_gchash(GridCellHash *gch, long id)
 {
   long ind = ih_getint64(gch->ih,id);

@@ -13,7 +13,7 @@
 #include "fftpoissonsolve.h"
 #include "gridcellhash.h"
 
-#define WRAPIF(id,N) if(id >= N) id -= N; if(id < 0) id += N;
+#define WRAPIF(id,N) {if(id >= N) id -= N; if(id < 0) id += N;}
 
 typedef struct {
   char fname[MAX_FILENAME];
@@ -49,7 +49,7 @@ void threedpot_poissondriver(void)
   if(initFTTsnaps == 1) {
     initFTTsnaps = 0;
     
-    read_snap_info(&snaps,&Nsnaps);
+    read_snaps(&snaps,&Nsnaps);
     
     //init FFTs
     init_ffts();
@@ -259,6 +259,8 @@ void threedpot_poissondriver(void)
     }// for(level = 0; level < (1 << log2NTasks); level++)
     
     //interp to rays and comp derivs
+    int dind1,dind2;
+    double jac[3][3];
     if(bind < NbundleCells) {
       if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL)) {
 	//make sure buff cells are the same length as gch cells
@@ -270,7 +272,7 @@ void threedpot_poissondriver(void)
 	for(dind1=0;dind1<3;++dind1) {
 	  //comp deriv for this direction
 	  //mark cells with no deriv with -1 for id
-	  for(m=0;m<gch-NumGridCells;++m)
+	  for(m=0;m<gch->NumGridCells;++m)
 	    {
 	      //get ids of nbr cells
 	      gbuff[m].id = -1;
@@ -321,7 +323,7 @@ void threedpot_poissondriver(void)
 	      
 	      gbuff[m].val /= dL;
 	      gbuff[m].val /= 2.0;
-	      gbuff[m].id = gch->Gridells[m].id;
+	      gbuff[m].id = gch->GridCells[m].id;
 	    }//for(m=0;m<gch-NumGridCells;++m)
 	
 	  //now add part needed to the rays
@@ -455,7 +457,7 @@ void threedpot_poissondriver(void)
 	  for(dind2=dind1;dind2<3;++dind2) {
 	    //comp deriv for this direction
 	    //mark cells with no deriv with -1 for id
-	    for(m=0;m<gch-NumGridCells;++m)
+	    for(m=0;m<gch->NumGridCells;++m)
 	      {
 		//get ids of nbr cells
 		gbuff[m].id = -1;
@@ -506,7 +508,7 @@ void threedpot_poissondriver(void)
 		  gbuff[m].val += gch->GridCells[ind].val;
 		  
 		  gbuff[m].val /= dL;
-		  gbuff[m].id = gch->Gridells[m].id;
+		  gbuff[m].id = gch->GridCells[m].id;
 		}
 		else {
 		  //build the stencil
@@ -560,7 +562,7 @@ void threedpot_poissondriver(void)
 		  
                   gbuff[m].val /= dL;
 		  gbuff[m].val /= 2.0;
-                  gbuff[m].id = gch->Gridells[m].id;
+                  gbuff[m].id = gch->GridCells[m].id;
 		}//end of else
 		
 	      }//for(m=0;m<gch-NumGridCells;++m)
@@ -763,7 +765,7 @@ static void read_snaps(NbodySnap **snaps, long *Nsnaps) {
     }
     fclose(fp);
     
-    *snaps = (NovdySnap*)malloc(sizeof(NbodySnap)*n);
+    *snaps = (NbodySnap*)malloc(sizeof(NbodySnap)*n);
     assert((*snaps) != NULL);
     *Nsnaps = n;
     

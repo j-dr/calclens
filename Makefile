@@ -27,10 +27,10 @@ OPTS += -DTHREEDPOT #define to use 3D potential to move rays
 #OPTS += -DCICSHTDENS #define to use CIC interp for SHT step
 
 #select your computer
-#COMP="orange"
+COMP="orange"
 #COMP="orion-gcc"
 #COMP="midway"
-COMP="home"
+#COMP="home"
 
 ################################
 #edit/add to match your machine
