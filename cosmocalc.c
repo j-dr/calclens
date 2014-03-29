@@ -7,8 +7,8 @@
 
 #include "raytrace.h"
 
-#define COSMOCALC_COMVDIST_TABLE_LENGTH 10000
-#define AEXPN_MIN 0.1
+#define COSMOCALC_COMVDIST_TABLE_LENGTH 20000
+#define AEXPN_MIN 0.01
 #define AEXPN_MAX 1.0
 
 int init_cosmocalc_flag = 1;

@@ -52,6 +52,7 @@ void comp_pot_snap(char *fbase)
   
   //init grid cell hash table
   GridCellHash *gch = init_gchash();
+  assert(gch != NULL);
   
   //get units
   get_units(fbase,&L,&Ntot,&a);  
@@ -61,7 +62,8 @@ void comp_pot_snap(char *fbase)
   
   //first get the file decomp
   get_partio_decomp(fbase,&startFile,&NumFiles);
-    
+  //fprintf(stderr,"%04d: file decomp: start,num = %ld|%ld\n",ThisTask,startFile,NumFiles); fflush(stderr); //FIXME
+  
   //read all parts and assign to buffer
   logProfileTag(PROFILETAG_PARTIO);
   time = -MPI_Wtime();
@@ -73,12 +75,14 @@ void comp_pot_snap(char *fbase)
 	//read parts
 	sprintf(fname,"%s.%d",fbase,file);
 	read_LGADGET(fname,&px,&py,&pz,NULL,&Np);
+	//fprintf(stderr,"%04d: read %ld parts from file %ld\n",ThisTask,Np,file); fflush(stderr); //FIXME
 	for(n=0;n<Np;++n)
 	  {
 	    px[n] *= rayTraceData.LengthConvFact;
 	    py[n] *= rayTraceData.LengthConvFact;
 	    pz[n] *= rayTraceData.LengthConvFact;
 	  }
+	//fprintf(stderr,"%04d: scaled %ld parts from file %ld\n",ThisTask,Np,file); fflush(stderr); //FIXME
 	
 	//assign to grid
 	for(n=0;n<Np;++n)
@@ -134,16 +138,21 @@ void comp_pot_snap(char *fbase)
 	    ind = getid_gchash(gch,id);
 	    gch->GridCells[ind].val += dx*dy*dz;
 	  }
+	//fprintf(stderr,"%04d: finished %ld parts from file %ld\n",ThisTask,Np,file); fflush(stderr); //FIXME
 	
 	free(px);
 	free(py);
 	free(pz);
       }
   
+  //fprintf(stderr,"%04d: finished reading parts! NumFiles = %ld\n",ThisTask,NumFiles); //FIXME
+  
   minmem_gchash(gch);
   sortcells_gchash(gch);
   destroyhash_gchash(gch);
   logProfileTag(PROFILETAG_PARTIO);
+  
+  //fprintf(stderr,"%04d: finished realloc of gch!\n",ThisTask,NumFiles); //FIXME
   
   time += MPI_Wtime();
   if(ThisTask == 0)

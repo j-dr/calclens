@@ -12,8 +12,10 @@
 #include "raytrace.h"
 #include "fftpoissonsolve.h"
 #include "gridcellhash.h"
+#include "lgadgetio.h"
 
 #define WRAPIF(id,N) {if(id >= N) id -= N; if(id < 0) id += N;}
+#define THREEDIND(i,j,k,N) ((i*N+j)*N+k)
 
 typedef struct {
   char fname[MAX_FILENAME];
@@ -66,12 +68,32 @@ void threedpot_poissondriver(void)
       dsnap = fabs(snaps[i].chi-rayTraceData.planeRad);
     }
   }
+  sprintf(fbase,"%s",snaps[mysnap].fname); 
   
   //solve for potential
+  double t0;
   if(mysnap != currFTTsnap) {
+    
+    t0 = -MPI_Wtime();
+    if(ThisTask == 0) {
+      fprintf(stderr,"getting potential for snapshot %ld.\n",currFTTsnap);
+      fflush(stderr);
+    }
+    
     currFTTsnap = mysnap;
-    sprintf(fbase,"%s",snaps[mysnap].fname); 
     comp_pot_snap(snaps[mysnap].fname);
+    
+    t0 += MPI_Wtime();
+    if(ThisTask == 0) {
+      fprintf(stderr,"got potential for snapshot %ld in %lf seconds.\n",currFTTsnap,t0);
+      fflush(stderr);
+    }
+  }  
+  
+  t0 = -MPI_Wtime();
+  if(ThisTask == 0) {
+    fprintf(stderr,"doing interp and integral to rays.\n",currFTTsnap);
+    fflush(stderr);
   }
   
   //get units and lengths  
@@ -104,8 +126,27 @@ void threedpot_poissondriver(void)
   double dx,dy,dz;
   double val,fac1,fac2;
   
-  long MaxNbundleCells;
-  MPI_Allreduce(&NbundleCells,&MaxNbundleCells,1,MPI_LONG,MPI_MAX,MPI_COMM_WORLD);
+  long NumActiveBundleCells;
+  long *activeBundleCellInds;
+  long MaxNumActiveBundleCells;
+  NumActiveBundleCells = 0;
+  for(bind=0;bind<NbundleCells;++bind) {
+    if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL)) {
+      ++NumActiveBundleCells;
+    }
+  }
+  activeBundleCellInds = (long*)malloc(sizeof(long)*NumActiveBundleCells);
+  assert(activeBundleCellInds != NULL);
+  n = 0;
+  for(bind=0;bind<NbundleCells;++bind) {
+    if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL)) {
+      activeBundleCellInds[n] = bind;
+      ++n;
+    }
+  }
+  assert(n == NumActiveBundleCells);
+  MPI_Allreduce(&NumActiveBundleCells,&MaxNumActiveBundleCells,1,MPI_LONG,MPI_MAX,MPI_COMM_WORLD);
+  long abind;
   
   long Ngbuff = 0;
   GridCell *gbuff = NULL;
@@ -118,12 +159,17 @@ void threedpot_poissondriver(void)
   while(NTasks > (1 << log2NTasks))
     ++log2NTasks;
   
-  for(bind=0;bind<MaxNbundleCells;++bind) {
+  for(abind=0;abind<MaxNumActiveBundleCells;++abind) {
     //setup gridcell hash
     gch = init_gchash();
     
+    //get index of bundle cell working with
+    if(abind < NumActiveBundleCells) {
+      bind = activeBundleCellInds[abind];
+    }
+    
     //get grid cells needed
-    if(bind < NbundleCells) {
+    if(abind < NumActiveBundleCells) {
       if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL)) {
 	for(rind=0;rind<bundleCells[bind].Nrays;++rind) {
 	  r = sqrt(bundleCells[bind].rays[rind].n[0]*bundleCells[bind].rays[rind].n[0] + 
@@ -167,7 +213,8 @@ void threedpot_poissondriver(void)
 		  kk = k + dk;
 		  WRAPIF(kk,NFFT);
 		  
-		  id = (ii*NFFT + kk)*NFFT + kk;
+		  id = THREEDIND(ii,jj,kk,NFFT);
+		  //id = (ii*NFFT + jj)*NFFT + kk;
 		  ind = getid_gchash(gch,id);
 		}//for(dk=-1;dk<=2;++dk)
 	      }//for(dj=-1;dj<=2;++dj)
@@ -176,11 +223,20 @@ void threedpot_poissondriver(void)
 	}//for(rind=0;rind<bundleCells[bind].Nrays;++rind)
       
 	assert(gch->NumGridCells > 0);
+	//fprintf(stderr,"%04ld: using %ld gridCells for pot and derivs.\n",ThisTask,gch->NumGridCells); fflush(stderr); //FIXME
+	
       }//if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL))
-    }//if(bind < NbundleCells)
+    }//if(abind < NumActiveBundleCells)
     
     //sort to get into slab order
+    //if(abind < NumActiveBundleCells)
+    //fprintf(stderr,"%04ld: sorting gridCells for pot and derivs. %ld\n",ThisTask,gch->NumGridCells); fflush(stderr); //FIXME
     sortcells_gchash(gch);
+    //if(abind < NumActiveBundleCells)
+    //fprintf(stderr,"%04ld: sorted gridCells for pot and derivs. %ld\n",ThisTask,gch->NumGridCells); fflush(stderr); //FIXME
+    
+    //if(abind < NumActiveBundleCells)
+    //fprintf(stderr,"%04ld: getting gridCells for pot and derivs. %ld\n",ThisTask,gch->NumGridCells); fflush(stderr); //FIXME
     
     //do send/recvs to get cells from other processors
     /*algorithm to loop through pairs of tasks linearly
@@ -211,9 +267,11 @@ void threedpot_poissondriver(void)
 	    if(gch->GridCells[n].id >= TaskN0LocalStart[recvTask]*NFFT*NFFT + TaskN0Local[recvTask]*NFFT*NFFT)
 	      break;
 	  }
-          
-	if(!((offset >= 0 && Nrecv > 0) || (offset == -1 && Nrecv == 0)))
-	  fprintf(stderr,"%d->%d Nrecv = %ld, offset = %ld, tot = %ld\n",sendTask,recvTask,Nrecv,offset,gch->NumGridCells);
+	
+	if(!((offset >= 0 && Nrecv > 0) || (offset == -1 && Nrecv == 0))) {
+	  fprintf(stderr,"%04ld: %d->%d Nrecv = %ld, offset = %ld, tot = %ld\n",ThisTask,sendTask,recvTask,Nrecv,offset,gch->NumGridCells);
+	  fflush(stderr);
+	}
 	assert((offset >= 0 && Nrecv > 0) || (offset == -1 && Nrecv == 0));
 	
 	if(sendTask != recvTask) {
@@ -235,6 +293,13 @@ void threedpot_poissondriver(void)
 	    //fill cells for other processor
 	    for(m=0;m<Nsend;++m) {
 	      id2ijk(gbuff[m].id,NFFT,&i,&j,&k);
+	      
+	      //FIXME
+	      if(!(i >= N0LocalStart && i < N0LocalStart+N0Local)) {
+		fprintf(stderr,"%04ld: send != recv slab assertion going to fail! %s:%d\n",ThisTask,__FILE__,__LINE__);
+		fflush(stderr);
+	      }
+	      
 	      assert(i >= N0LocalStart && i < N0LocalStart+N0Local);
 	      gbuff[m].val = fftwrin[((i-N0LocalStart)*NFFT + j) * (2*(NFFT/2+1)) + k];
 	    }
@@ -249,20 +314,32 @@ void threedpot_poissondriver(void)
 	else {
 	  //store pot
 	  for(m=0;m<Nrecv;++m) {
-	    id2ijk(gch->GridCells[m].id,NFFT,&i,&j,&k);
+	    id2ijk(gch->GridCells[m+offset].id,NFFT,&i,&j,&k);
+	    
+	    //FIXME
+	    if(!(i >= N0LocalStart && i < N0LocalStart+N0Local)) {
+	      fprintf(stderr,"%04ld: send == recv slab assertion going to fail! %s:%d\n",ThisTask,__FILE__,__LINE__);
+	      fflush(stderr);
+	    }
+	    
 	    assert(i >= N0LocalStart && i < N0LocalStart+N0Local);
-	    gch->GridCells[m].val = fftwrin[((i-N0LocalStart)*NFFT + j) * (2*(NFFT/2+1)) + k];
-	  }
-	  
+	    gch->GridCells[m+offset].val = fftwrin[((i-N0LocalStart)*NFFT + j) * (2*(NFFT/2+1)) + k];
+	  }//for(m=0;m<Nrecv;++m
 	}//else for if(sendTask != recvTask) 
       }// if(recvTask < NTasks)
     }// for(level = 0; level < (1 << log2NTasks); level++)
     
+    //if(abind < NumActiveBundleCells)
+    //fprintf(stderr,"%04ld: got gridCells for pot and derivs. %ld\n",ThisTask,gch->NumGridCells); fflush(stderr); //FIXME
+    
     //interp to rays and comp derivs
     int dind1,dind2;
     double jac[3][3];
-    if(bind < NbundleCells) {
+    if(abind < NumActiveBundleCells) {
       if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL)) {
+	
+	//fprintf(stderr,"%04ld: doing derivs of gridCells for pot and derivs.\n",ThisTask); fflush(stderr); //FIXME
+	
 	//make sure buff cells are the same length as gch cells
 	Ngbuff = gch->NumGridCells;
 	gbuff = (GridCell*)realloc(gbuff,sizeof(GridCell)*Ngbuff);
@@ -288,7 +365,8 @@ void threedpot_poissondriver(void)
 		    kk = k + dk;
 		    WRAPIF(kk,NFFT);
 		    
-		    indvec[di+1][dj+1][dk+1] = (ii*NFFT+jj)*NFFT+kk; 
+		    indvec[di+1][dj+1][dk+1] = THREEDIND(ii,jj,kk,NFFT);
+		    //indvec[di+1][dj+1][dk+1] = (ii*NFFT+jj)*NFFT+kk; 
 		  }
 		}
 	      }
@@ -387,28 +465,32 @@ void threedpot_poissondriver(void)
 	      //interp deriv val
 	      val = 0.0;
 	      
-	      id = (i*NFFT + j)*NFFT + k;
+	      //id = (i*NFFT + j)*NFFT + k;
+	      id = THREEDIND(i,j,k,NFFT);
 	      ind = getonlyid_gchash(gch,id);
 	      assert(ind != GCH_INVALID);
 	      assert(gbuff[ind].id != -1);
 	      assert(gbuff[ind].id == gch->GridCells[ind].id);
 	      val += gbuff[ind].val*(1.0 - dx)*(1.0 - dy)*(1.0 - dz);
 	      
-	      id = (i*NFFT + j)*NFFT + kp1;
+	      //id = (i*NFFT + j)*NFFT + kp1;
+	      id = THREEDIND(i,j,kp1,NFFT);
 	      ind = getonlyid_gchash(gch,id);
 	      assert(ind != GCH_INVALID);
 	      assert(gbuff[ind].id != -1);
 	      assert(gbuff[ind].id == gch->GridCells[ind].id);
 	      val += gbuff[ind].val*(1.0 - dx)*(1.0 - dy)*dz;
 	      
-	      id = (i*NFFT + jp1)*NFFT + k;
+	      //id = (i*NFFT + jp1)*NFFT + k;
+	      id = THREEDIND(i,jp1,k,NFFT);
 	      ind = getonlyid_gchash(gch,id);
 	      assert(ind != GCH_INVALID);
 	      assert(gbuff[ind].id != -1);
 	      assert(gbuff[ind].id == gch->GridCells[ind].id);
 	      val += gbuff[ind].val*(1.0 - dx)*dy*(1.0 - dz);
 	      
-	      id = (i*NFFT + jp1)*NFFT + kp1;
+	      //id = (i*NFFT + jp1)*NFFT + kp1;
+	      id = THREEDIND(i,jp1,kp1,NFFT);
 	      ind = getonlyid_gchash(gch,id);
 	      assert(ind != GCH_INVALID);
 	      assert(gbuff[ind].id != -1);
@@ -416,28 +498,32 @@ void threedpot_poissondriver(void)
 	      val += gbuff[ind].val*(1.0 - dx)*dy*dz;
 	      
 	      
-	      id = (ip1*NFFT + j)*NFFT + k;
+	      //id = (ip1*NFFT + j)*NFFT + k;
+	      id = THREEDIND(ip1,j,k,NFFT);
 	      ind = getonlyid_gchash(gch,id);
 	      assert(ind != GCH_INVALID);
 	      assert(gbuff[ind].id != -1);
 	      assert(gbuff[ind].id == gch->GridCells[ind].id);
 	      val += gbuff[ind].val*dx*(1.0 - dy)*(1.0 - dz);
 	      
-	      id = (ip1*NFFT + j)*NFFT + kp1;
+	      //id = (ip1*NFFT + j)*NFFT + kp1;
+	      id = THREEDIND(ip1,j,kp1,NFFT);
 	      ind = getonlyid_gchash(gch,id);
 	      assert(ind != GCH_INVALID);
 	      assert(gbuff[ind].id != -1);
 	      assert(gbuff[ind].id == gch->GridCells[ind].id);
 	      val += gbuff[ind].val*dx*(1.0 - dy)*dz;
 	      
-	      id = (ip1*NFFT + jp1)*NFFT + k;
+	      //id = (ip1*NFFT + jp1)*NFFT + k;
+	      id = THREEDIND(ip1,jp1,k,NFFT);
 	      ind = getonlyid_gchash(gch,id);
 	      assert(ind != GCH_INVALID);
 	      assert(gbuff[ind].id != -1);
 	      assert(gbuff[ind].id == gch->GridCells[ind].id);
 	      val += gbuff[ind].val*dx*dy*(1.0 - dz);
 	      
-	      id = (ip1*NFFT + jp1)*NFFT + kp1;
+	      //id = (ip1*NFFT + jp1)*NFFT + kp1;
+	      id = THREEDIND(ip1,jp1,kp1,NFFT);
 	      ind = getonlyid_gchash(gch,id);
 	      assert(ind != GCH_INVALID);
 	      assert(gbuff[ind].id != -1);
@@ -473,7 +559,7 @@ void threedpot_poissondriver(void)
 		      kk = k + dk;
 		      WRAPIF(kk,NFFT);
 		      
-		      indvec[di+1][dj+1][dk+1] = (ii*NFFT+jj)*NFFT+kk; 
+		      indvec[di+1][dj+1][dk+1] = THREEDIND(ii,jj,kk,NFFT); //(ii*NFFT+jj)*NFFT+kk; 
 		    }
 		  }
 		}
@@ -628,57 +714,64 @@ void threedpot_poissondriver(void)
 		//interp deriv val
 		val = 0.0;
 		
-		id = (i*NFFT + j)*NFFT + k;
+		//id = (i*NFFT + j)*NFFT + k;
+		id = THREEDIND(i,j,k,NFFT);
 		ind = getonlyid_gchash(gch,id);
 		assert(ind != GCH_INVALID);
 		assert(gbuff[ind].id != -1);
 		assert(gbuff[ind].id == gch->GridCells[ind].id);
 		val += gbuff[ind].val*(1.0 - dx)*(1.0 - dy)*(1.0 - dz);
 		
-		id = (i*NFFT + j)*NFFT + kp1;
+		//id = (i*NFFT + j)*NFFT + kp1;
+		id = THREEDIND(i,j,kp1,NFFT);
 		ind = getonlyid_gchash(gch,id);
 		assert(ind != GCH_INVALID);
 		assert(gbuff[ind].id != -1);
 		assert(gbuff[ind].id == gch->GridCells[ind].id);
 		val += gbuff[ind].val*(1.0 - dx)*(1.0 - dy)*dz;
 		
-		id = (i*NFFT + jp1)*NFFT + k;
+		//id = (i*NFFT + jp1)*NFFT + k;
+		id = THREEDIND(i,jp1,k,NFFT);
 		ind = getonlyid_gchash(gch,id);
 		assert(ind != GCH_INVALID);
 		assert(gbuff[ind].id != -1);
 		assert(gbuff[ind].id == gch->GridCells[ind].id);
 		val += gbuff[ind].val*(1.0 - dx)*dy*(1.0 - dz);
 		
-		id = (i*NFFT + jp1)*NFFT + kp1;
+		//id = (i*NFFT + jp1)*NFFT + kp1;
+		id = THREEDIND(i,jp1,k,NFFT);
 		ind = getonlyid_gchash(gch,id);
 		assert(ind != GCH_INVALID);
 		assert(gbuff[ind].id != -1);
 		assert(gbuff[ind].id == gch->GridCells[ind].id);
 		val += gbuff[ind].val*(1.0 - dx)*dy*dz;
 		
-		
-		id = (ip1*NFFT + j)*NFFT + k;
+		//id = (ip1*NFFT + j)*NFFT + k;
+		id = THREEDIND(ip1,j,k,NFFT);
 		ind = getonlyid_gchash(gch,id);
 		assert(ind != GCH_INVALID);
 		assert(gbuff[ind].id != -1);
 		assert(gbuff[ind].id == gch->GridCells[ind].id);
 		val += gbuff[ind].val*dx*(1.0 - dy)*(1.0 - dz);
 		
-		id = (ip1*NFFT + j)*NFFT + kp1;
+		//id = (ip1*NFFT + j)*NFFT + kp1;
+		id = THREEDIND(ip1,j,kp1,NFFT);
 		ind = getonlyid_gchash(gch,id);
 		assert(ind != GCH_INVALID);
 		assert(gbuff[ind].id != -1);
 		assert(gbuff[ind].id == gch->GridCells[ind].id);
 		val += gbuff[ind].val*dx*(1.0 - dy)*dz;
 		
-		id = (ip1*NFFT + jp1)*NFFT + k;
+		//id = (ip1*NFFT + jp1)*NFFT + k;
+		id = THREEDIND(ip1,jp1,k,NFFT);
 		ind = getonlyid_gchash(gch,id);
 		assert(ind != GCH_INVALID);
 		assert(gbuff[ind].id != -1);
 		assert(gbuff[ind].id == gch->GridCells[ind].id);
 		val += gbuff[ind].val*dx*dy*(1.0 - dz);
 		
-		id = (ip1*NFFT + jp1)*NFFT + kp1;
+		//id = (ip1*NFFT + jp1)*NFFT + kp1;
+		id = THREEDIND(ip1,jp1,kp1,NFFT);
 		ind = getonlyid_gchash(gch,id);
 		assert(ind != GCH_INVALID);
 		assert(gbuff[ind].id != -1);
@@ -700,11 +793,13 @@ void threedpot_poissondriver(void)
 	    }//for(rind=0;rind<bundleCells[bind].Nrays;++rind)
 	
 	  }// for(dind2=dind1;dind2<3;++dind2)
+
+	//fprintf(stderr,"%04ld: finished derivs of gridCells for pot and derivs.\n",ThisTask); fflush(stderr); //FIXME
       }//if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL))
-    }//if(bind < NbundleCells)
+    }//if(abind < NumActiveBundleCells)
     
     //get units right
-    if(bind < NbundleCells) {
+    if(abind < NumActiveBundleCells) {
       if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL)) {
 	//fac for second derivs 2.0/CSOL/CSOL*dchi/chi*chi*chi
 	fac2 = 2.0/CSOL/CSOL*dchi*rayTraceData.planeRad;
@@ -722,16 +817,31 @@ void threedpot_poissondriver(void)
 	  
 	}//for(rind=0;rind<bundleCells[bind].Nrays;++rind)
       }//if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL))
-    }//if(bind < NbundleCells)
+    }//if(abind < NumActiveBundleCells)
     
     //clean it all up
     free_gchash(gch);
     if(Ngbuff > 0) {
       Ngbuff = 0;
       free(gbuff);
+      gbuff = NULL;
     }
-    
-  }//for(bind=0;bind<MaxNbundleCells;++bind)
+
+    //fprintf(stderr,"%04ld: before barrier, abind = %ld\n",ThisTask,abind); fflush(stderr); //FIXME
+    //FIXME - extra barrier
+    ///////////////////////////////////
+    MPI_Barrier(MPI_COMM_WORLD);
+    ///////////////////////////////////
+        
+  }//for(abind=0;abind<MaxNumActiveBundleCells;++abind)
+  
+  free(activeBundleCellInds);
+  
+  t0 += MPI_Wtime();
+  if(ThisTask == 0) {
+    fprintf(stderr,"did interp and integral to rays in %lf seconds.\n",currFTTsnap,t0);
+    fflush(stderr);
+  }
 }
 
 static void get_units(char *fbase, double *L, double *a)
@@ -754,6 +864,8 @@ static void read_snaps(NbodySnap **snaps, long *Nsnaps) {
   char line[MAX_FILENAME];
   FILE *fp;
   long n = 0;
+  char fname[MAX_FILENAME];
+  long nl;
   
   if(ThisTask == 0) {
     fp = fopen(rayTraceData.ThreeDPotSnapList,"r");
@@ -776,14 +888,18 @@ static void read_snaps(NbodySnap **snaps, long *Nsnaps) {
       if(line[0] == '#')
 	continue;
       assert(n < (*Nsnaps));
+      nl = strlen(line);
+      line[nl-1] = '\0';
       sprintf((*snaps)[n].fname,"%s",line);
       ++n;
     }
     fclose(fp);
     
     for(n=0;n<(*Nsnaps);++n) {
-      (*snaps)[n].a = get_scale_factor_LGADGET((*snaps)[n].fname);
+      sprintf(fname,"%s.0",(*snaps)[n].fname);
+      (*snaps)[n].a = get_scale_factor_LGADGET(fname);
       (*snaps)[n].chi = comvdist((*snaps)[n].a);
+      //fprintf(stderr,"snap: '%s' chi(%lf) = %lf\n",(*snaps)[n].fname,(*snaps)[n].a,(*snaps)[n].chi); //FIXME
     }
   }//if(ThisTask == 0)
   
@@ -795,3 +911,6 @@ static void read_snaps(NbodySnap **snaps, long *Nsnaps) {
   }
   MPI_Bcast(*snaps,sizeof(NbodySnap)*(*Nsnaps),MPI_BYTE,0,MPI_COMM_WORLD);
 }
+
+#undef THREEDIND
+#undef WARPIF

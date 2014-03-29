@@ -331,6 +331,7 @@ static void set_plane_params(void)
   
   //big enough to make sure we get all parts needed 
   rayTraceData.partBuffRad = sqrt(4.0*M_PI/order2npix(rayTraceData.poissonOrder))*10.0 + 2.0*bundleLength + rayTraceData.maxSL*2.0;
+#ifndef THREEDPOT
   if(ThisTask == 0)
     {
       fprintf(stderr,"densfact = %le, backdens = %le, max smoothing scale = %le, cmv dist. = %lg\n",
@@ -338,6 +339,7 @@ static void set_plane_params(void)
       fprintf(stderr,"SHT order = %ld, partBuffRad = %lg\n",rayTraceData.poissonOrder
 	      ,rayTraceData.partBuffRad);
     }
+#endif
 #else
   rayTraceData.NumMGPatch = MGPATCH_SIZE_FAC*bundleLength/(rayTraceData.minSL/SMOOTHKERN_MGRESOLVE_FAC);
   if(rayTraceData.NumMGPatch < NUM_MGPATCH_MIN)
@@ -345,6 +347,7 @@ static void set_plane_params(void)
     
   //big enough to make sure we get all parts needed
   rayTraceData.partBuffRad = MGPATCH_SIZE_FAC*bundleLength + 2.0*bundleLength + rayTraceData.maxSL*2.0;
+#ifndef THREEDPOT
   if(ThisTask == 0)
     {
       fprintf(stderr,"densfact = %le, backdens = %le, max smoothing scale = %le, cmv dist. = %lg\n",
@@ -352,5 +355,6 @@ static void set_plane_params(void)
       fprintf(stderr,"SHT order = %ld, partBuffRad = %lg, minSL = %le, apprx. # of cells in MG patch = %ld, # of MG cells per minSL = %lf, MG res fact = %lf\n",rayTraceData.poissonOrder
 	      ,rayTraceData.partBuffRad,rayTraceData.minSL,rayTraceData.NumMGPatch,rayTraceData.minSL/((MGPATCH_SIZE_FAC*bundleLength)/(rayTraceData.NumMGPatch)),SMOOTHKERN_MGRESOLVE_FAC);
     }
+#endif
 #endif
 }

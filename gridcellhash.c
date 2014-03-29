@@ -106,6 +106,9 @@ GridCellHash *init_gchash(void)
   GridCellHash *gch;
   gch = (GridCellHash*)malloc(sizeof(GridCellHash));
   assert(gch != NULL);
+  gch->NumGridCells = 0;
+  gch->NumGridCellsAlloc = 0;
+  gch->GridCells = NULL;
   gch->ih = new_inthash();
   return gch;
 }

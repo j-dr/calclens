@@ -185,7 +185,7 @@ void read_LGADGET(char fname[], float **px, float **py, float **pz, long **id, i
       assert((*id) != NULL);
     }
   
-  //read positions                                                                                                                                                                                           
+  //read positions
   partChunk = (float*)malloc(sizeof(float)*(*Np)*3);
   assert(partChunk != NULL);
   SKIP;

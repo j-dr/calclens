@@ -1,7 +1,7 @@
 # compile time options
 #OPTS += -DBORNAPPRX #ray trace with born approximation
-#OPTS += -DOUTPUTRAYDEFLECTIONS #output ray deflections
-#OPTS += -DOUTPUTPHI #output lensing potential at ray position
+OPTS += -DOUTPUTRAYDEFLECTIONS #output ray deflections
+OPTS += -DOUTPUTPHI #output lensing potential at ray position
 OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
 #OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
 #OPTS += -DSHTONLY #set to only use SHT for lensing
