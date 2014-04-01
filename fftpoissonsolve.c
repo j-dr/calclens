@@ -441,29 +441,53 @@ void init_ffts(void)
 
 void alloc_and_plan_ffts(void) 
 {
+  if(AllocLocal == 0) {
+    fprintf(stderr,"%04ld: AllocLocal is zeor! NFFT = %ld\n",ThisTask,NFFT);
+    fflush(stderr);
+    assert(AllocLocal != 0);
+  }
+  
 #ifdef DOUBLEFFTW
   //allocate mem
   fftwrin = fftw_alloc_real(2*AllocLocal);
-  assert(fftwrin != NULL);
   fftwcout = (fftw_complex*)fftwrin;
+  if(ThisTask == 0) { fprintf(stderr,"did alloc of FFT memory!\n"); fflush(stderr);} //FIXME
   
   //create plan
   fplan = fftw_mpi_plan_dft_r2c_3d(NFFT, NFFT, NFFT, fftwrin, fftwcout, MPI_COMM_WORLD, FFTW_ESTIMATE);
-  assert(fplan != NULL);  
+  if(ThisTask == 0) { fprintf(stderr,"did plan for forward FFT!\n"); fflush(stderr);} //FIXME
   bplan = fftw_mpi_plan_dft_c2r_3d(NFFT, NFFT, NFFT, fftwcout, fftwrin, MPI_COMM_WORLD, FFTW_ESTIMATE);
-  assert(bplan != NULL);  
+  if(ThisTask == 0) { fprintf(stderr,"did plan of backward FFT!\n"); fflush(stderr);} //FIXME
 #else
   //allocate memory
   fftwrin = fftwf_alloc_real(2*AllocLocal);
-  assert(fftwrin != NULL);
   fftwcout = (fftwf_complex*)fftwrin;
+  if(ThisTask == 0) { fprintf(stderr,"did alloc of FFT memory!\n"); fflush(stderr);} //FIXME
   
   //create plan
   fplan = fftwf_mpi_plan_dft_r2c_3d(NFFT, NFFT, NFFT, fftwrin, fftwcout, MPI_COMM_WORLD, FFTW_ESTIMATE);
-  assert(fplan != NULL);
+  if(ThisTask == 0) { fprintf(stderr,"did plan for forward FFT!\n"); fflush(stderr);} //FIXME  
   bplan = fftwf_mpi_plan_dft_c2r_3d(NFFT, NFFT, NFFT, fftwcout, fftwrin, MPI_COMM_WORLD, FFTW_ESTIMATE);
-  assert(bplan != NULL);
+  if(ThisTask == 0) { fprintf(stderr,"did plan of backward FFT!\n"); fflush(stderr);} //FIXME 
 #endif
+
+  if(fftwrin == NULL) {
+    fprintf(stderr,"%04ld: fftwrin is NULL! AllocLocal = %ld, NFFT = %ld\n",ThisTask,AllocLocal,NFFT);
+    fflush(stderr);
+    assert(fftwrin != NULL);
+  }
+  
+  if(fplan == NULL) {
+    fprintf(stderr,"%04ld: forward plan failed!\n",ThisTask);
+    fflush(stderr);
+    assert(fplan != NULL);
+  }
+  
+  if(bplan == NULL) {
+    fprintf(stderr,"%04ld: backward plan failed!\n",ThisTask);
+    fflush(stderr);
+    assert(bplan != NULL);
+  }
 }
 
 void cleanup_ffts(void)

@@ -14,7 +14,7 @@
 #include "gridcellhash.h"
 #include "lgadgetio.h"
 
-#define WRAPIF(id,N) {if(id >= N) id -= N; if(id < 0) id += N;}
+#define WRAPIF(id,N) {if(id >= N) id -= N; if(id < 0) id += N; assert(id >= 0 && id < N);}
 #define THREEDIND(i,j,k,N) ((i*N+j)*N+k)
 
 typedef struct {
@@ -46,16 +46,12 @@ void threedpot_poissondriver(void)
   static long initFTTsnaps = 1;
   static long Nsnaps;
   static NbodySnap *snaps;
+  static long NFFTcurr = -1;
   char fbase[MAX_FILENAME];
   
   if(initFTTsnaps == 1) {
     initFTTsnaps = 0;
-    
     read_snaps(&snaps,&Nsnaps);
-    
-    //init FFTs
-    init_ffts();
-    alloc_and_plan_ffts();
   }
   
   //get closest snap
@@ -69,10 +65,68 @@ void threedpot_poissondriver(void)
     }
   }
   sprintf(fbase,"%s",snaps[mysnap].fname); 
+
+  //init FFTs
+  double L,a;
+  get_units(fbase,&L,&a);
   
   //solve for potential
   double t0;
+  double tdiff;
+  double pfacs[8] = {1.0,3.0,5.0,7.0,9.0,11.0,13.0,15.0};
+  long Npfacs = 8;
+  long lgb2;
+  long bsize,bdiff;
+  long dlgb2,pfacind;
   if(mysnap != currFTTsnap) {
+    
+    //FIXME
+    /*if(ThisTask == 0) {fprintf(stderr,"------TEST------\n"); fflush(stderr);}
+      rayTraceData.NFFT = 128;
+      fftw_cleanup();
+      if(ThisTask == 0) {fprintf(stderr,"cleaned FFTs!\n"); fflush(stderr);}
+      init_ffts();
+      if(ThisTask == 0) {fprintf(stderr,"init FFTs!\n"); fflush(stderr);}
+      alloc_and_plan_ffts();
+      if(ThisTask == 0) {fprintf(stderr,"planned FFTs!\n"); fflush(stderr);}
+      comp_pot_snap(snaps[mysnap].fname);
+      if(ThisTask == 0) {fprintf(stderr,"------END OF TEST------\n"); fflush(stderr);}
+    */
+    
+    rayTraceData.NFFT = L/(rayTraceData.planeRad*rayTraceData.minSL/2.0);
+    lgb2 = (int) (log(rayTraceData.NFFT)/log(2.0));
+    bsize = pow(2.0,lgb2);
+    bdiff = fabs(bsize -  rayTraceData.NFFT);
+    for(dlgb2=-4;dlgb2<=1;++dlgb2) {
+      for(pfacind=0;pfacind<Npfacs;++pfacind) {
+	if(fabs(pow(2.0,lgb2+dlgb2)*pfacs[pfacind] -  rayTraceData.NFFT) < bdiff) {
+	  bsize = pow(2.0,lgb2+dlgb2)*pfacs[pfacind];
+	  bdiff = fabs(pow(2.0,lgb2+dlgb2)*pfacs[pfacind] -  rayTraceData.NFFT);
+	}
+      }
+    }
+    rayTraceData.NFFT = bsize;
+    if(ThisTask == 0) {
+      fprintf(stderr,"test NFFT = %ld (wanted %ld), cell size = %.2lf Mpc/h, L = %.2lf Mpc/h.\n",rayTraceData.NFFT,
+	      (int) (L/(rayTraceData.planeRad*rayTraceData.minSL/2.0)),L/rayTraceData.NFFT,L);
+      fflush(stderr);
+    }
+    if(rayTraceData.NFFT > rayTraceData.MaxNFFT)
+      rayTraceData.NFFT = rayTraceData.MaxNFFT;
+    NFFTcurr = rayTraceData.NFFT;
+    
+    fftw_cleanup();
+    if(ThisTask == 0) {fprintf(stderr,"cleaned FFTs!\n"); fflush(stderr);}
+    init_ffts();
+    if(ThisTask == 0) {
+      fprintf(stderr,"min smooth length = %.2lg rad.\n",rayTraceData.minSL);
+      fprintf(stderr,"NFFT = %ld (wanted %ld), cell size = %.2lf Mpc/h, L = %.2lf Mpc/h.\n",NFFT,
+	      (int) (L/(rayTraceData.planeRad*rayTraceData.minSL/2.0)),L/NFFT,L);
+      fflush(stderr);
+    }
+    if(ThisTask == 0) {fprintf(stderr,"init FFTs!\n"); fflush(stderr);}
+    alloc_and_plan_ffts();
+    if(ThisTask == 0) {fprintf(stderr,"planned FFTs!\n"); fflush(stderr);}
     
     currFTTsnap = mysnap;
     
@@ -97,10 +151,8 @@ void threedpot_poissondriver(void)
     fflush(stderr);
   }
   
-  //get units and lengths  
-  double L,a,dL;
-  get_units(fbase,&L,&a);
-  dL = L/NFFT;
+  //get lengths  
+  double dL = L/NFFT;
   double binL = (rayTraceData.maxComvDistance)/((double) (rayTraceData.NumLensPlanes));
   int Nint = binL/dL*2;
   double chimin = rayTraceData.planeRad - binL/2.0;
@@ -576,8 +628,7 @@ void threedpot_poissondriver(void)
 		    if(n == dind1) {
 		      pp[n] = 2;
 		      pm[n] = 0;
-		    } 
-		    else {
+		    } else {
 		      pp[n] = 1;
 		      pm[n] = 1;
 		    }
@@ -601,8 +652,8 @@ void threedpot_poissondriver(void)
 		  gbuff[m].val /= dL;
 		  gbuff[m].val /= dL;
 		  gbuff[m].id = gch->GridCells[m].id;
-		} 
-		else {
+
+		} else {
 		  //build the stencil
 		  for(n=0;n<3;++n) {
 		    if(n == dind1) {
@@ -610,14 +661,12 @@ void threedpot_poissondriver(void)
 		      pm[n] = 2;
 		      mp[n] = 0;
 		      mm[n] = 0;
-		    }
-		    else if(n == dind2) {
+		    } else if(n == dind2) {
 		      pp[n] = 2;
 		      pm[n] = 0;
 		      mp[n] = 2;
 		      mm[n] = 0;
-		    }
-		    else {
+		    } else {
 		      pp[n] = 1;
 		      pm[n] = 1;
 		      mp[n] = 1;
@@ -807,7 +856,7 @@ void threedpot_poissondriver(void)
 	    }//for(rind=0;rind<bundleCells[bind].Nrays;++rind)
 	
 	  }// for(dind2=dind1;dind2<3;++dind2)
-
+	
 	//fprintf(stderr,"%04ld: finished derivs of gridCells for pot and derivs.\n",ThisTask); fflush(stderr); //FIXME
       }//if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL))
     }//if(abind < NumActiveBundleCells)
@@ -828,6 +877,10 @@ void threedpot_poissondriver(void)
 	  
 	  for(ii=0;ii<2;++ii)
 	    bundleCells[bind].rays[rind].alpha[ii] *= fac1;
+	  
+	  //sign shift to match convention of code
+	  for(ii=0;ii<2;++ii)
+	    bundleCells[bind].rays[rind].alpha[ii] *= -1.0;
 	  
 	}//for(rind=0;rind<bundleCells[bind].Nrays;++rind)
       }//if(ISSETBITFLAG(bundleCells[bind].active,PRIMARY_BUNDLECELL))
