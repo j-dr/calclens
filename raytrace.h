@@ -159,6 +159,7 @@ typedef struct {
   double ComvSmoothingScale;
   double partMass;
   long NFFT;
+  long MaxNFFT;
   char ThreeDPotSnapList[MAX_FILENAME];
   double LengthConvFact;
   

@@ -46,16 +46,12 @@ void threedpot_poissondriver(void)
   static long initFTTsnaps = 1;
   static long Nsnaps;
   static NbodySnap *snaps;
+  static long NFFTcurr = -1;
   char fbase[MAX_FILENAME];
   
   if(initFTTsnaps == 1) {
     initFTTsnaps = 0;
-    
     read_snaps(&snaps,&Nsnaps);
-    
-    //init FFTs
-    init_ffts();
-    alloc_and_plan_ffts();
   }
   
   //get closest snap
@@ -69,10 +65,45 @@ void threedpot_poissondriver(void)
     }
   }
   sprintf(fbase,"%s",snaps[mysnap].fname); 
+
+  //init FFTs
+  double L,a;
+  get_units(fbase,&L,&a);
   
   //solve for potential
   double t0;
   if(mysnap != currFTTsnap) {
+    
+    //FIXME
+    if(ThisTask == 0) {fprintf(stderr,"------TEST------\n"); fflush(stderr);}
+    rayTraceData.NFFT = 128;
+    fftw_cleanup();
+    if(ThisTask == 0) {fprintf(stderr,"cleaned FFTs!\n"); fflush(stderr);}
+    init_ffts();
+    if(ThisTask == 0) {fprintf(stderr,"init FFTs!\n"); fflush(stderr);}
+    alloc_and_plan_ffts();
+    if(ThisTask == 0) {fprintf(stderr,"planned FFTs!\n"); fflush(stderr);}
+    comp_pot_snap(snaps[mysnap].fname);
+    if(ThisTask == 0) {fprintf(stderr,"------TEST------\n"); fflush(stderr);}
+    
+    rayTraceData.NFFT = L/(rayTraceData.planeRad*rayTraceData.minSL/2.0);
+    if(rayTraceData.NFFT > rayTraceData.MaxNFFT)
+      rayTraceData.NFFT = rayTraceData.MaxNFFT;
+    NFFTcurr = rayTraceData.NFFT;
+    
+    fftw_cleanup();
+    if(ThisTask == 0) {fprintf(stderr,"cleaned FFTs!\n"); fflush(stderr);}
+    init_ffts();
+    if(ThisTask == 0) {fprintf(stderr,"init FFTs!\n"); fflush(stderr);}
+    alloc_and_plan_ffts();
+    if(ThisTask == 0) {fprintf(stderr,"planned FFTs!\n"); fflush(stderr);}
+    
+    if(ThisTask == 0) {
+      fprintf(stderr,"min smooth length = %.2lg rad.\n",rayTraceData.minSL);
+      fprintf(stderr,"NFFT = %ld (wanted %ld), cell size = %.2lf Mpc/h, L = %.2lf Mpc/h.\n",NFFT,
+	      (int) (L/(rayTraceData.planeRad*rayTraceData.minSL/2.0)),L/NFFT,L);
+      fflush(stderr);
+    }
     
     currFTTsnap = mysnap;
     
@@ -97,10 +128,8 @@ void threedpot_poissondriver(void)
     fflush(stderr);
   }
   
-  //get units and lengths  
-  double L,a,dL;
-  get_units(fbase,&L,&a);
-  dL = L/NFFT;
+  //get lengths  
+  double dL = L/NFFT;
   double binL = (rayTraceData.maxComvDistance)/((double) (rayTraceData.NumLensPlanes));
   int Nint = binL/dL*2;
   double chimin = rayTraceData.planeRad - binL/2.0;

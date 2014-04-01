@@ -43,6 +43,7 @@ void read_config(char *filename)
   rayTraceData.ComvSmoothingScale = -1.0;
   rayTraceData.partMass = -1.0;
   rayTraceData.NFFT = -1;
+  rayTraceData.MaxNFFT = -1;
   rayTraceData.ThreeDPotSnapList[0] = '\0';
   rayTraceData.LengthConvFact = -1.0;
   
@@ -144,7 +145,7 @@ void read_config(char *filename)
       ASSIGN_CONFIG_DOUBLE(maxRayMemImbalance);
       ASSIGN_CONFIG_DOUBLE(MGConvFact);
       
-      ASSIGN_CONFIG_LONG(NFFT);
+      ASSIGN_CONFIG_LONG(MaxNFFT);
       ASSIGN_CONFIG_STR(ThreeDPotSnapList);
       ASSIGN_CONFIG_DOUBLE(LengthConvFact);
       
@@ -200,7 +201,7 @@ void read_config(char *filename)
   
 #ifdef THREEDPOT
   assert(strlen(rayTraceData.ThreeDPotSnapList) > 0);
-  assert(rayTraceData.NFFT > 0);
+  assert(rayTraceData.MaxNFFT > 0);
   assert(rayTraceData.LengthConvFact > 0.0);
 #endif
   
