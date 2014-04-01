@@ -74,13 +74,14 @@ void threedpot_poissondriver(void)
   double t0;
   if(mysnap != currFTTsnap) {
     
+    currFTTsnap = mysnap;
+    
     t0 = -MPI_Wtime();
     if(ThisTask == 0) {
       fprintf(stderr,"getting potential for snapshot %ld.\n",currFTTsnap);
       fflush(stderr);
     }
     
-    currFTTsnap = mysnap;
     comp_pot_snap(snaps[mysnap].fname);
     
     t0 += MPI_Wtime();
@@ -533,7 +534,11 @@ void threedpot_poissondriver(void)
 	      //do the projections and add to ray
 	      for(ii=0;ii<2;++ii)
 		bundleCells[bind].rays[rind].alpha[ii] += val*jac[dind1][ii];
-		
+	      
+	      //FIXME DEBUG
+	      assert(gsl_finite(bundleCells[bind].rays[rind].alpha[0]));
+	      assert(gsl_finite(bundleCells[bind].rays[rind].alpha[1]));
+	      
 	    }//for(n=0;n<Nint;++n)
 	  }//for(rind=0;rind<bundleCells[bind].Nrays;++rind)
 	}//for(dind1=0;dind1<3;++dind1)
@@ -594,8 +599,9 @@ void threedpot_poissondriver(void)
 		  gbuff[m].val += gch->GridCells[ind].val;
 		  
 		  gbuff[m].val /= dL;
+		  gbuff[m].val /= dL;
 		  gbuff[m].id = gch->GridCells[m].id;
-		}
+		} 
 		else {
 		  //build the stencil
 		  for(n=0;n<3;++n) {
@@ -647,6 +653,8 @@ void threedpot_poissondriver(void)
                   gbuff[m].val += gch->GridCells[ind].val;
 		  
                   gbuff[m].val /= dL;
+		  gbuff[m].val /= dL;
+		  gbuff[m].val /= 2.0;
 		  gbuff[m].val /= 2.0;
                   gbuff[m].id = gch->GridCells[m].id;
 		}//end of else
@@ -788,6 +796,12 @@ void threedpot_poissondriver(void)
 		    for(jj=0;jj<2;++jj)
 		      bundleCells[bind].rays[rind].U[ii*2+jj] += val*jac[dind2][ii]*jac[dind1][jj];
 		}
+		
+		//FIXME DEBUG
+		assert(gsl_finite(bundleCells[bind].rays[rind].U[0]));
+		assert(gsl_finite(bundleCells[bind].rays[rind].U[1]));
+		assert(gsl_finite(bundleCells[bind].rays[rind].U[2]));
+		assert(gsl_finite(bundleCells[bind].rays[rind].U[3]));
 		
 	      }//for(n=0;n<Nint;++n)
 	    }//for(rind=0;rind<bundleCells[bind].Nrays;++rind)

@@ -295,32 +295,38 @@ void comp_pot_snap(char *fbase)
     for(j=0;j<NFFT;++j)
       for(k=0;k<(NFFT/2+1);++k)
 	{
-	  //k-modes
-	  k0 = kgrid[i+N0LocalStart];
-	  k1 = kgrid[j];
-	  k2 = kgrid[k];
-	  
-	  //cic decomp
-	  if(k0 != 0.0)
-	    wx = sin(M_PI*k0/2.0/kny)/(M_PI*k0/2.0/kny);
-	  else
-	    wx = 1.0;
-	  if(k1 != 0.0)
-	    wy = sin(M_PI*k1/2.0/kny)/(M_PI*k1/2.0/kny);
-	  else
-	    wy = 1.0;
-	  if(k2 != 0.0)
-	    wz = sin(M_PI*k2/2.0/kny)/(M_PI*k2/2.0/kny);
-	  else
-	    wz = 1.0;
-	  w = wx*wy*wz;
-	  w = w*w;
-	  
-	  //greens function
-	  grfcn = -1.0*dL*dL/4.0/(sin(k0*dL/2.0)*sin(k0*dL/2.0) + sin(k1*dL/2.0)*sin(k1*dL/2.0) + sin(k2*dL/2.0)*sin(k2*dL/2.0));
-	  
-	  fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][0] *= (potfact*grfcn/w/w); //do CIC decomp twice for interp to rays
-	  fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][1] *= (potfact*grfcn/w/w); //do CIC decomp twice for interp to rays
+	  if(i != 0 && j != 0 && k != 0) {
+	    //k-modes
+	    k0 = kgrid[i+N0LocalStart];
+	    k1 = kgrid[j];
+	    k2 = kgrid[k];
+	    
+	    //cic decomp
+	    if(k0 != 0.0)
+	      wx = sin(M_PI*k0/2.0/kny)/(M_PI*k0/2.0/kny);
+	    else
+	      wx = 1.0;
+	    if(k1 != 0.0)
+	      wy = sin(M_PI*k1/2.0/kny)/(M_PI*k1/2.0/kny);
+	    else
+	      wy = 1.0;
+	    if(k2 != 0.0)
+	      wz = sin(M_PI*k2/2.0/kny)/(M_PI*k2/2.0/kny);
+	    else
+	      wz = 1.0;
+	    w = wx*wy*wz;
+	    w = w*w;
+	    
+	    //greens function
+	    grfcn = -1.0*dL*dL/4.0/(sin(k0*dL/2.0)*sin(k0*dL/2.0) + sin(k1*dL/2.0)*sin(k1*dL/2.0) + sin(k2*dL/2.0)*sin(k2*dL/2.0));
+	    
+	    fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][0] *= (potfact*grfcn/w/w); //do CIC decomp twice for interp to rays
+	    fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][1] *= (potfact*grfcn/w/w); //do CIC decomp twice for interp to rays
+	  } else {
+	    //make the zero mode zero!
+	    fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][0] = 0.0;
+	    fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][1] = 0.0;
+	  }
 	}
   
   free(kgrid);
