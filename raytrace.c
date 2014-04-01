@@ -136,13 +136,24 @@ void raytrace(void)
       ///////////////////////////////////////
       stepTime = -MPI_Wtime();
       logProfileTag(PROFILETAG_STEPTIME);
-      
-      if(ThisTask == 0)
-	fprintf(stderr,"planeNum = %04ld (% 4ld of % 4ld) '%s/%s%04ld.h5'\n",rayTraceData.CurrentPlaneNum,rayTraceData.CurrentPlaneNum+1,rayTraceData.NumLensPlanes,
-		rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,rayTraceData.CurrentPlaneNum);
-      
+
       //set units and poisson solve type
       set_plane_params();
+
+#ifndef THREEDPOT      
+      if(ThisTask == 0) {
+	fprintf(stderr,"planeNum = %04ld (% 4ld of % 4ld) [dist = %.2lf Mpc/h, z = %.2lf] '%s/%s%04ld.h5'\n",rayTraceData.CurrentPlaneNum,rayTraceData.CurrentPlaneNum+1,rayTraceData.NumLensPlanes,
+		rayTraceData.planeRad,1.0/acomvdist(rayTraceData.planeRad)-1.0);
+	fprintf(stderr,"lens plane: '%s/%s%04ld.h5'\n", rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,rayTraceData.CurrentPlaneNum);
+	fflush(stderr);
+      }
+#else
+      if(ThisTask == 0) {
+	fprintf(stderr,"planeNum = %04ld (% 4ld of % 4ld) [dist = %.2lf Mpc/h, z = %.2lf]\n",rayTraceData.CurrentPlaneNum,rayTraceData.CurrentPlaneNum+1,rayTraceData.NumLensPlanes,
+		rayTraceData.planeRad,1.0/acomvdist(rayTraceData.planeRad)-1.0);
+	fflush(stderr);
+      }
+#endif
       
       //load balance the nodes
       logProfileTag(PROFILETAG_INITEND_LOADBAL);
