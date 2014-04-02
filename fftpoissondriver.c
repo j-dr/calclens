@@ -118,16 +118,15 @@ void threedpot_poissondriver(void)
     fftw_cleanup();
     if(ThisTask == 0) {fprintf(stderr,"cleaned FFTs!\n"); fflush(stderr);}
     init_ffts();
-    if(ThisTask == 0) {fprintf(stderr,"init FFTs!\n"); fflush(stderr);}
-    alloc_and_plan_ffts();
-    if(ThisTask == 0) {fprintf(stderr,"planned FFTs!\n"); fflush(stderr);}
-    
     if(ThisTask == 0) {
       fprintf(stderr,"min smooth length = %.2lg rad.\n",rayTraceData.minSL);
       fprintf(stderr,"NFFT = %ld (wanted %ld), cell size = %.2lf Mpc/h, L = %.2lf Mpc/h.\n",NFFT,
 	      (int) (L/(rayTraceData.planeRad*rayTraceData.minSL/2.0)),L/NFFT,L);
       fflush(stderr);
     }
+    if(ThisTask == 0) {fprintf(stderr,"init FFTs!\n"); fflush(stderr);}
+    alloc_and_plan_ffts();
+    if(ThisTask == 0) {fprintf(stderr,"planned FFTs!\n"); fflush(stderr);}
     
     currFTTsnap = mysnap;
     
