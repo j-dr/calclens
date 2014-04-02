@@ -81,18 +81,36 @@ void threedpot_poissondriver(void)
   if(mysnap != currFTTsnap) {
     
     //FIXME
-    if(ThisTask == 0) {fprintf(stderr,"------TEST------\n"); fflush(stderr);}
-    rayTraceData.NFFT = 128;
-    fftw_cleanup();
-    if(ThisTask == 0) {fprintf(stderr,"cleaned FFTs!\n"); fflush(stderr);}
-    init_ffts();
-    if(ThisTask == 0) {fprintf(stderr,"init FFTs!\n"); fflush(stderr);}
-    alloc_and_plan_ffts();
-    if(ThisTask == 0) {fprintf(stderr,"planned FFTs!\n"); fflush(stderr);}
-    comp_pot_snap(snaps[mysnap].fname);
-    if(ThisTask == 0) {fprintf(stderr,"------TEST------\n"); fflush(stderr);}
+    /*if(ThisTask == 0) {fprintf(stderr,"------TEST------\n"); fflush(stderr);}
+      rayTraceData.NFFT = 128;
+      fftw_cleanup();
+      if(ThisTask == 0) {fprintf(stderr,"cleaned FFTs!\n"); fflush(stderr);}
+      init_ffts();
+      if(ThisTask == 0) {fprintf(stderr,"init FFTs!\n"); fflush(stderr);}
+      alloc_and_plan_ffts();
+      if(ThisTask == 0) {fprintf(stderr,"planned FFTs!\n"); fflush(stderr);}
+      comp_pot_snap(snaps[mysnap].fname);
+      if(ThisTask == 0) {fprintf(stderr,"------END OF TEST------\n"); fflush(stderr);}
+    */
     
     rayTraceData.NFFT = L/(rayTraceData.planeRad*rayTraceData.minSL/2.0);
+    lgb2 = (int) (log(rayTraceData.NFFT)/log(2.0));
+    bsize = pow(2.0,lgb2);
+    bdiff = fabs(bsize -  rayTraceData.NFFT);
+    for(dlgb2=-4;dlgb2<=1;++dlgb2) {
+      for(pfacind=0;pfacind<Npfacs;++pfacind) {
+	if(fabs(pow(2.0,lgb2+dlgb2)*pfacs[pfacind] -  rayTraceData.NFFT) < bdiff) {
+	  bsize = pow(2.0,lgb2+dlgb2)*pfacs[pfacind];
+	  bdiff = fabs(pow(2.0,lgb2+dlgb2)*pfacs[pfacind] -  rayTraceData.NFFT);
+	}
+      }
+    }
+    rayTraceData.NFFT = bsize;
+    if(ThisTask == 0) {
+      fprintf(stderr,"test NFFT = %ld (wanted %ld), cell size = %.2lf Mpc/h, L = %.2lf Mpc/h.\n",rayTraceData.NFFT,
+	      (int) (L/(rayTraceData.planeRad*rayTraceData.minSL/2.0)),L/rayTraceData.NFFT,L);
+      fflush(stderr);
+    }
     if(rayTraceData.NFFT > rayTraceData.MaxNFFT)
       rayTraceData.NFFT = rayTraceData.MaxNFFT;
     NFFTcurr = rayTraceData.NFFT;
