@@ -36,7 +36,7 @@ void comp_pot_snap(char *fbase)
   int startFile;
   int NumFiles;
   int file;
-  long i,j,k,n;
+  long i,j,k,n,m;
   double L,dL,a,mp;
   long Ntot;
   float *px,*py,*pz;
@@ -60,9 +60,15 @@ void comp_pot_snap(char *fbase)
   mp = RHO_CRIT*rayTraceData.OmegaM*L*L*L/Ntot;
   potfact = FOUR_PI_G/a*mp/L/L/L;
   
+  //check potential factors
+  if(potfact == 0.0) {
+    fprintf(stderr,"%04ld: potfact is zero! potfact = %lg, a = %lg, mp %lg, L = %lg\n",ThisTask,potfact,a,mp,L);
+    fflush(stderr);
+    assert(potfact != 0.0);
+  }
+  
   //first get the file decomp
   get_partio_decomp(fbase,&startFile,&NumFiles);
-  //fprintf(stderr,"%04d: file decomp: start,num = %ld|%ld\n",ThisTask,startFile,NumFiles); fflush(stderr); //FIXME
   
   //read all parts and assign to buffer
   logProfileTag(PROFILETAG_PARTIO);
@@ -75,14 +81,12 @@ void comp_pot_snap(char *fbase)
 	//read parts
 	sprintf(fname,"%s.%d",fbase,file);
 	read_LGADGET(fname,&px,&py,&pz,NULL,&Np);
-	//fprintf(stderr,"%04d: read %ld parts from file %ld\n",ThisTask,Np,file); fflush(stderr); //FIXME
 	for(n=0;n<Np;++n)
 	  {
 	    px[n] *= rayTraceData.LengthConvFact;
 	    py[n] *= rayTraceData.LengthConvFact;
 	    pz[n] *= rayTraceData.LengthConvFact;
 	  }
-	//fprintf(stderr,"%04d: scaled %ld parts from file %ld\n",ThisTask,Np,file); fflush(stderr); //FIXME
 	
 	//assign to grid
 	for(n=0;n<Np;++n)
@@ -138,21 +142,17 @@ void comp_pot_snap(char *fbase)
 	    ind = getid_gchash(gch,id);
 	    gch->GridCells[ind].val += dx*dy*dz;
 	  }
-	//fprintf(stderr,"%04d: finished %ld parts from file %ld\n",ThisTask,Np,file); fflush(stderr); //FIXME
 	
 	free(px);
 	free(py);
 	free(pz);
       }
   
-  //fprintf(stderr,"%04d: finished reading parts! NumFiles = %ld\n",ThisTask,NumFiles); //FIXME
-  
+  //manage mem for hash
   minmem_gchash(gch);
   sortcells_gchash(gch);
   destroyhash_gchash(gch);
   logProfileTag(PROFILETAG_PARTIO);
-  
-  //fprintf(stderr,"%04d: finished realloc of gch!\n",ThisTask,NumFiles); //FIXME
   
   time += MPI_Wtime();
   if(ThisTask == 0)
@@ -254,6 +254,19 @@ void comp_pot_snap(char *fbase)
 	  
 	}/*if(recvTask < NTasks)*/
     }
+
+  //check cells for all zeros
+  m = 0;
+  for(i=0;i<N0Local;++i)
+    for(j=0;j<NFFT;++j)
+      for(k=0;k<2*(NFFT/2+1);++k)
+	if(fftwrin[(i*NFFT + j)*(2*(NFFT/2+1)) + k] != 0.0) m = 1;
+  if(m != 1) {
+    fprintf(stderr,"%04ld: all density cells are zero in FFTW real array in FFT solver!\n",ThisTask);
+    fflush(stderr);
+    assert(m == 1);
+  }
+  
   time += MPI_Wtime();
   if(ThisTask == 0)
     fprintf(stderr,"shared density in %lf seconds.\n",time);
@@ -271,6 +284,19 @@ void comp_pot_snap(char *fbase)
   if(ThisTask == 0)
     fprintf(stderr,"doing forward FFT.\n");
   fftwf_execute(fplan);
+  
+  //check cells for all zeros
+  m = 0;
+  for(i=0;i<N0Local;++i)
+    for(j=0;j<NFFT;++j)
+      for(k=0;k<(NFFT/2+1);++k)
+	if( fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][0] != 0.0 || fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][1] != 0.0) m = 1;
+  if(m != 1) {
+    fprintf(stderr,"%04ld: all complex density cells are zero in FFTW real array in FFT solver!\n",ThisTask);
+    fflush(stderr);
+    assert(m == 1);
+  }
+  
   time += MPI_Wtime();
   if(ThisTask == 0)
     fprintf(stderr,"finished forward FFT in %lf seconds.\n",time);
@@ -285,17 +311,19 @@ void comp_pot_snap(char *fbase)
   kgrid = (double*)malloc(NFFT*sizeof(double));
   assert(kgrid != NULL);
   
-  for(i=0;i<NFFT/2;++i)
+  for(i=0;i<NFFT;++i)
     {
-      kgrid[i] = 2.0*M_PI*i/NFFT/dL;
-      kgrid[NFFT - 1 - i] = -2.0*M_PI*i/NFFT/dL;
+      if(i <= NFFT/2)
+	kgrid[i] = (2.0*M_PI*i)/NFFT/dL;
+      else
+	kgrid[i] = (2.0*M_PI*(i-NFFT))/NFFT/dL;
     }
   
   for(i=0;i<N0Local;++i)
     for(j=0;j<NFFT;++j)
       for(k=0;k<(NFFT/2+1);++k)
 	{
-	  if(i != 0 && j != 0 && k != 0) {
+	  if(i != 0 || j != 0 || k != 0) {
 	    //k-modes
 	    k0 = kgrid[i+N0LocalStart];
 	    k1 = kgrid[j];
@@ -320,6 +348,13 @@ void comp_pot_snap(char *fbase)
 	    //greens function
 	    grfcn = -1.0*dL*dL/4.0/(sin(k0*dL/2.0)*sin(k0*dL/2.0) + sin(k1*dL/2.0)*sin(k1*dL/2.0) + sin(k2*dL/2.0)*sin(k2*dL/2.0));
 	    
+	    //check factor for potential
+	    if(potfact*grfcn/w/w == 0.0) {
+	      fprintf(stderr,"%04ld: greens plus CIC factors are zero! total = %lg, greens = %lg, cic win = %lg, potfact = %lg\n",ThisTask,potfact*grfcn/w/w,grfcn,w,potfact);
+	      fflush(stderr);
+	      assert(potfact*grfcn/w/w != 0.0);
+	    }
+	    
 	    fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][0] *= (potfact*grfcn/w/w); //do CIC decomp twice for interp to rays
 	    fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][1] *= (potfact*grfcn/w/w); //do CIC decomp twice for interp to rays
 	  } else {
@@ -331,11 +366,36 @@ void comp_pot_snap(char *fbase)
   
   free(kgrid);
   
+  //check for all zeros
+  m = 0;
+  for(i=0;i<N0Local;++i)
+    for(j=0;j<NFFT;++j)
+      for(k=0;k<(NFFT/2+1);++k)
+	if(fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][0] != 0.0 || fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][1] != 0.0) m = 1;
+  if(m != 1) {
+    fprintf(stderr,"%04ld: all complex potential cells are zero in FFTW real array in FFT solver!\n",ThisTask);
+    fflush(stderr);
+    assert(m == 1);
+  }
+  
   //do reverse FFT
   time = -MPI_Wtime();
   if(ThisTask == 0)
     fprintf(stderr,"doing backward FFT.\n");
   fftwf_execute(bplan);
+
+  //check for all zeros
+  m = 0;
+  for(i=0;i<N0Local;++i)
+    for(j=0;j<NFFT;++j)
+      for(k=0;k<2*(NFFT/2+1);++k)
+	if(fftwrin[(i*NFFT + j)*(2*(NFFT/2+1)) + k] != 0.0) m = 1;
+  if(m != 1) {
+    fprintf(stderr,"%04ld: all potential cells are zero in FFTW real array in FFT solver!\n",ThisTask);
+    fflush(stderr);
+    assert(m == 1);
+  }
+  
   time += MPI_Wtime();
   if(ThisTask == 0)
     fprintf(stderr,"finished backward FFT in %lf seconds.\n",time);
@@ -451,26 +511,26 @@ void alloc_and_plan_ffts(void)
   //allocate mem
   fftwrin = fftw_alloc_real(2*AllocLocal);
   fftwcout = (fftw_complex*)fftwrin;
-  if(ThisTask == 0) { fprintf(stderr,"did alloc of FFT memory!\n"); fflush(stderr);} //FIXME
+  if(ThisTask == 0) { fprintf(stderr,"did alloc of FFT memory!\n"); fflush(stderr);}
   
   //create plan
   fplan = fftw_mpi_plan_dft_r2c_3d(NFFT, NFFT, NFFT, fftwrin, fftwcout, MPI_COMM_WORLD, FFTW_ESTIMATE);
-  if(ThisTask == 0) { fprintf(stderr,"did plan for forward FFT!\n"); fflush(stderr);} //FIXME
+  if(ThisTask == 0) { fprintf(stderr,"did plan for forward FFT!\n"); fflush(stderr);}
   bplan = fftw_mpi_plan_dft_c2r_3d(NFFT, NFFT, NFFT, fftwcout, fftwrin, MPI_COMM_WORLD, FFTW_ESTIMATE);
-  if(ThisTask == 0) { fprintf(stderr,"did plan of backward FFT!\n"); fflush(stderr);} //FIXME
+  if(ThisTask == 0) { fprintf(stderr,"did plan of backward FFT!\n"); fflush(stderr);}
 #else
   //allocate memory
   fftwrin = fftwf_alloc_real(2*AllocLocal);
   fftwcout = (fftwf_complex*)fftwrin;
-  if(ThisTask == 0) { fprintf(stderr,"did alloc of FFT memory!\n"); fflush(stderr);} //FIXME
+  if(ThisTask == 0) { fprintf(stderr,"did alloc of FFT memory!\n"); fflush(stderr);}
   
   //create plan
   fplan = fftwf_mpi_plan_dft_r2c_3d(NFFT, NFFT, NFFT, fftwrin, fftwcout, MPI_COMM_WORLD, FFTW_ESTIMATE);
-  if(ThisTask == 0) { fprintf(stderr,"did plan for forward FFT!\n"); fflush(stderr);} //FIXME  
+  if(ThisTask == 0) { fprintf(stderr,"did plan for forward FFT!\n"); fflush(stderr);}
   bplan = fftwf_mpi_plan_dft_c2r_3d(NFFT, NFFT, NFFT, fftwcout, fftwrin, MPI_COMM_WORLD, FFTW_ESTIMATE);
-  if(ThisTask == 0) { fprintf(stderr,"did plan of backward FFT!\n"); fflush(stderr);} //FIXME 
+  if(ThisTask == 0) { fprintf(stderr,"did plan of backward FFT!\n"); fflush(stderr);}
 #endif
-
+  
   if(fftwrin == NULL) {
     fprintf(stderr,"%04ld: fftwrin is NULL! AllocLocal = %ld, NFFT = %ld\n",ThisTask,AllocLocal,NFFT);
     fflush(stderr);
