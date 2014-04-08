@@ -73,8 +73,8 @@ void threedpot_poissondriver(void)
   //solve for potential
   double t0;
   double tdiff;
-  double pfacs[8] = {1.0,3.0,5.0,7.0,9.0,11.0,13.0,15.0};
-  long Npfacs = 8;
+  double pfacs[7] = {1.0,3.0,5.0,7.0,9.0,11.0,13.0};
+  long Npfacs = 7;
   long lgb2;
   long bsize,bdiff;
   long dlgb2,pfacind;
