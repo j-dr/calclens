@@ -122,8 +122,8 @@ void threedpot_poissondriver(void)
       rayTraceData.NFFT = rayTraceData.MaxNFFT;
     NFFTcurr = rayTraceData.NFFT;
     
-    fftw_cleanup();
-    if(ThisTask == 0) {fprintf(stderr,"cleaned FFTs!\n"); fflush(stderr);}
+    cleanup_ffts();
+    if(ThisTask == 0) {fprintf(stderr,"cleaned up old FFTs!\n"); fflush(stderr);}
     init_ffts();
     if(ThisTask == 0) {
       fprintf(stderr,"min smooth length = %.2lg rad.\n",rayTraceData.minSL);

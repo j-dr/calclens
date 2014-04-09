@@ -14,17 +14,17 @@
 //global defs for this file
 ptrdiff_t NFFT;
 ptrdiff_t AllocLocal,N0Local, N0LocalStart;
-int *TaskN0Local;
-int *TaskN0LocalStart;
+int *TaskN0Local = NULL;
+int *TaskN0LocalStart = NULL;
 int MaxN0Local;
 
 #ifdef DOUBLEFFTW
-fftw_plan fplan,bplan;
-double *fftwrin;
+fftw_plan fplan = NULL,bplan = NULL;
+double *fftwrin = NULL;
 fftw_complex *fftwcout;
 #else
-fftwf_plan fplan,bplan;
-float *fftwrin;
+fftwf_plan fplan = NULL,bplan = NULL;
+float *fftwrin = NULL;
 fftwf_complex *fftwcout;
 #endif
 
@@ -461,22 +461,17 @@ static void get_partio_decomp(char *fbase, int *startFile, int *NumFiles)
 
 void init_ffts(void) 
 {
+  //set var for FFT size
   NFFT = rayTraceData.NFFT;
   
-#ifdef DOUBLEFFTW
-  //init fftw
-  fftw_mpi_init();
-  
   //get local data size
+#ifdef DOUBLEFFTW
   AllocLocal = fftw_mpi_local_size_3d(NFFT, NFFT, NFFT/2+1, MPI_COMM_WORLD, &N0Local, &N0LocalStart);
 #else
-  //init fftw
-  fftwf_mpi_init();
-  
-  //get local data size and allocate
   AllocLocal = fftwf_mpi_local_size_3d(NFFT, NFFT, NFFT/2+1, MPI_COMM_WORLD, &N0Local, &N0LocalStart);
 #endif
   
+  //collect sizes for MPI work
   int i;
   
   TaskN0Local = (int*)malloc(sizeof(int)*NTasks);
@@ -501,41 +496,42 @@ void init_ffts(void)
 
 void alloc_and_plan_ffts(void) 
 {
-  if(AllocLocal == 0) {
-    fprintf(stderr,"%04ld: AllocLocal is zeor! NFFT = %ld\n",ThisTask,NFFT);
-    fflush(stderr);
-    assert(AllocLocal != 0);
+  //allocate mem
+  if(AllocLocal != 0) {
+#ifdef DOUBLEFFTW
+    fftwrin = fftw_alloc_real(2*AllocLocal);
+    fftwcout = (fftw_complex*)fftwrin;
+#else
+    fftwrin = fftwf_alloc_real(2*AllocLocal);
+    fftwcout = (fftwf_complex*)fftwrin;
+#endif
+      
+    if(fftwrin == NULL) {
+      fprintf(stderr,"%04ld: fftwrin is NULL! AllocLocal = %ld, NFFT = %ld\n",ThisTask,AllocLocal,NFFT);
+      fflush(stderr);
+      assert(fftwrin != NULL);
+    }
   }
   
-#ifdef DOUBLEFFTW
-  //allocate mem
-  fftwrin = fftw_alloc_real(2*AllocLocal);
-  fftwcout = (fftw_complex*)fftwrin;
   if(ThisTask == 0) { fprintf(stderr,"did alloc of FFT memory!\n"); fflush(stderr);}
   
+  //FIXME - extra barrier
+  ///////////////////////////////
+  MPI_Barrier(MPI_COMM_WORLD);
+  ///////////////////////////////
+
   //create plan
+#ifdef DOUBLEFFTW
   fplan = fftw_mpi_plan_dft_r2c_3d(NFFT, NFFT, NFFT, fftwrin, fftwcout, MPI_COMM_WORLD, FFTW_ESTIMATE);
   if(ThisTask == 0) { fprintf(stderr,"did plan for forward FFT!\n"); fflush(stderr);}
   bplan = fftw_mpi_plan_dft_c2r_3d(NFFT, NFFT, NFFT, fftwcout, fftwrin, MPI_COMM_WORLD, FFTW_ESTIMATE);
   if(ThisTask == 0) { fprintf(stderr,"did plan of backward FFT!\n"); fflush(stderr);}
 #else
-  //allocate memory
-  fftwrin = fftwf_alloc_real(2*AllocLocal);
-  fftwcout = (fftwf_complex*)fftwrin;
-  if(ThisTask == 0) { fprintf(stderr,"did alloc of FFT memory!\n"); fflush(stderr);}
-  
-  //create plan
   fplan = fftwf_mpi_plan_dft_r2c_3d(NFFT, NFFT, NFFT, fftwrin, fftwcout, MPI_COMM_WORLD, FFTW_ESTIMATE);
   if(ThisTask == 0) { fprintf(stderr,"did plan for forward FFT!\n"); fflush(stderr);}
   bplan = fftwf_mpi_plan_dft_c2r_3d(NFFT, NFFT, NFFT, fftwcout, fftwrin, MPI_COMM_WORLD, FFTW_ESTIMATE);
   if(ThisTask == 0) { fprintf(stderr,"did plan of backward FFT!\n"); fflush(stderr);}
 #endif
-  
-  if(fftwrin == NULL) {
-    fprintf(stderr,"%04ld: fftwrin is NULL! AllocLocal = %ld, NFFT = %ld\n",ThisTask,AllocLocal,NFFT);
-    fflush(stderr);
-    assert(fftwrin != NULL);
-  }
   
   if(fplan == NULL) {
     fprintf(stderr,"%04ld: forward plan failed!\n",ThisTask);
@@ -553,15 +549,39 @@ void alloc_and_plan_ffts(void)
 void cleanup_ffts(void)
 {
 #ifdef DOUBLEFFTW
-  fftw_free(fftwrin);
-  fftw_destroy_plan(fplan);
-  fftw_destroy_plan(bplan);
+  if(fftwrin != NULL) {
+    fftw_free(fftwrin);
+    fftwrin = NULL;
+  }
+  if(fplan != NULL) {
+    fftw_destroy_plan(fplan);
+    fplan = NULL;
+  }
+  if(bplan != NULL) {
+    fftw_destroy_plan(bplan);
+    bplan = NULL;
+  }
 #else
-  fftwf_free(fftwrin);
-  fftwf_destroy_plan(fplan);
-  fftwf_destroy_plan(bplan);
+  if(fftwrin !=NULL) {
+    fftwf_free(fftwrin);
+    fftwrin = NULL;
+  }
+  if(fplan != NULL) {
+    fftwf_destroy_plan(fplan);
+    fplan = NULL;
+  }
+  if(bplan != NULL) {
+    fftwf_destroy_plan(bplan);
+    bplan = NULL;
+  }
 #endif
   
-  free(TaskN0Local);
-  free(TaskN0LocalStart);
+  if(TaskN0Local != NULL) {
+    free(TaskN0Local);
+    TaskN0Local = NULL;
+  }
+  if(TaskN0LocalStart != NULL) {
+    free(TaskN0LocalStart);
+    TaskN0LocalStart = NULL;
+  }
 }

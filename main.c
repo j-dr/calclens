@@ -42,6 +42,15 @@ int main(int argc, char **argv)
   mwStatistics(MW_STAT_LINE);
 #endif
   
+  //init FFTW3 parallel transforms if needed
+#ifdef THREEDPOT
+#ifdef DOUBLEFFTW
+  fftw_mpi_init();
+#else
+  fftwf_mpi_init();
+#endif
+#endif
+  
   /* init all vars for raytracing 
      1) read from config file
      2) set search radius
@@ -91,7 +100,12 @@ int main(int argc, char **argv)
   healpixsht_destroy_internaldata();
   
   //free fftw data
+#ifdef THREEDPOT
+#ifdef DOUBLEFFTW
   fftw_cleanup();
+#endif
+#endif
+  fftwf_cleanup();
   
   MPI_Finalize();
   return 0;

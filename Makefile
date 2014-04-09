@@ -90,9 +90,15 @@ ifeq (POINTMASSTEST,$(findstring POINTMASSTEST,$(OPTS)))
 OPTS += -DNOBACKDENS
 endif
 
+ifneq (DOUBLEFFTW,$(findstring DOUBLEFFTW,$(OPTS)))
+FFTWLIBS = -lfftw3f_mpi  
+else
+FFTWLIBS = -lfftw3_mpi -lfftw3
+endif
+
 CLINK=$(CC)
 CFLAGS=$(OPTIMIZE) $(FFTWI) $(HDF5I) $(FITSI) $(GSLI) $(EXTRACFLAGS) $(OPTS)
-CLIB=$(EXTRACLIB) $(FFTWL) $(HDF5L) $(FITSL) $(GSLL) -lgsl -lgslcblas -lfftw3_mpi -lfftw3f_mpi -lfftw3 -lfftw3f -lz -lhdf5_hl -lhdf5  -lcfitsio -lm
+CLIB=$(EXTRACLIB) $(FFTWL) $(HDF5L) $(FITSL) $(GSLL) -lgsl -lgslcblas $(FFTWLIBS) -lfftw3f -lz -lhdf5_hl -lhdf5  -lcfitsio -lm
 
 ifeq (MEMWATCH,$(findstring MEMWATCH,$(CFLAGS)))
 MEMWATCH=memwatch.o
