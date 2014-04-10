@@ -17,6 +17,8 @@
 #define WRAPIF(id,N) {if(id >= N) id -= N; if(id < 0) id += N; assert(id >= 0 && id < N);}
 #define THREEDIND(i,j,k,N) ((i*N+j)*N+k)
 
+#define VERTEX_MIXED_PARTIAL
+
 typedef struct {
   char fname[MAX_FILENAME];
   double a;
@@ -656,13 +658,23 @@ void threedpot_poissondriver(void)
 		    if(n == dind1) {
 		      pp[n] = 2;
 		      pm[n] = 2;
+#ifdef VERTEX_MIXED_PARTIAL
+		      mp[n] = 1;
+		      mm[n] = 1;
+#else
 		      mp[n] = 0;
 		      mm[n] = 0;
+#endif
 		    } else if(n == dind2) {
 		      pp[n] = 2;
-		      pm[n] = 0;
 		      mp[n] = 2;
+#ifdef VERTEX_MIXED_PARTIAL
+		      pm[n] = 1;
+		      mm[n] = 1;
+#else
+		      pm[n] = 0;
 		      mm[n] = 0;
+#endif
 		    } else {
 		      pp[n] = 1;
 		      pm[n] = 1;
@@ -672,7 +684,7 @@ void threedpot_poissondriver(void)
 		  }
 		  
 		  //eval stencil parts
-		  gbuff[n].val = 0.0;
+		  gbuff[m].val = 0.0;
 		  
 		  id = indvec[pp[0]][pp[1]][pp[2]];
                   ind = getonlyid_gchash(gch,id);
@@ -700,8 +712,10 @@ void threedpot_poissondriver(void)
 		  
                   gbuff[m].val /= dL;
 		  gbuff[m].val /= dL;
+#ifndef VERTEX_MIXED_PARTIAL
 		  gbuff[m].val /= 2.0;
 		  gbuff[m].val /= 2.0;
+#endif
                   gbuff[m].id = gch->GridCells[m].id;
 		}//end of else
 		
@@ -750,23 +764,70 @@ void threedpot_poissondriver(void)
 		    vec[m] -= L;
 		}
 		
-		i = (long) (vec[0]/dL);
-		dx = (vec[0] - i*dL)/dL;
-		WRAPIF(i,NFFT);
-		ip1 = i + 1;
-		WRAPIF(ip1,NFFT);
-		
-		j = (long) (vec[1]/dL);
-		dy = (vec[1] - j*dL)/dL;
-		WRAPIF(j,NFFT);
-		jp1 = j + 1;
-		WRAPIF(jp1,NFFT);
-		
-		k = (long) (vec[2]/dL);
-		dz = (vec[2] - k*dL)/dL;
-		WRAPIF(k,NFFT);
-		kp1 = k + 1;
-		WRAPIF(kp1,NFFT);
+		if(dind1 != dind2) {
+		  //vertex centered for dind1 != dind2
+		  i = (long) (vec[0]/dL);
+		  dx = (vec[0] - i*dL)/dL;
+#ifdef VERTEX_MIXED_PARTIAL
+		  if(dx < 0.5) {
+		    --i;
+		    dx += 0.5;
+		  } else {
+		    dx -= 0.5;
+		  }
+#endif
+		  WRAPIF(i,NFFT);
+		  ip1 = i + 1;
+		  WRAPIF(ip1,NFFT);
+		  
+		  j = (long) (vec[1]/dL);
+		  dy = (vec[1] - j*dL)/dL;
+#ifdef VERTEX_MIXED_PARTIAL
+		  if(dy < 0.5) {
+		    --j;
+		    dy += 0.5;
+		  } else {
+		    dy -= 0.5;
+		  }
+#endif
+		  WRAPIF(j,NFFT);
+		  jp1 = j + 1;
+		  WRAPIF(jp1,NFFT);
+		  
+		  k = (long) (vec[2]/dL);
+		  dz = (vec[2] - k*dL)/dL;
+#ifdef VERTEX_MIXED_PARTIAL
+		  if(dz < 0.5) {
+		    --k;
+		    dz += 0.5;
+		  } else {
+		    dz -= 0.5;
+		  }
+#endif
+		  WRAPIF(k,NFFT);
+		  kp1 = k + 1;
+		  WRAPIF(kp1,NFFT);
+		  
+		} else {
+		  //cell centered for dind1 == dind2
+		  i = (long) (vec[0]/dL);
+		  dx = (vec[0] - i*dL)/dL;
+		  WRAPIF(i,NFFT);
+		  ip1 = i + 1;
+		  WRAPIF(ip1,NFFT);
+		  
+		  j = (long) (vec[1]/dL);
+		  dy = (vec[1] - j*dL)/dL;
+		  WRAPIF(j,NFFT);
+		  jp1 = j + 1;
+		  WRAPIF(jp1,NFFT);
+		  
+		  k = (long) (vec[2]/dL);
+		  dz = (vec[2] - k*dL)/dL;
+		  WRAPIF(k,NFFT);
+		  kp1 = k + 1;
+		  WRAPIF(kp1,NFFT);
+		}
 		
 		//interp deriv val
 		val = 0.0;
