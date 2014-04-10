@@ -75,8 +75,12 @@ void threedpot_poissondriver(void)
   //solve for potential
   double t0;
   double tdiff;
+  /*FIXME comment out until bug in FFTW is fixed
   double pfacs[7] = {1.0,3.0,5.0,7.0,9.0,11.0,13.0};
   long Npfacs = 7;
+  */
+  double pfacs[1] = {1.0};
+  long Npfacs = 1;
   long lgb2;
   long bsize,bdiff;
   long dlgb2,pfacind;
