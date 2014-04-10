@@ -865,7 +865,12 @@ void threedpot_poissondriver(void)
 	  for(ii=0;ii<2;++ii)
 	    for(jj=0;jj<2;++jj)
 	      bundleCells[bind].rays[rind].U[ii*2+jj] *= fac2;
-	
+	  
+	  //make mixed partials symmetric
+	  val = (bundleCells[bind].rays[rind].U[0*2+1] + bundleCells[bind].rays[rind].U[1*2+0])/2.0;
+	  bundleCells[bind].rays[rind].U[0*2+1] = val;
+	  bundleCells[bind].rays[rind].U[1*2+0] = val;
+	  
 	  for(ii=0;ii<2;++ii)
 	    bundleCells[bind].rays[rind].alpha[ii] *= fac1;
 	  

@@ -102,7 +102,9 @@ int main(int argc, char **argv)
   //free fftw data
 #ifdef THREEDPOT
 #ifdef DOUBLEFFTW
-  fftw_cleanup();
+  fftw_mpi_cleanup();
+#else
+  fftwf_mpi_cleanup();
 #endif
 #endif
   fftwf_cleanup();

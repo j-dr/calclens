@@ -515,11 +515,6 @@ void alloc_and_plan_ffts(void)
   
   if(ThisTask == 0) { fprintf(stderr,"did alloc of FFT memory!\n"); fflush(stderr);}
   
-  //FIXME - extra barrier
-  ///////////////////////////////
-  MPI_Barrier(MPI_COMM_WORLD);
-  ///////////////////////////////
-
   //create plan
 #ifdef DOUBLEFFTW
   fplan = fftw_mpi_plan_dft_r2c_3d(NFFT, NFFT, NFFT, fftwrin, fftwcout, MPI_COMM_WORLD, FFTW_ESTIMATE);
