@@ -18,6 +18,7 @@
 #define THREEDIND(i,j,k,N) ((i*N+j)*N+k)
 
 #define VERTEX_MIXED_PARTIAL
+#define FACE_GRAD
 
 typedef struct {
   char fname[MAX_FILENAME];
@@ -437,15 +438,20 @@ void threedpot_poissondriver(void)
 	      //build the stencil
 	      for(n=0;n<3;++n) {
 		if(n == dind1) {
+#ifdef FACE_GRAD
+		  pp[n] = 2;
+		  pm[n] = 1;
+#else
 		  pp[n] = 2;
 		  pm[n] = 0;
+#endif
 		} 
 		else {
 		  pp[n] = 1;
 		  pm[n] = 1;
 		}
 	      }
-		  
+	      
 	      //eval stencil parts
 	      gbuff[m].val = 0.0;
 		  
@@ -462,7 +468,9 @@ void threedpot_poissondriver(void)
 	      gbuff[m].val -= gch->GridCells[ind].val;
 	      
 	      gbuff[m].val /= dL;
+#ifndef FACE_GRAD
 	      gbuff[m].val /= 2.0;
+#endif
 	      gbuff[m].id = gch->GridCells[m].id;
 	    }//for(m=0;m<gch-NumGridCells;++m)
 	
@@ -511,18 +519,46 @@ void threedpot_poissondriver(void)
 	      
 	      i = (long) (vec[0]/dL);
 	      dx = (vec[0] - i*dL)/dL;
+
+	      j = (long) (vec[1]/dL);
+	      dy = (vec[1] - j*dL)/dL;
+
+	      k = (long) (vec[2]/dL);
+	      dz = (vec[2] - k*dL)/dL;
+	      
+#ifdef FACE_GRAD
+	      if(dind1 == 0) {
+		if(dx < 0.5) {
+		  --i;
+		  dx += 0.5;
+		} else {
+		  dx -= 0.5;
+		}
+	      } else if(dind1 == 1) {
+		if(dy < 0.5) {
+		  --j;
+		  dy += 0.5;
+		} else {
+		  dy -= 0.5;
+		}		
+	      } else {
+		if(dz < 0.5) {
+		  --k;
+		  dz += 0.5;
+		} else {
+		  dz -= 0.5;
+		}				
+	      }
+#endif
+	      
 	      WRAPIF(i,NFFT);
 	      ip1 = i + 1;
 	      WRAPIF(ip1,NFFT);
 	      
-	      j = (long) (vec[1]/dL);
-	      dy = (vec[1] - j*dL)/dL;
 	      WRAPIF(j,NFFT);
 	      jp1 = j + 1;
 	      WRAPIF(jp1,NFFT);
 	      
-	      k = (long) (vec[2]/dL);
-	      dz = (vec[2] - k*dL)/dL;
 	      WRAPIF(k,NFFT);
 	      kp1 = k + 1;
 	      WRAPIF(kp1,NFFT);
