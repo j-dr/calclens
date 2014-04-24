@@ -688,7 +688,7 @@ void do_healpix_sht_poisson_solve(double densfact, double backdens)
 		  MPI_Abort(MPI_COMM_WORLD,123);
 		}
 	      
-	      bundleCells[i].rays[j].phi += lenspot;
+	      bundleCells[i].rays[j].phi = lenspot;
 	      
 	      bundleCells[i].rays[j].alpha[0] += -1.0*alpha[0];
               bundleCells[i].rays[j].alpha[1] += -1.0*alpha[1];
