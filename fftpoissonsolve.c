@@ -261,7 +261,7 @@ void comp_pot_snap(char *fbase)
     for(j=0;j<NFFT;++j)
       for(k=0;k<2*(NFFT/2+1);++k)
 	if(fftwrin[(i*NFFT + j)*(2*(NFFT/2+1)) + k] != 0.0) m = 1;
-  if(m != 1) {
+  if(m != 1 && N0Local > 0) {
     fprintf(stderr,"%04ld: all density cells are zero in FFTW real array in FFT solver!\n",ThisTask);
     fflush(stderr);
     assert(m == 1);
@@ -291,7 +291,7 @@ void comp_pot_snap(char *fbase)
     for(j=0;j<NFFT;++j)
       for(k=0;k<(NFFT/2+1);++k)
 	if( fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][0] != 0.0 || fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][1] != 0.0) m = 1;
-  if(m != 1) {
+  if(m != 1 && N0Local > 0) {
     fprintf(stderr,"%04ld: all complex density cells are zero in FFTW real array in FFT solver!\n",ThisTask);
     fflush(stderr);
     assert(m == 1);
@@ -372,7 +372,7 @@ void comp_pot_snap(char *fbase)
     for(j=0;j<NFFT;++j)
       for(k=0;k<(NFFT/2+1);++k)
 	if(fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][0] != 0.0 || fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][1] != 0.0) m = 1;
-  if(m != 1) {
+  if(m != 1 && N0Local > 0) {
     fprintf(stderr,"%04ld: all complex potential cells are zero in FFTW real array in FFT solver!\n",ThisTask);
     fflush(stderr);
     assert(m == 1);
@@ -390,7 +390,7 @@ void comp_pot_snap(char *fbase)
     for(j=0;j<NFFT;++j)
       for(k=0;k<2*(NFFT/2+1);++k)
 	if(fftwrin[(i*NFFT + j)*(2*(NFFT/2+1)) + k] != 0.0) m = 1;
-  if(m != 1) {
+  if(m != 1 && N0Local > 0) {
     fprintf(stderr,"%04ld: all potential cells are zero in FFTW real array in FFT solver!\n",ThisTask);
     fflush(stderr);
     assert(m == 1);

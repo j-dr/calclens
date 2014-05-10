@@ -175,6 +175,8 @@ void raytrace(void)
 	    {
 	      for(j=0;j<bundleCells[i].Nrays;++j)
 		{
+		  bundleCells[i].rays[j].phi = 0.0;
+		  
 		  bundleCells[i].rays[j].alpha[0] = 0.0;
 		  bundleCells[i].rays[j].alpha[1] = 0.0;
 		  
