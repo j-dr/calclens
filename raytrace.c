@@ -139,21 +139,6 @@ void raytrace(void)
 
       //set units and poisson solve type
       set_plane_params();
-
-#ifndef THREEDPOT      
-      if(ThisTask == 0) {
-	fprintf(stderr,"planeNum = %04ld (% 4ld of % 4ld) [dist = %.2lf Mpc/h, z = %.2lf] '%s/%s%04ld.h5'\n",rayTraceData.CurrentPlaneNum,rayTraceData.CurrentPlaneNum+1,rayTraceData.NumLensPlanes,
-		rayTraceData.planeRad,1.0/acomvdist(rayTraceData.planeRad)-1.0);
-	fprintf(stderr,"lens plane: '%s/%s%04ld.h5'\n", rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,rayTraceData.CurrentPlaneNum);
-	fflush(stderr);
-      }
-#else
-      if(ThisTask == 0) {
-	fprintf(stderr,"planeNum = %04ld (% 4ld of % 4ld) [dist = %.2lf Mpc/h, z = %.2lf]\n",rayTraceData.CurrentPlaneNum,rayTraceData.CurrentPlaneNum+1,rayTraceData.NumLensPlanes,
-		rayTraceData.planeRad,1.0/acomvdist(rayTraceData.planeRad)-1.0);
-	fflush(stderr);
-      }
-#endif
       
       //load balance the nodes
       logProfileTag(PROFILETAG_INITEND_LOADBAL);
@@ -337,6 +322,15 @@ static void set_plane_params(void)
   else
     rayTraceData.poissonOrder = rayTraceData.HEALPixLensPlaneMapOrder;
   
+  //do some helpful I/O
+  if(ThisTask == 0) {
+    fprintf(stderr,"planeNum = %04ld (% 4ld of % 4ld) [dist = %.2lf Mpc/h, z = %.2lf]\n",rayTraceData.CurrentPlaneNum,rayTraceData.CurrentPlaneNum+1,rayTraceData.NumLensPlanes,
+	    rayTraceData.planeRad,1.0/acomvdist(rayTraceData.planeRad)-1.0);
+#ifndef THREEDPOT      
+    fprintf(stderr,"lens plane: '%s/%s%04ld.h5'\n", rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,rayTraceData.CurrentPlaneNum);
+#endif
+    fflush(stderr);
+  }
   
 #ifdef SHTONLY  
   rayTraceData.minSL = MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.poissonOrder));
@@ -346,8 +340,8 @@ static void set_plane_params(void)
   rayTraceData.partBuffRad = sqrt(4.0*M_PI/order2npix(rayTraceData.poissonOrder))*10.0 + 2.0*bundleLength + rayTraceData.maxSL*2.0;
   if(ThisTask == 0)
     {
-      fprintf(stderr,"densfact = %le, backdens = %le, max smoothing scale = %le, cmv dist. = %lg\n",
-	      rayTraceData.densfact,rayTraceData.backdens,rayTraceData.maxComvSmoothingScale/rayTraceData.planeRad,rayTraceData.planeRad);
+      fprintf(stderr,"densfact = %le, backdens = %le, cmv dist. = %lg\n",
+	      rayTraceData.densfact,rayTraceData.backdens,rayTraceData.planeRad);
       fprintf(stderr,"SHT order = %ld, partBuffRad = %lg\n",rayTraceData.poissonOrder
 	      ,rayTraceData.partBuffRad);
     }
@@ -363,10 +357,10 @@ static void set_plane_params(void)
   rayTraceData.partBuffRad = MGPATCH_SIZE_FAC*bundleLength + 2.0*bundleLength + rayTraceData.maxSL*2.0;
   if(ThisTask == 0)
     {
-      fprintf(stderr,"densfact = %le, backdens = %le, max smoothing scale = %le, cmv dist. = %lg\n",
-	      rayTraceData.densfact,rayTraceData.backdens,rayTraceData.maxComvSmoothingScale/rayTraceData.planeRad,rayTraceData.planeRad);
-      fprintf(stderr,"SHT order = %ld, partBuffRad = %lg, minSL = %le, apprx. # of cells in MG patch = %ld, # of MG cells per minSL = %lf, MG res fact = %lf\n",rayTraceData.poissonOrder
-	      ,rayTraceData.partBuffRad,rayTraceData.minSL,rayTraceData.NumMGPatch,rayTraceData.minSL/((MGPATCH_SIZE_FAC*bundleLength)/(rayTraceData.NumMGPatch)),SMOOTHKERN_MGRESOLVE_FAC);
+      fprintf(stderr,"densfact = %le, backdens = %le, cmv dist. = %lg\n",
+	      rayTraceData.densfact,rayTraceData.backdens,rayTraceData.planeRad);
+      fprintf(stderr,"SHT order = %ld, partBuffRad = %lg, apprx. # of cells in MG patch = %ld, # of MG cells per minSL = %lf, MG res fact = %lf\n",rayTraceData.poissonOrder
+	      ,rayTraceData.partBuffRad,rayTraceData.NumMGPatch,rayTraceData.minSL/((MGPATCH_SIZE_FAC*bundleLength)/(rayTraceData.NumMGPatch)),SMOOTHKERN_MGRESOLVE_FAC);
     }
 #endif
 }

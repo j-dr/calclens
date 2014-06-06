@@ -110,12 +110,12 @@
   SMOOTHKERN_SHTRESOLVE_FAC - # of resolution elements used to grid up particles for SHT density
 */
 #define GRIDSEARCH_RADIUS_ARCMIN   2.5
-#define MIN_SMOOTH_TO_RAY_RATIO    2.0 
+#define MIN_SMOOTH_TO_RAY_RATIO    0.5 //was 2
 #define RAYBUFF_RADIUS_ARCMIN      10.0
 #define MGPATCH_SIZE_FAC           4.0
 #define NUM_MGPATCH_MIN            256
-#define SMOOTHKERN_MGRESOLVE_FAC   4.0
-#define SMOOTHKERN_SHTRESOLVE_FAC  4.0
+#define SMOOTHKERN_MGRESOLVE_FAC   3.0 //was 4
+#define SMOOTHKERN_SHTRESOLVE_FAC  3.0 //was 4
 
 /* macros for bit flags */
 #define SETBITFLAG(x,b) ((x) |= (1 << (b)))
