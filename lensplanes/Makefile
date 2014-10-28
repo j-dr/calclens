@@ -13,10 +13,10 @@
 #OPTS += -DDEF_GSL_IEEE_ENV #define the GSL IEEE environment variables - for debugging
 
 #select your computer
-#COMP="orange"
+COMP="orange"
 #COMP="orion-gcc"
 #COMP="midway"
-COMP="home"
+#COMP="home"
 
 ################################
 #edit/add to match your machine
@@ -35,10 +35,10 @@ endif
 ifeq ($(COMP),"orange")
 CC          =  mpicc
 OPTIMIZE    =  -g -O3 #-Wall -wd981 #-wd1419 -wd810
-GSLI        =  -I/afs/slac.stanford.edu/g/ki/software/gsl/1.15/include
-GSLL        =  -L/afs/slac.stanford.edu/g/ki/software/gsl/1.15/lib
-HDF5I       =  -I/afs/slac.stanford.edu/g/ki/software/hdf5/1.8.8/include 
-HDF5L       =  -L/afs/slac.stanford.edu/g/ki/software/hdf5/1.8.8/lib
+#GSLI        =  -I/afs/slac.stanford.edu/g/ki/software/gsl/1.15/include
+#GSLL        =  -L/afs/slac.stanford.edu/g/ki/software/gsl/1.15/lib
+#HDF5I       =  -I/afs/slac.stanford.edu/g/ki/software/hdf5/1.8.8/include 
+#HDF5L       =  -L/afs/slac.stanford.edu/g/ki/software/hdf5/1.8.8/lib
 EXTRACFLAGS =
 EXTRACLIB   =
 endif
@@ -108,7 +108,7 @@ $(OBJS1): ../healpix_utils.h  profile.h  raytrace.h Makefile
 
 .PHONY : clean
 clean: 
-	rm -f *.o
+	rm -f *.o *~
 
 .PHONY : spotless
 spotless: 
