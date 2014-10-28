@@ -79,13 +79,15 @@ long getNumLCPartsFile_LGADGET(FILE *infp)
   files = header1.num_files;
   for(k=0,NumPart=0;k<6;k++)
     NumPart += header1.npart[k];
-    
+
+  /*
   if(ThisTask == 0)
     {
       fprintf(stderr,"# of files = %d\n",files);
       fprintf(stderr,"NumPart = %d\n",NumPart);
       fprintf(stderr,"header1.npart[1] = %u\n",header1.npart[1]);
     }
+  */
   
 #undef SKIP  
   return ((long) NumPart);
@@ -228,13 +230,15 @@ long getNumLCPartsFile_GADGET2(FILE *infp)
   files = header1.num_files;
   for(k=0,NumPart=0;k<6;k++)
     NumPart += header1.npart[k];
-    
+  
+  /*
   if(ThisTask == 0)
     {
       fprintf(stderr,"# of files = %d\n",files);
       fprintf(stderr,"NumPart = %d\n",NumPart);
       fprintf(stderr,"header1.npart[1] = %u\n",header1.npart[1]);
     }
+  */
   
 #undef SKIP  
   return ((long) NumPart);
