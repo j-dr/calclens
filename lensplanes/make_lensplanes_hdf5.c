@@ -24,7 +24,7 @@ static void fillWriteBuffData(WriteBuffData *wb, long NumRayTracingPlanes, long 
   wb->HEALPixOrder = HEALPixOrder;
   wb->NPix = NPix;
   wb->MaxTotNumLCParts = MAX_NPART;
-  wb->ChunkSizeLCParts = (long) (((double) MAX_NPART)/rayTraceData.LightConePartChunkFactor);
+  wb->ChunkSizeLCParts = (long) (((double) MAX_NPART)/rayTraceData.LightConePartChunkFactor/NumRayTracingPlanes);
   wb->NumLCPartWriteBuff = MAX_NPART + wb->ChunkSizeLCParts;
   
   //alloc mem for I/O buffering
