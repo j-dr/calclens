@@ -296,22 +296,22 @@ planes, the following options must be set.
     LightConeOriginX - X-origin of light in Mpc/h
     LightConeOriginY - Y-origin of light in Mpc/h
     LightConeOriginZ - Z-origin of light in Mpc/h
-    LensPlaneOrder - HEALPix order of cells used to spatially index
-                     the light cone (usually between 3 and 5)
-    memBuffSizeInMB - size of buffer used in memory to sort particles (set as big 
-                      as possible)
+    LensPlaneOrder - HEALPix order of cells used to spatially index 
+         the light cone (usually between 3 and 5)
+    memBuffSizeInMB - size of buffer used in memory to sort particles
+        (set as big as possible)
     MaxNumLensPlaneInMem - if particles for more than this many lens
-                           planes are in mem, all planes will be written to disk (set 
-			   to the number of lens planes usually)
-    LightConePartChunkFactor - memBuffSizeInMB/LightConePartChunkFactor extra mem is 
-                               allocated to each plane as needed when sorting 
-			       particles (set around 150 or so)
+         planes are in mem, all planes will be written to disk (set 
+         to the number of lens planes usually)
+    LightConePartChunkFactor - memBuffSizeInMB/LightConePartChunkFactor 
+        extra mem is allocated to each plane as needed when sorting 
+        particles (set around 150 or so)
     partMass - particle mass in Msun/h for light cone formats which need it
-               (also used as mass of point mass or NFW mass for those tests)
+        (also used as mass of point mass or NFW mass for those tests)
     MassConvFact - conversion factor used to make masses in light cone
-                   into Msun/h units
+        into Msun/h units
     LengthConvFact - conversion factor used to convert distance units
-                     to Mpc/h
+        to Mpc/h
     VelocityConvFact - conversion factor to get velocities into km/s
 
 The velocities are *not* used by the code, but are included so that
