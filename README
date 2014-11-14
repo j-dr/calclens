@@ -1,17 +1,16 @@
-////////////////////////////////////////////////////////////////////////////////////
-CALCLENS - Curved-sky grAvitational Lensing for Cosmological Light conE simulatioNS
-Copyright (C) 2009,2010,2011,2012,2013,2014 Matthew R. Becker
-Released under GNU GPL v3 - see COPYING and AUTHORS for details.
-////////////////////////////////////////////////////////////////////////////////////
+CALCLENS 
+=========
+Curved-sky grAvitational Lensing for Cosmological Light conE simulatioNS  
+Copyright (C) 2009,2010,2011,2012,2013,2014 Matthew R. Becker  
+Released under GNU GPL v3 - see COPYING and AUTHORS for details.  
 
 CALCLENS stands for Curved-sky grAvitational Lensing for Cosmological
 Light conE simulatioNS. It is a curved-sky multiple-plane ray tracing
 code for generating weak gravitational lensing shear fields from light
 cone simulations. Currently only flat LCDM models are supported.
 
-/////////////////////////////////////////////
 License and Conditions of Use
-/////////////////////////////////////////////
+-----------------------------------------
 This code is released publicly under GNU GPL v3 (see COPYING for
 details). The standard GNU disclaimer (which most definitely applies
 here!) is
@@ -36,30 +35,27 @@ cite the paper describing the code
 
 and also post your own work (and any updates) to the arXiv
 (http://arxiv.org/). I also ask that you notify me of any bugs once
-they are confirmed immediately at becker.mr<at>gmail<dot>com.
+they are confirmed immediately at ```becker.mr<at>gmail<dot>com```. 
 
 CALCLENS is a BYOLC code, which stands for Bring Your Own Light
 Cone. Utilities for reading light cone formats (see lightconeio.c for
 how to write your own) are included below, but there is no way I
 can personally provide many TB of light cone data to the community.
 
-/////////////////////////////////////////////
 Compilation
-/////////////////////////////////////////////
+----------------
 CALCLENS requires the following widely available public software
 libraries:
 
-    GSL - GNU Scientific Library (http://www.gnu.org/software/gsl/)
-    CFITSIO - for read and writing FITS files (http://heasarc.gsfc.nasa.gov/fitsio/)
-    HDF5 v1.8 - for the indexed light cone format (http://www.hdfgroup.org/HDF5/)
-    FFTW3 - for FFTs used by SHTs (http://www.fftw.org/)
+GSL - GNU Scientific Library (http://www.gnu.org/software/gsl/)  
+CFITSIO - for read and writing FITS files (http://heasarc.gsfc.nasa.gov/fitsio/)  
+HDF5 v1.8 - for the indexed light cone format (http://www.hdfgroup.org/HDF5/)  
+FFTW3 - for FFTs used by SHTs (http://www.fftw.org/)  
 
 Other requirements include:
-    
-    1) a 64 bit system - the types long and double in C must both be 8
-       bytes
-    2) a Unix-like environment (It has not been tested on Mac OSX.  If
-       you do, let me know!)
+
+1. a 64 bit system - the types long and double in C must both be 8 bytes
+2. a Unix-like environment (It has not been tested on Mac OSX.  If you do, let me know!)
 
 Once these libraries are installed (or if you have them already) and
 requirements are met, then you just have to edit the Makefile to match
@@ -84,9 +80,8 @@ intuitive.  Here is an example for the KIPAC Orange cluster
 Then simply type "make" in the source directory and you should get an
 executable named "raytrace" for your enjoyment.  
 
-/////////////////////////////////////////////
 Running an MPI code
-/////////////////////////////////////////////
+-----------------------------
 CALCLENS is an MPI-1 parallel code. See the local user guide (or ask a
 friend) on how to run MPI code on your local compute cluster.
 Typically one needs to make a job script and the include commands like 
@@ -96,9 +91,8 @@ Typically one needs to make a job script and the include commands like
 to get this work. See the Ray Tracing below for how to actually run
 the code.
 
-/////////////////////////////////////////////
 Ray Tracing 
-/////////////////////////////////////////////
+----------------
 Ray tracing a light cone involves two steps.  First, the light cone
 must be rewritten into the HDF5 index light cone format.  Then it can
 be ray traced.  
@@ -129,9 +123,8 @@ be ray traced.
    regardless of area, but that for large enough areas the MG steps
    dominate the running time.
 
-/////////////////////////////////////////////
 Configuration
-/////////////////////////////////////////////
+------------------
 CALCLENS uses a configuration file to set most options for running the
 code.  Options *not* set in the configuration file, but in the
 Makefile, include
@@ -323,4 +316,3 @@ planes, the following options must be set.
 
 The velocities are *not* used by the code, but are included so that
 indexed light cone format can be used more widely.
-
