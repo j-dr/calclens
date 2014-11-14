@@ -47,10 +47,10 @@ Compilation
 CALCLENS requires the following widely available public software
 libraries:
 
-    GSL - GNU Scientific Library (http://www.gnu.org/software/gsl/)
-    CFITSIO - for read and writing FITS files (http://heasarc.gsfc.nasa.gov/fitsio/)
-    HDF5 v1.8 - for the indexed light cone format (http://www.hdfgroup.org/HDF5/)
-    FFTW3 - for FFTs used by SHTs (http://www.fftw.org/)
+GSL - GNU Scientific Library (http://www.gnu.org/software/gsl/)  
+CFITSIO - for read and writing FITS files (http://heasarc.gsfc.nasa.gov/fitsio/)  
+HDF5 v1.8 - for the indexed light cone format (http://www.hdfgroup.org/HDF5/)  
+FFTW3 - for FFTs used by SHTs (http://www.fftw.org/)  
 
 Other requirements include:
     
