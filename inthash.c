@@ -71,6 +71,7 @@ void _ih_add_more_buckets(struct inthash *ih, int64_t add_factor) {
 
   //new_buckets = check_realloc(NULL, new_alloc_size, "Allocating new buckets.");
   new_buckets = (struct intbucket*)realloc(NULL, new_alloc_size);
+  assert(new_buckets != NULL);
   
   memset(new_buckets, 0, new_alloc_size);
   for (i=0; i<ih->num_buckets; i++) new_buckets[i].key = IH_INVALID;

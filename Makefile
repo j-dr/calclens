@@ -5,7 +5,7 @@
 OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
 #OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
 #OPTS += -DSHTONLY #set to only use SHT for lensing
-#OPTS += -DTHREEDPOT #define to use 3D potential to move rays
+OPTS += -DTHREEDPOT #define to use 3D potential to move rays
 
 #testing options
 #OPTS += -DNFWHALOTEST #define to write lensplanes and do test with an NFW halo - need POINTMASSTEST defined as well 
