@@ -24,7 +24,7 @@ static void fillWriteBuffData(WriteBuffData *wb, long NumRayTracingPlanes, long 
   wb->HEALPixOrder = HEALPixOrder;
   wb->NPix = NPix;
   wb->MaxTotNumLCParts = MAX_NPART;
-  wb->ChunkSizeLCParts = (long) (((double) MAX_NPART)/rayTraceData.LightConePartChunkFactor);
+  wb->ChunkSizeLCParts = (long) (((double) MAX_NPART)/rayTraceData.LightConePartChunkFactor/NumRayTracingPlanes);
   wb->NumLCPartWriteBuff = MAX_NPART + wb->ChunkSizeLCParts;
   
   //alloc mem for I/O buffering
@@ -85,6 +85,7 @@ static long needToWriteRayTracingPlanes(WriteBuffData *wb, long *RayTracingPlane
 {
   long writeRayTracingPlanes;
   long TotNumLCParts = 0;
+  long TotNumLCPartsUsed = 0;
   long j;
   long MaxNumLCParts;
   
@@ -94,6 +95,7 @@ static long needToWriteRayTracingPlanes(WriteBuffData *wb, long *RayTracingPlane
   for(j=0;j<wb->NumRayTracingPlanes;++j)
     {
       TotNumLCParts += wb->NumLCParts[j];
+      TotNumLCPartsUsed += wb->NumLCPartsUsed[j];
       if(wb->NumLCPartsUsed[j] > 0)
 	*TotNumLCPartsNonZero = *TotNumLCPartsNonZero + 1;
     }
@@ -104,13 +106,16 @@ static long needToWriteRayTracingPlanes(WriteBuffData *wb, long *RayTracingPlane
   // 2) the total number of allocated LCParticles exceeds the max set by wb->MaxTotNumLCParts
   if((TotNumLCParts >= wb->MaxTotNumLCParts && *TotNumLCPartsNonZero > 0) || *TotNumLCPartsNonZero > rayTraceData.MaxNumLensPlaneInMem)
     {
+      //fprintf(stderr,"TotNumLCParts = %ld (>= %ld), TotNumLCPartsUsed = %ld, TotNumLCPartsNonZero = %ld (> 0)\n",
+      //TotNumLCParts,wb->MaxTotNumLCParts,TotNumLCPartsUsed,*TotNumLCPartsNonZero);
+
       writeRayTracingPlanes = 1;
       
       if(TotNumLCParts >= wb->MaxTotNumLCParts && *TotNumLCPartsNonZero > 0)
 	{
 	  //find plane that uses the most mem
-	  *RayTracingPlaneIdMaxNumLCParts = 0;
-	  MaxNumLCParts = wb->NumLCParts[0];
+	  *RayTracingPlaneIdMaxNumLCParts = -1;
+	  MaxNumLCParts = -1;
 	  for(j=0;j<wb->NumRayTracingPlanes;++j)
 	    {
 	      if(wb->NumLCParts[j] > MaxNumLCParts && wb->NumLCPartsUsed[j] > 0)
@@ -423,8 +428,10 @@ void makeRayTracingPlanesHDF5(void)
 	    {
 	      for(j=0;j<wb.NumRayTracingPlanes;++j)
 		{
+		  //fprintf(stderr,"used = %ld, i = %ld, j = %ld\n",wb.NumLCPartsUsed[j],i,j);
 		  if((j == RayTracingPlaneIdMaxNumLCParts || TotNumLCPartsNonZero > rayTraceData.MaxNumLensPlaneInMem) && wb.NumLCPartsUsed[j] > 0)
 		    {
+		      //fprintf(stderr,"write\n");
 		      writeRayTracingPlane(j,&wb);
 		    }
 		}
