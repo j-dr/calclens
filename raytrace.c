@@ -49,7 +49,10 @@ void raytrace(void)
   if(rayTraceData.Restart > 0)
     {
       if(ThisTask == 0)
-	fprintf(stderr,"\nreading restart files in directory '%s'\n",rayTraceData.OutputPath);
+	{
+	  fprintf(stderr,"\nreading restart files in directory '%s'\n",rayTraceData.OutputPath);
+	  fflush(stderr);
+	}
       
       logProfileTag(PROFILETAG_RESTART);
       read_restart();
@@ -59,11 +62,17 @@ void raytrace(void)
     {
       logProfileTag(PROFILETAG_INITEND_LOADBAL);
       if(ThisTask == 0)
-	fprintf(stderr,"initializing domain decomposition.\n");
+	{
+	  fprintf(stderr,"initializing domain decomposition.\n");
+	  fflush(stderr);
+	}
       init_bundlecells();
       
       if(ThisTask == 0)
-	fprintf(stderr,"initializing rays.\n\n");
+	{
+	  fprintf(stderr,"initializing rays.\n\n");
+	  fflush(stderr);
+	}
       alloc_rays();
       init_rays();
       logProfileTag(PROFILETAG_INITEND_LOADBAL);
@@ -106,12 +115,14 @@ void raytrace(void)
 	      writeRestartFile = 2;
 	      fprintf(stderr,"\nout of time! limit,curr,step = %lg|%lg|%lg, writing restart files at plane %ld.\n",
 		    rayTraceData.WallTimeLimit,maxTime,minTime,rayTraceData.CurrentPlaneNum);
+	      fflush(stderr);
 	    }
 	  else if(time >= rayTraceData.WallTimeBetweenRestart)
 	    {
 	      restTime = MPI_Wtime();
 	      writeRestartFile = 1;
 	      fprintf(stderr,"\nwriting restart files at plane %ld.\n",rayTraceData.CurrentPlaneNum);
+	      fflush(stderr);
 	    }
 	  else
 	    writeRestartFile = 0;
@@ -211,6 +222,7 @@ void raytrace(void)
 	{
 	  printStepTimesProfileTags(fpStepTime,rayTraceData.CurrentPlaneNum,NULL);
 	  fprintf(stderr,"\n");
+	  fflush(stderr);
 	}
       
     } // end of main driver loop for simulation
@@ -221,7 +233,10 @@ void raytrace(void)
   if(rayTraceData.CurrentPlaneNum == rayTraceData.NumLensPlanes)
     {
       if(ThisTask == 0)
-	fprintf(stderr,"finished ray tracing for all lens planes.\n");
+	{
+	  fprintf(stderr,"finished ray tracing for all lens planes.\n");
+	  fflush(stderr);
+	}
       
       //do last plane I/O
       if(strlen(rayTraceData.RayOutputName) > 0)
@@ -344,6 +359,7 @@ static void set_plane_params(void)
 	      rayTraceData.densfact,rayTraceData.backdens,rayTraceData.planeRad);
       fprintf(stderr,"SHT order = %ld, partBuffRad = %lg\n",rayTraceData.poissonOrder
 	      ,rayTraceData.partBuffRad);
+      fflush(stderr);
     }
 #elif defined(THREEDPOT)
   rayTraceData.minSL = MIN_SMOOTH_TO_RAY_RATIO*sqrt(4.0*M_PI/order2npix(rayTraceData.rayOrder));
@@ -361,6 +377,7 @@ static void set_plane_params(void)
 	      rayTraceData.densfact,rayTraceData.backdens,rayTraceData.planeRad);
       fprintf(stderr,"SHT order = %ld, partBuffRad = %lg, apprx. # of cells in MG patch = %ld, # of MG cells per minSL = %lf, MG res fact = %lf\n",rayTraceData.poissonOrder
 	      ,rayTraceData.partBuffRad,rayTraceData.NumMGPatch,rayTraceData.minSL/((MGPATCH_SIZE_FAC*bundleLength)/(rayTraceData.NumMGPatch)),SMOOTHKERN_MGRESOLVE_FAC);
+      fflush(stderr);
     }
 #endif
 }

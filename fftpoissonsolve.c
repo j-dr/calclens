@@ -28,7 +28,7 @@ float *fftwrin = NULL;
 fftwf_complex *fftwcout;
 #endif
 
-static void get_partio_decomp(char *fbase, int *startFile, int *NumFiles);
+static void get_partio_decomp(char *fbase, int *startFile, int *NumFiles, int *MyIOGroup, int *NumIOGroups);
 static void get_units(char *fbase, double *L, long *Ntot, double *a);
 
 void comp_pot_snap(char *fbase) 
@@ -49,6 +49,7 @@ void comp_pot_snap(char *fbase)
   long id,ind;
   double time;
   double potfact;
+  int MyIOGroup,NumIOGroups,IOGroup;
   
   //init grid cell hash table
   GridCellHash *gch = init_gchash();
@@ -62,91 +63,105 @@ void comp_pot_snap(char *fbase)
   
   //check potential factors
   if(potfact == 0.0) {
-    fprintf(stderr,"%04ld: potfact is zero! potfact = %lg, a = %lg, mp %lg, L = %lg\n",ThisTask,potfact,a,mp,L);
+    fprintf(stderr,"%04d: potfact is zero! potfact = %lg, a = %lg, mp %lg, L = %lg\n",ThisTask,potfact,a,mp,L);
     fflush(stderr);
     assert(potfact != 0.0);
   }
   
   //first get the file decomp
-  get_partio_decomp(fbase,&startFile,&NumFiles);
+  get_partio_decomp(fbase,&startFile,&NumFiles,&MyIOGroup,&NumIOGroups);
   
   //read all parts and assign to buffer
   logProfileTag(PROFILETAG_PARTIO);
   time = -MPI_Wtime();
   if(ThisTask == 0)
     fprintf(stderr,"reading parts.\n");
-  if(NumFiles > 0)
-    for(file=startFile;file<startFile+NumFiles;++file)
-      {
-	//read parts
-	sprintf(fname,"%s.%d",fbase,file);
-	read_LGADGET(fname,&px,&py,&pz,NULL,&Np);
-	for(n=0;n<Np;++n)
-	  {
-	    px[n] *= rayTraceData.LengthConvFact;
-	    py[n] *= rayTraceData.LengthConvFact;
-	    pz[n] *= rayTraceData.LengthConvFact;
-	  }
-	
-	//assign to grid
-	for(n=0;n<Np;++n)
-	  {
-	    //now place in grid
-	    i = px[n]/dL;
-	    dx = px[n]/dL - i;
-	    ii = i + 1;
-	    i = i%NFFT;
-	    ii = ii%NFFT;
-	    
-	    j = py[n]/dL;
-	    dy = py[n]/dL - j;
-	    jj = j + 1;
-	    j = j%NFFT;
-	    jj = jj%NFFT;
-	    
-	    k = pz[n]/dL;
-	    dz = pz[n]/dL - k;
-	    kk = k + 1;
-	    k = k%NFFT;
-	    kk = kk%NFFT;
-	    
-	    id = (i*NFFT + j)*NFFT + k;
-	    ind = getid_gchash(gch,id);
-	    gch->GridCells[ind].val += (1.0 - dx)*(1.0 - dy)*(1.0 - dz);
-	    
-	    id = (i*NFFT + j)*NFFT + kk;
-	    ind = getid_gchash(gch,id);
-	    gch->GridCells[ind].val += (1.0 - dx)*(1.0 - dy)*dz;
-	    
-	    id = (i*NFFT + jj)*NFFT + k;
-	    ind = getid_gchash(gch,id);
-	    gch->GridCells[ind].val += (1.0 - dx)*dy*(1.0 - dz);
-	    
-	    id = (i*NFFT + jj)*NFFT + kk;
-	    ind = getid_gchash(gch,id);
-	    gch->GridCells[ind].val  += (1.0 - dx)*dy*dz;
-	    
-	    id = (ii*NFFT + j)*NFFT + k;
-	    ind = getid_gchash(gch,id);
-	    gch->GridCells[ind].val += dx*(1.0 - dy)*(1.0 - dz);
-	    
-	    id = (ii*NFFT + j)*NFFT + kk;
-	    ind = getid_gchash(gch,id);
-	    gch->GridCells[ind].val  += dx*(1.0 - dy)*dz;
-	    
-	    id = (ii*NFFT + jj)*NFFT + k;
-	    ind = getid_gchash(gch,id);
-	    gch->GridCells[ind].val += dx*dy*(1.0 - dz);
-	    
-	    id = (ii*NFFT + jj)*NFFT + kk;
-	    ind = getid_gchash(gch,id);
-	    gch->GridCells[ind].val += dx*dy*dz;
-	  }
-	
-	free(px);
-	free(py);
-	free(pz);
-      }
+  for(IOGroup=0;IOGroup<NumIOGroups;++IOGroup) {
+    if(MyIOGroup == IOGroup) {
+      
+      fprintf(stderr,"%04d: IO group = %d, start file = %d, num files = %d\n",ThisTask,IOGroup,startFile,NumFiles);
+      fflush(stderr);
+      
+      for(file=startFile;file<startFile+NumFiles;++file)
+	{
+	  //read parts
+	  sprintf(fname,"%s.%d",fbase,file);
+	  read_LGADGET(fname,&px,&py,&pz,NULL,&Np);
+	  for(n=0;n<Np;++n)
+	    {
+	      px[n] *= rayTraceData.LengthConvFact;
+	      py[n] *= rayTraceData.LengthConvFact;
+	      pz[n] *= rayTraceData.LengthConvFact;
+	    }
+	  
+	  //assign to grid
+	  for(n=0;n<Np;++n)
+	    {
+	      //now place in grid
+	      i = px[n]/dL;
+	      dx = px[n]/dL - i;
+	      ii = i + 1;
+	      i = i%NFFT;
+	      ii = ii%NFFT;
+	      
+	      j = py[n]/dL;
+	      dy = py[n]/dL - j;
+	      jj = j + 1;
+	      j = j%NFFT;
+	      jj = jj%NFFT;
+	      
+	      k = pz[n]/dL;
+	      dz = pz[n]/dL - k;
+	      kk = k + 1;
+	      k = k%NFFT;
+	      kk = kk%NFFT;
+	      
+	      id = (i*NFFT + j)*NFFT + k;
+	      ind = getid_gchash(gch,id);
+	      gch->GridCells[ind].val += (1.0 - dx)*(1.0 - dy)*(1.0 - dz);
+	      
+	      id = (i*NFFT + j)*NFFT + kk;
+	      ind = getid_gchash(gch,id);
+	      gch->GridCells[ind].val += (1.0 - dx)*(1.0 - dy)*dz;
+	      
+	      id = (i*NFFT + jj)*NFFT + k;
+	      ind = getid_gchash(gch,id);
+	      gch->GridCells[ind].val += (1.0 - dx)*dy*(1.0 - dz);
+	      
+	      id = (i*NFFT + jj)*NFFT + kk;
+	      ind = getid_gchash(gch,id);
+	      gch->GridCells[ind].val  += (1.0 - dx)*dy*dz;
+	      
+	      id = (ii*NFFT + j)*NFFT + k;
+	      ind = getid_gchash(gch,id);
+	      gch->GridCells[ind].val += dx*(1.0 - dy)*(1.0 - dz);
+	      
+	      id = (ii*NFFT + j)*NFFT + kk;
+	      ind = getid_gchash(gch,id);
+	      gch->GridCells[ind].val  += dx*(1.0 - dy)*dz;
+	      
+	      id = (ii*NFFT + jj)*NFFT + k;
+	      ind = getid_gchash(gch,id);
+	      gch->GridCells[ind].val += dx*dy*(1.0 - dz);
+	      
+	      id = (ii*NFFT + jj)*NFFT + kk;
+	      ind = getid_gchash(gch,id);
+	      gch->GridCells[ind].val += dx*dy*dz;
+	    }
+	  
+	  free(px);
+	  free(py);
+	  free(pz);
+	  
+	  fprintf(stderr,"%04d: IO group = %d, file = %d\n",ThisTask,IOGroup,file);
+	  fflush(stderr);
+	}
+      
+      ///////////////////////////////
+      MPI_Barrier(MPI_COMM_WORLD);
+      ///////////////////////////////	
+    }
+  }
   
   //manage mem for hash
   minmem_gchash(gch);
@@ -262,7 +277,7 @@ void comp_pot_snap(char *fbase)
       for(k=0;k<2*(NFFT/2+1);++k)
 	if(fftwrin[(i*NFFT + j)*(2*(NFFT/2+1)) + k] != 0.0) m = 1;
   if(m != 1 && N0Local > 0) {
-    fprintf(stderr,"%04ld: all density cells are zero in FFTW real array in FFT solver!\n",ThisTask);
+    fprintf(stderr,"%04d: all density cells are zero in FFTW real array in FFT solver!\n",ThisTask);
     fflush(stderr);
     assert(m == 1);
   }
@@ -292,7 +307,7 @@ void comp_pot_snap(char *fbase)
       for(k=0;k<(NFFT/2+1);++k)
 	if( fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][0] != 0.0 || fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][1] != 0.0) m = 1;
   if(m != 1 && N0Local > 0) {
-    fprintf(stderr,"%04ld: all complex density cells are zero in FFTW real array in FFT solver!\n",ThisTask);
+    fprintf(stderr,"%04d: all complex density cells are zero in FFTW real array in FFT solver!\n",ThisTask);
     fflush(stderr);
     assert(m == 1);
   }
@@ -350,7 +365,7 @@ void comp_pot_snap(char *fbase)
 	    
 	    //check factor for potential
 	    if(potfact*grfcn/w/w == 0.0) {
-	      fprintf(stderr,"%04ld: greens plus CIC factors are zero! total = %lg, greens = %lg, cic win = %lg, potfact = %lg\n",ThisTask,potfact*grfcn/w/w,grfcn,w,potfact);
+	      fprintf(stderr,"%04d: greens plus CIC factors are zero! total = %lg, greens = %lg, cic win = %lg, potfact = %lg\n",ThisTask,potfact*grfcn/w/w,grfcn,w,potfact);
 	      fflush(stderr);
 	      assert(potfact*grfcn/w/w != 0.0);
 	    }
@@ -373,7 +388,7 @@ void comp_pot_snap(char *fbase)
       for(k=0;k<(NFFT/2+1);++k)
 	if(fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][0] != 0.0 || fftwcout[(i*NFFT+j)*(NFFT/2+1)+k][1] != 0.0) m = 1;
   if(m != 1 && N0Local > 0) {
-    fprintf(stderr,"%04ld: all complex potential cells are zero in FFTW real array in FFT solver!\n",ThisTask);
+    fprintf(stderr,"%04d: all complex potential cells are zero in FFTW real array in FFT solver!\n",ThisTask);
     fflush(stderr);
     assert(m == 1);
   }
@@ -391,7 +406,7 @@ void comp_pot_snap(char *fbase)
       for(k=0;k<2*(NFFT/2+1);++k)
 	if(fftwrin[(i*NFFT + j)*(2*(NFFT/2+1)) + k] != 0.0) m = 1;
   if(m != 1 && N0Local > 0) {
-    fprintf(stderr,"%04ld: all potential cells are zero in FFTW real array in FFT solver!\n",ThisTask);
+    fprintf(stderr,"%04d: all potential cells are zero in FFTW real array in FFT solver!\n",ThisTask);
     fflush(stderr);
     assert(m == 1);
   }
@@ -421,10 +436,10 @@ static void get_units(char *fbase, double *L, long *Ntot, double *a)
   MPI_Bcast(a,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 }
 
-static void get_partio_decomp(char *fbase, int *startFile, int *NumFiles) 
+static void get_partio_decomp(char *fbase, int *startFile, int *NumFiles, int *MyIOGroup, int *NumIOGroups)
 {
   char fname[MAX_FILENAME];
-  int Nf,i;
+  int Nf;
   int Nfpertask;
   
   sprintf(fname,"%s.0",fbase);
@@ -457,6 +472,15 @@ static void get_partio_decomp(char *fbase, int *startFile, int *NumFiles)
 	  *NumFiles = 0;
 	}
     }
+  
+  //do IO groups
+  *NumIOGroups = NTasks/rayTraceData.NumFilesIOInParallel;
+  if(rayTraceData.NumFilesIOInParallel*(*NumIOGroups) < NTasks)
+    *NumIOGroups += 1;
+  *MyIOGroup = ThisTask/rayTraceData.NumFilesIOInParallel;
+  
+  if(NumFiles == 0)
+    *MyIOGroup = -1;
 }
 
 void init_ffts(void) 
@@ -507,7 +531,7 @@ void alloc_and_plan_ffts(void)
 #endif
       
     if(fftwrin == NULL) {
-      fprintf(stderr,"%04ld: fftwrin is NULL! AllocLocal = %ld, NFFT = %ld\n",ThisTask,AllocLocal,NFFT);
+      fprintf(stderr,"%04d: fftwrin is NULL! AllocLocal = %ld, NFFT = %ld\n",ThisTask,AllocLocal,NFFT);
       fflush(stderr);
       assert(fftwrin != NULL);
     }
@@ -529,13 +553,13 @@ void alloc_and_plan_ffts(void)
 #endif
   
   if(fplan == NULL) {
-    fprintf(stderr,"%04ld: forward plan failed!\n",ThisTask);
+    fprintf(stderr,"%04d: forward plan failed!\n",ThisTask);
     fflush(stderr);
     assert(fplan != NULL);
   }
   
   if(bplan == NULL) {
-    fprintf(stderr,"%04ld: backward plan failed!\n",ThisTask);
+    fprintf(stderr,"%04d: backward plan failed!\n",ThisTask);
     fflush(stderr);
     assert(bplan != NULL);
   }

@@ -75,7 +75,6 @@ void threedpot_poissondriver(void)
   
   //solve for potential
   double t0;
-  double tdiff;
   /*FIXME comment out until bug in FFTW is fixed
   double pfacs[7] = {1.0,3.0,5.0,7.0,9.0,11.0,13.0};
   long Npfacs = 7;
@@ -121,7 +120,7 @@ void threedpot_poissondriver(void)
     }
     rayTraceData.NFFT = bsize;
     if(ThisTask == 0) {
-      fprintf(stderr,"raw NFFT (of not crazy prime factor size) = %ld (wanted %ld), cell size = %.2lf Mpc/h, L = %.2lf Mpc/h.\n",rayTraceData.NFFT,
+      fprintf(stderr,"raw NFFT (of not crazy prime factor size) = %ld (wanted %d), cell size = %.2lf Mpc/h, L = %.2lf Mpc/h.\n",rayTraceData.NFFT,
 	      (int) (L/(rayTraceData.planeRad*rayTraceData.minSL/2.0)),L/rayTraceData.NFFT,L);
       fflush(stderr);
     }
@@ -134,7 +133,7 @@ void threedpot_poissondriver(void)
     init_ffts();
     if(ThisTask == 0) {
       fprintf(stderr,"min smooth length = %.2lg rad.\n",rayTraceData.minSL);
-      fprintf(stderr,"NFFT = %ld (wanted %ld), cell size = %.2lf Mpc/h, L = %.2lf Mpc/h.\n",NFFT,
+      fprintf(stderr,"NFFT = %ld (wanted %d), cell size = %.2lf Mpc/h, L = %.2lf Mpc/h.\n",NFFT,
 	      (int) (L/(rayTraceData.planeRad*rayTraceData.minSL/2.0)),L/NFFT,L);
       fflush(stderr);
     }
@@ -153,7 +152,7 @@ void threedpot_poissondriver(void)
   
   t0 = -MPI_Wtime();
   if(ThisTask == 0) {
-    fprintf(stderr,"doing interp and integral to rays.\n",currFTTsnap);
+    fprintf(stderr,"doing interp and integral to rays.\n");
     fflush(stderr);
   }
   
@@ -319,7 +318,7 @@ void threedpot_poissondriver(void)
 	  }
 	
 	if(!((offset >= 0 && Nrecv > 0) || (offset == -1 && Nrecv == 0))) {
-	  fprintf(stderr,"%04ld: %d->%d Nrecv = %ld, offset = %ld, tot = %ld\n",ThisTask,sendTask,recvTask,Nrecv,offset,gch->NumGridCells);
+	  fprintf(stderr,"%04d: %d->%d Nrecv = %ld, offset = %ld, tot = %ld\n",ThisTask,sendTask,recvTask,Nrecv,offset,gch->NumGridCells);
 	  fflush(stderr);
 	}
 	assert((offset >= 0 && Nrecv > 0) || (offset == -1 && Nrecv == 0));
@@ -345,7 +344,7 @@ void threedpot_poissondriver(void)
 	      id2ijk(gbuff[m].id,NFFT,&i,&j,&k);
 	      
 	      if(!(i >= N0LocalStart && i < N0LocalStart+N0Local)) {
-		fprintf(stderr,"%04ld: send != recv slab assertion going to fail! %s:%d\n",ThisTask,__FILE__,__LINE__);
+		fprintf(stderr,"%04d: send != recv slab assertion going to fail! %s:%d\n",ThisTask,__FILE__,__LINE__);
 		fflush(stderr);
 	      }
 	      assert(i >= N0LocalStart && i < N0LocalStart+N0Local);
@@ -366,7 +365,7 @@ void threedpot_poissondriver(void)
 	    id2ijk(gch->GridCells[m+offset].id,NFFT,&i,&j,&k);
 	    
 	    if(!(i >= N0LocalStart && i < N0LocalStart+N0Local)) {
-	      fprintf(stderr,"%04ld: send == recv slab assertion going to fail! %s:%d\n",ThisTask,__FILE__,__LINE__);
+	      fprintf(stderr,"%04d: send == recv slab assertion going to fail! %s:%d\n",ThisTask,__FILE__,__LINE__);
 	      fflush(stderr);
 	    }
 	    
@@ -385,7 +384,7 @@ void threedpot_poissondriver(void)
 	for(k=0;k<2*(NFFT/2+1);++k)
 	  if(fftwrin[(i*NFFT + j)*(2*(NFFT/2+1)) + k] != 0.0) m = 1;
     if(m != 1 && N0Local > 0) {
-      fprintf(stderr,"%04ld: all potential cells are zero in FFTW real array!\n",ThisTask);
+      fprintf(stderr,"%04d: all potential cells are zero in FFTW real array!\n",ThisTask);
       fflush(stderr);
       assert(m == 1);
     }
@@ -393,7 +392,7 @@ void threedpot_poissondriver(void)
     for(i=0;i<gch->NumGridCells;++i)
       if(gch->GridCells[i].val != 0.0) m = 1;
     if(m != 1 && gch->NumGridCells > 0) {
-      fprintf(stderr,"%04ld: all potential cells are zero in gch!\n",ThisTask);
+      fprintf(stderr,"%04d: all potential cells are zero in gch!\n",ThisTask);
       fflush(stderr);
       assert(m == 1);
     }
@@ -1113,7 +1112,7 @@ void threedpot_poissondriver(void)
   
   t0 += MPI_Wtime();
   if(ThisTask == 0) {
-    fprintf(stderr,"did interp and integral to rays in %lf seconds.\n",currFTTsnap,t0);
+    fprintf(stderr,"did interp and integral to rays in %lf seconds.\n",t0);
     fflush(stderr);
   }
 }

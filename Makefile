@@ -19,7 +19,7 @@ OPTS += -DTHREEDPOT #define to use 3D potential to move rays
 #OPTS += -DDEBUG_IO_DD #output debug info for domain decomp
 #OPTS += -DDEBUG -DDEBUG_LEVEL=0 #leave undefined for no debugging - 0,1, and 2 give progressively more output to stderr
 #OPTS += -DTEST_CODE #define to run some basic test code
-#OPTS += -DMEMWATCH -DMEMWATCH_STDIO #define to test for memory leaks, out of bounds, etc. for memory used in this code
+OPTS += -DMEMWATCH -DMEMWATCH_STDIO #define to test for memory leaks, out of bounds, etc. for memory used in this code
 #OPTS += -DUSEMEMCHECK #define to test for memory leaks, out of bounds, etc. for memory used in this code
 #OPTS += -DDMALLOC -DDMALLOC_FUNC_CHECK #define to test for memory leaks, out of bounds, etc. for memory used in this code
 #OPTS += -DDEF_GSL_IEEE_ENV #define the GSL IEEE environment variables - for debugging
@@ -48,7 +48,7 @@ endif
 
 ifeq ($(COMP),"orange")
 CC          =  mpicc
-OPTIMIZE    =  -g -O3 #-Wall -wd981 #-wd1419 -wd810
+OPTIMIZE    =  -g -O0 -Wall #-wd981 #-wd1419 -wd810
 GSLI        =  -I$(SLAC_GSL_DIR)/include
 GSLL        =  -L$(SLAC_GSL_DIR)/lib
 FFTWI       =  -I$(MATTS_FFTW3_DIR)/include 
