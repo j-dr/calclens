@@ -8,10 +8,10 @@ OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
 OPTS += -DTHREEDPOT #define to use 3D potential to move rays
 
 #select your computer
-COMP="orange"
+#COMP="orange"
 #COMP="orion-gcc"
 #COMP="midway"
-#COMP="home"
+COMP="home"
 
 ################################
 #edit/add to match your machine
@@ -23,8 +23,8 @@ OPTIMIZE    =  -g -O3 #-Wall -wd981 #-wd1419 -wd810
 
 ifeq ($(COMP),"home")
 CC          =  mpicc
-EXTRACFLAGS =  -I/opt/local/include
-EXTRACLIB   =  -L/opt/local/lib
+#EXTRACFLAGS =  -I/opt/local/include
+#EXTRACLIB   =  -L/opt/local/lib
 endif
 
 ifeq ($(COMP),"orange")

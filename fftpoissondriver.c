@@ -109,7 +109,7 @@ void threedpot_poissondriver(void)
     rayTraceData.NFFT = L/(rayTraceData.planeRad*rayTraceData.minSL/2.0);
     lgb2 = (int) (log(rayTraceData.NFFT)/log(2.0));
     bsize = pow(2.0,lgb2);
-    bdiff = fabs(bsize -  rayTraceData.NFFT);
+    bdiff = labs(bsize -  rayTraceData.NFFT);
     for(dlgb2=-4;dlgb2<=1;++dlgb2) {
       for(pfacind=0;pfacind<Npfacs;++pfacind) {
 	if(fabs(pow(2.0,lgb2+dlgb2)*pfacs[pfacind] -  rayTraceData.NFFT) < bdiff) {

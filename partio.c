@@ -4,14 +4,14 @@
 #include <assert.h>
 #include <fftw3.h>
 #include <mpi.h>
-#include <hdf5.h>
-#include <hdf5_hl.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_sort_long.h>
 #include <fitsio.h>
 #include <unistd.h>
 
 #include "raytrace.h"
+#include "read_lensplanes_hdf5.h"
+#include "read_lensplanes_pixLC.h"
 
 static int compPartNest(const void *a, const void *b)
 {
@@ -38,6 +38,28 @@ static int compNCTGTask(const void *a, const void *b)
     return 0;
 }
 
+/* generic io interface */
+void readRayTracingPlaneAtPeanoInds(long planeNum, long HEALPixOrder, long *PeanoIndsToRead, long NumPeanoIndsToRead, Part **LCParts, long *NumLCParts)
+{
+  void (*read_lens_plane)(long, long, long *, long, Part **, long *) = NULL;
+  
+  if(strcmp_caseinsens(rayTraceData.LensPlaneType,"HDF5") == 0)
+    {
+      read_lens_plane = &readRayTracingPlaneAtPeanoInds_HDF5;
+    } 
+  else if(strcmp_caseinsens(rayTraceData.LensPlaneType,"pixLC") == 0)
+    {
+      read_lens_plane = &readRayTracingPlaneAtPeanoInds_pixLC;      
+    }
+  else 
+    {
+      fprintf(stderr,"%d: readRayTracingPlaneAtPeanoInds - could not find I/O code for lens plane type '%s'!\n",ThisTask,rayTraceData.LensPlaneType);
+      MPI_Abort(MPI_COMM_WORLD,666);      
+    }
+  
+  read_lens_plane(planeNum,HEALPixOrder,PeanoIndsToRead,NumPeanoIndsToRead,LCParts,NumLCParts);
+}
+
 /* reads light cone particles into bundleCells for the given planeNum */
 void read_lcparts_at_planenum(long planeNum)
 {
@@ -45,10 +67,6 @@ void read_lcparts_at_planenum(long planeNum)
   long *PeanoIndsToRead;
   long NumPeanoIndsToRead;
     
-  char file_name[MAX_FILENAME];
-  hid_t file_id;
-  herr_t status;
-
   long bundleNest;
   double vec[3];
   
@@ -97,16 +115,7 @@ void read_lcparts_at_planenum(long planeNum)
 	{
 	  readFromPlane = 1;
 	  
-	  sprintf(file_name,"%s/%s%04ld.h5",rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,planeNum);
-	  file_id = H5Fopen(file_name,H5F_ACC_RDONLY,H5P_DEFAULT);
-	  if(file_id < 0)
-	    {
-	      fprintf(stderr,"%d: lens plane %ld could not be opened!\n",ThisTask,planeNum);
-	      assert(0);
-	    }
-	  readRayTracingPlaneAtPeanoInds(&file_id,rayTraceData.bundleOrder,PeanoIndsToRead,NumPeanoIndsToRead,&lensPlaneParts,&NlensPlaneParts);
-	  status = H5Fclose(file_id);
-	  assert(status >= 0);
+	  readRayTracingPlaneAtPeanoInds(planeNum,rayTraceData.bundleOrder,PeanoIndsToRead,NumPeanoIndsToRead,&lensPlaneParts,&NlensPlaneParts);
 	  free(PeanoIndsToRead);
 	  
 	  if(NlensPlaneParts > 0)
@@ -377,18 +386,8 @@ void read_lcparts_at_planenum(long planeNum)
       if(ISSETBITFLAG(bundleCells[i].active,PARTBUFF_BUNDLECELL) && bundleCellsNest2RestrictedPeanoInd[i] < 0)
 	{
 	  //read parts from file
-	  peanoInd = nest2peano(i,rayTraceData.bundleOrder);
-	  
-	  sprintf(file_name,"%s/%s%04ld.h5",rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,planeNum);
-          file_id = H5Fopen(file_name,H5F_ACC_RDONLY,H5P_DEFAULT);
-          if(file_id < 0)
-            {
-              fprintf(stderr,"%d: lens plane %ld could not be opened!\n",ThisTask,planeNum);
-              assert(0);
-            }
-          readRayTracingPlaneAtPeanoInds(&file_id,rayTraceData.bundleOrder,&peanoInd,NumPeanoIndsToRead,&buffParts,&NumBuffParts);
-          status = H5Fclose(file_id);
-          assert(status >= 0);
+	  peanoInd = nest2peano(i,rayTraceData.bundleOrder);	  
+          readRayTracingPlaneAtPeanoInds(planeNum,rayTraceData.bundleOrder,&peanoInd,NumPeanoIndsToRead,&buffParts,&NumBuffParts);
 	  
 	  //now add to current parts vector if needed
 	  if(NumBuffParts > 0)
@@ -524,16 +523,7 @@ void read_lcparts_at_planenum_fullsky_partdist(long planeNum)
 	{
 	  readFromPlane = 1;
 	  
-	  sprintf(file_name,"%s/%s%04ld.h5",rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,planeNum);
-	  file_id = H5Fopen(file_name,H5F_ACC_RDONLY,H5P_DEFAULT);
-	  if(file_id < 0)
-	    {
-	      fprintf(stderr,"%d: lens plane %ld could not be opened!\n",ThisTask,planeNum);
-	      assert(0);
-	    }
-	  readRayTracingPlaneAtPeanoInds(&file_id,rayTraceData.bundleOrder,PeanoIndsToRead,NumPeanoIndsToRead,&lensPlaneParts,&NlensPlaneParts);
-	  status = H5Fclose(file_id);
-	  assert(status >= 0);
+	  readRayTracingPlaneAtPeanoInds(planeNum,rayTraceData.bundleOrder,PeanoIndsToRead,NumPeanoIndsToRead,&lensPlaneParts,&NlensPlaneParts);
 	  free(PeanoIndsToRead);
 	  
 	  if(NlensPlaneParts > 0)
@@ -625,16 +615,7 @@ void read_lcparts_at_planenum_all(long planeNum)
 	{
 	  readFromPlane = 1;
 	  
-	  sprintf(file_name,"%s/%s%04ld.h5",rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,planeNum);
-	  file_id = H5Fopen(file_name,H5F_ACC_RDONLY,H5P_DEFAULT);
-	  if(file_id < 0)
-	    {
-	      fprintf(stderr,"%d: lens plane %ld could not be opened!\n",ThisTask,planeNum);
-	      assert(0);
-	    }
-	  readRayTracingPlaneAtPeanoInds(&file_id,rayTraceData.bundleOrder,PeanoIndsToRead,NumPeanoIndsToRead,&lensPlaneParts,&NlensPlaneParts);
-	  status = H5Fclose(file_id);
-	  assert(status >= 0);
+	  readRayTracingPlaneAtPeanoInds(planeNum,rayTraceData.bundleOrder,PeanoIndsToRead,NumPeanoIndsToRead,&lensPlaneParts,&NlensPlaneParts);
 	  free(PeanoIndsToRead);
 	  
 	  if(NlensPlaneParts > 0)

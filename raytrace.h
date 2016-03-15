@@ -139,6 +139,7 @@ typedef struct {
   long NumLensPlanes;
   char LensPlanePath[MAX_FILENAME];
   char LensPlaneName[MAX_FILENAME];
+  char LensPlaneType[MAX_FILENAME];
   char HEALPixLensPlaneMapPath[MAX_FILENAME];
   char HEALPixLensPlaneMapName[MAX_FILENAME];
   long HEALPixLensPlaneMapOrder;
@@ -351,13 +352,12 @@ void rot_ray_radec2ang(HEALPixRay *ray);
 void paratrans_ray_curr2obs(HEALPixRay *ray);
 void paratrans_ray_obs2curr(HEALPixRay *ray);
 
-/* in read_lensplanes_hdf5.c */
-void readRayTracingPlaneAtPeanoInds(hid_t *file_id, long HEALPixOrder, long *PeanoIndsToRead, long NumPeanoIndsToRead, Part **LCParts, long *NumLCParts);
-
 /* in rayio.c */
 void write_rays(void);
 
 /* in partio.c */
+/* in read_lensplanes_hdf5.c */
+void readRayTracingPlaneAtPeanoInds(long planeNum, long HEALPixOrder, long *PeanoIndsToRead, long NumPeanoIndsToRead, Part **LCParts, long *NumLCParts);
 void read_lcparts_at_planenum_all(long planeNum);
 void read_lcparts_at_planenum_fullsky_partdist(long planeNum);
 void read_lcparts_at_planenum(long planeNum);
@@ -395,6 +395,9 @@ void destroy_gals(void);
 void destroy_parts(void);
 
 /* in ioutils.c */
+int strcmp_caseinsens(const char *s1, const char *s2);
+void getPeanoIndsToReadFromFile(long HEALPixOrder, long *PeanoIndsToRead, long NumPeanoIndsToRead,
+                                long FileHEALPixOrder, long **FilePeanoIndsToRead, long *NumFilePeanoIndsToRead);
 long fnumlines(FILE *fp);
 FILE *fopen_retry(const char *filename, const char *mode);
 

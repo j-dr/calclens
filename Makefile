@@ -5,7 +5,7 @@
 OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
 #OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
 #OPTS += -DSHTONLY #set to only use SHT for lensing
-OPTS += -DTHREEDPOT #define to use 3D potential to move rays
+#OPTS += -DTHREEDPOT #define to use 3D potential to move rays
 
 #testing options
 #OPTS += -DNFWHALOTEST #define to write lensplanes and do test with an NFW halo - need POINTMASSTEST defined as well 
@@ -19,7 +19,7 @@ OPTS += -DTHREEDPOT #define to use 3D potential to move rays
 #OPTS += -DDEBUG_IO_DD #output debug info for domain decomp
 #OPTS += -DDEBUG -DDEBUG_LEVEL=0 #leave undefined for no debugging - 0,1, and 2 give progressively more output to stderr
 #OPTS += -DTEST_CODE #define to run some basic test code
-OPTS += -DMEMWATCH -DMEMWATCH_STDIO #define to test for memory leaks, out of bounds, etc. for memory used in this code
+#OPTS += -DMEMWATCH -DMEMWATCH_STDIO #define to test for memory leaks, out of bounds, etc. for memory used in this code
 #OPTS += -DUSEMEMCHECK #define to test for memory leaks, out of bounds, etc. for memory used in this code
 #OPTS += -DDMALLOC -DDMALLOC_FUNC_CHECK #define to test for memory leaks, out of bounds, etc. for memory used in this code
 #OPTS += -DDEF_GSL_IEEE_ENV #define the GSL IEEE environment variables - for debugging
@@ -27,10 +27,10 @@ OPTS += -DMEMWATCH -DMEMWATCH_STDIO #define to test for memory leaks, out of bou
 #OPTS += -DCICSHTDENS #define to use CIC interp for SHT step
 
 #select your computer
-COMP="orange"
+#COMP="orange"
 #COMP="orion-gcc"
 #COMP="midway"
-#COMP="home"
+COMP="home"
 
 ################################
 #edit/add to match your machine
@@ -42,8 +42,8 @@ OPTIMIZE    =  -g -O3 #-Wall -wd981 #-wd1419 -wd810
 
 ifeq ($(COMP),"home")
 CC          =  mpicc
-EXTRACFLAGS =  -I/opt/local/include
-EXTRACLIB   =  -L/opt/local/lib
+#EXTRACFLAGS =  -I/opt/local/include
+#EXTRACLIB   =  -L/opt/local/lib
 endif
 
 ifeq ($(COMP),"orange")
@@ -122,7 +122,7 @@ OBJS = $(MEMWATCH) $(TESTCODE) raytrace.o raytrace_utils.o healpix_utils.o confi
 	healpix_plmgen.o healpix_shtrans.o shtpoissonsolve.o map_shuffle.o alm2map_transpose_mpi.o partsmoothdens.o \
 	gridsearch.o loadbalance.o alm2allmaps_transpose_mpi.o map2alm_transpose_mpi.o mgpoissonsolve.o mgpoissonsolve_utils.o \
 	poissondrivers.o fftpoissonsolve.o inthash.o ioutils.o lgadgetio.o fftpoissondriver.o \
-	gridcellhash.o
+	gridcellhash.o read_lensplanes_pixLC.o 
 
 EXEC = raytrace
 TEST = raytrace
@@ -134,7 +134,9 @@ $(EXEC): $(OBJS1)
 	$(CLINK) $(CFLAGS) -o $@ $(OBJS1) $(CLIB)
 
 $(OBJS1): healpix_shtrans.h healpix_utils.h profile.h inthash.h fftpoissonsolve.h \
-	raytrace.h mgpoissonsolve.h lgadgetio.h gridcellhash.h Makefile
+	raytrace.h mgpoissonsolve.h lgadgetio.h gridcellhash.h read_lensplanes_hdf5.h \
+	read_lensplanes_pixLC.h \
+	Makefile
 
 .PHONY : clean
 clean: 

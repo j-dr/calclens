@@ -13,8 +13,6 @@
 
 #include "raytrace.h"
 
-static int strcmp_caseinsens(const char *s1, const char *s2);
-
 #define ASSIGN_CONFIG_STR(TAG) if(strcmp_caseinsens(tag,#TAG) == 0) { strcpy(rayTraceData.TAG,val); fprintf(usedfp,"%s %s\n",#TAG,rayTraceData.TAG); continue; }
 #define ASSIGN_CONFIG_LONG(TAG) if(strcmp_caseinsens(tag,#TAG) == 0) { rayTraceData.TAG = atol(val); fprintf(usedfp,"%s %ld\n",#TAG,rayTraceData.TAG); continue; }
 #define ASSIGN_CONFIG_DOUBLE(TAG) if(strcmp_caseinsens(tag,#TAG) == 0) { rayTraceData.TAG = atof(val); fprintf(usedfp,"%s %lg\n",#TAG,rayTraceData.TAG); continue; }
@@ -32,6 +30,7 @@ void read_config(char *filename)
   rayTraceData.HEALPixLensPlaneMapPath[0] = '\0';
   rayTraceData.HEALPixLensPlaneMapName[0] = '\0';
   rayTraceData.HEALPixLensPlaneMapOrder = -1;
+  rayTraceData.LensPlaneType[0] = '\0';
   rayTraceData.UseHEALPixLensPlaneMaps = 0;
   rayTraceData.RayOutputName[0] = '\0';
   rayTraceData.GalsFileList[0] = '\0';
@@ -124,6 +123,7 @@ void read_config(char *filename)
       ASSIGN_CONFIG_LONG(NumLensPlanes);
       ASSIGN_CONFIG_STR(LensPlanePath);
       ASSIGN_CONFIG_STR(LensPlaneName);
+      ASSIGN_CONFIG_STR(LensPlaneType);
       
       ASSIGN_CONFIG_STR(HEALPixLensPlaneMapPath);
       ASSIGN_CONFIG_STR(HEALPixLensPlaneMapName);
@@ -153,7 +153,8 @@ void read_config(char *filename)
       ASSIGN_CONFIG_STR(GalOutputName);
       ASSIGN_CONFIG_LONG(NumGalOutputFiles);
 
-      //fprintf(stderr,"Tag-value pair ('%s','%s') not found in config file '%s'!\n",tag,val,filename);
+      fprintf(stderr,"Tag-value pair ('%s','%s') not found in config file '%s'!\n",tag,val,filename);
+      fflush(stderr);
       //assert(0);
     }
   
@@ -210,47 +211,4 @@ void read_config(char *filename)
   if(rayTraceData.galImageSearchRad < GRIDSEARCH_RADIUS_ARCMIN/60.0/180.0*M_PI)
     rayTraceData.galImageSearchRad = GRIDSEARCH_RADIUS_ARCMIN/60.0/180.0*M_PI; 
   rayTraceData.galImageSearchRayBufferRad = sqrt(4.0*M_PI/order2npix(rayTraceData.bundleOrder)) + RAYBUFF_RADIUS_ARCMIN/60.0/180.0*M_PI;
-}
-
-//routine to do case insens. string comp.
-static int strcmp_caseinsens(const char *s1, const char *s2)
-{
-  int N,i,equal;
-  
-  if(strlen(s1) != strlen(s2))
-    return 1;
-  N = strlen(s1);
-
-#ifdef DEBUG
-#if DEBUG_LEVEL > 2  
-  if(ThisTask == 0)
-    fprintf(stderr,"s1 = '%s', s2 = '%s'\n",s1,s2);
-#endif
-#endif
-
-  equal = 0;
-  for(i=0;i<N;++i)
-    {
-#ifdef DEBUG
-#if DEBUG_LEVEL > 2
-      if(ThisTask == 0)
-        fprintf(stderr,"s1[i] = '%c', s2[i] = '%c'\n",tolower(s1[i]),tolower(s2[i]));
-#endif
-#endif
-
-      if(tolower(s1[i]) != tolower(s2[i]))
-        {
-          equal = 1;
-          break;
-        }
-    }
-
-#ifdef DEBUG
-#if DEBUG_LEVEL > 2  
-  if(ThisTask == 0)
-    fprintf(stderr,"equal %d (0 is true, 1 is false, weird)\n",equal);
-#endif
-#endif
-
-  return equal;
 }

@@ -37,7 +37,8 @@ void make_lensplane_map(long planeNum)
   double r,theta,phi;
   long ring;
   FILE *fp;
-  
+
+  /* read info about file */  
   sprintf(file_name,"%s/%s%04ld.h5",rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,planeNum);
   file_id = H5Fopen(file_name,H5F_ACC_RDONLY,H5P_DEFAULT);
   if(file_id < 0)
@@ -45,15 +46,15 @@ void make_lensplane_map(long planeNum)
       fprintf(stderr,"%d: lens plane %ld could not be opened!\n",ThisTask,planeNum);
       assert(0);
     }
-
-  /* read info about file */
   status = H5LTread_dataset(file_id,"/HEALPixOrder",H5T_NATIVE_LONG,&FileHEALPixOrder);
   assert(status >= 0);
   FileNPix = order2npix(FileHEALPixOrder);
   NumLCPartsInPix = (long*)malloc(sizeof(long)*FileNPix);
   status = H5LTread_dataset(file_id,"/NumLCPartsInPix",H5T_NATIVE_LONG,NumLCPartsInPix);
   assert(status >= 0);
-  
+  status = H5Fclose(file_id);
+  assert(status >= 0);
+    
   map = (float*)malloc(sizeof(float)*Npix);
   assert(map != NULL);
   totmap = (float*)malloc(sizeof(float)*Npix);
@@ -73,7 +74,7 @@ void make_lensplane_map(long planeNum)
       PeanoIndsToRead = i;
       NumPeanoIndsToRead = 1;
       
-      readRayTracingPlaneAtPeanoInds(&file_id,FileHEALPixOrder,&PeanoIndsToRead,NumPeanoIndsToRead,&Parts,&NumParts);
+      readRayTracingPlaneAtPeanoInds_HDF5(planeNum,FileHEALPixOrder,&PeanoIndsToRead,NumPeanoIndsToRead,&Parts,&NumParts);
       //fprintf(stderr,"%d: NumParts = %ld, NumLCPartsInPix = %ld\n",ThisTask,NumParts,NumLCPartsInPix[i]);
       
       assert(NumParts == NumLCPartsInPix[i]);
@@ -100,9 +101,6 @@ void make_lensplane_map(long planeNum)
       
       free(Parts);
     }
-  
-  status = H5Fclose(file_id);
-  assert(status >= 0);
   
   free(NumLCPartsInPix);
   

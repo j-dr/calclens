@@ -164,7 +164,7 @@ long fnumlines(FILE *fp);
 /* in makemaps.c */
 void make_lensplane_map(long planeNum);
 
-/* in read_lensplanes_hdf5.c */
-void readRayTracingPlaneAtPeanoInds(hid_t *file_id, long HEALPixOrder, long *PeanoIndsToRead, long NumPeanoIndsToRead, Part **LCParts, long *NumLCParts);
+/* in ../read_lensplanes_hdf5.c */
+void readRayTracingPlaneAtPeanoInds_HDF5(long planeNum, long HEALPixOrder, long *PeanoIndsToRead, long NumPeanoIndsToRead, Part **LCParts, long *NumLCParts);
 
 #endif /* _RAYTRACE_ */

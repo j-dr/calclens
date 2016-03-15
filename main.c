@@ -8,6 +8,9 @@
 #include <assert.h>
 #include <fftw3.h>
 #include <mpi.h>
+#ifdef THREEDPOT
+#include <fftw3-mpi.h>
+#endif
 #include <hdf5.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_sort_long.h>

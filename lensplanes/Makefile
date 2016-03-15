@@ -91,9 +91,9 @@ TESTCODE=test_code.o
 endif
 
 OBJS = $(MEMWATCH) $(TESTCODE) config.o ../cosmocalc.o globalvars.o \
-	../healpix_utils.o ioutils.o lightconeio.o make_lensplanes_hdf5.o \
+	../healpix_utils.o lightconeio.o make_lensplanes_hdf5.o \
 	make_lensplanes_pointmass_test.o makemaps.o profile.o \
-	../read_lensplanes_hdf5.o
+	../read_lensplanes_hdf5.o ../ioutils.o
 
 EXEC = makelensplanes
 TEST = makelensplanes
@@ -104,7 +104,7 @@ OBJS1=$(OBJS) main.o
 $(EXEC): $(OBJS1)
 	$(CLINK) $(CFLAGS) -o $@ $(OBJS1) $(CLIB)
 
-$(OBJS1): ../healpix_utils.h  profile.h  raytrace.h Makefile
+$(OBJS1): ../healpix_utils.h  profile.h  raytrace.h ../read_lensplanes_hdf5.h Makefile
 
 .PHONY : clean
 clean: 
