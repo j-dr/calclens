@@ -1,0 +1,56 @@
+/////////////////////////////////////////////
+Source Layout
+/////////////////////////////////////////////
+
+Main routines:
+main.c - base routine that either starts ray tracing or makes lens planes
+raytrace.h - global header file with most variable defs and prototypes
+raytrace.c - main driver routine for ray tracing
+
+Utilities and other steps:
+raytrace_utils.c - utility routines for ray tracing
+config.c - reads config files
+cosmocalc.c - does cosmological calculations
+globalvars.c - contains defs of all global vars
+loadbalance.c - does load balancing (not currently used) 
+rayprop.c - propagates rays from lens plane to lens plane
+partsmoothdens.c - has particle smoothing kernels, sets smoothing lengths
+rot_paratrans.c - does parallel transport and rotations on sphere
+gridsearch.c - does grid search for galaxy images
+nnbrs_healpixtree.c - fast nearest neighbors finding on the sphere
+profile.h - header for profiling library for code
+profile.c - profiling routines for code
+
+Poisson Solvers:
+shtpoissonsolve.c - does SHT solution to Poisson equation
+map_shuffle.c - utility used by SHT Poisson solver to change map layout
+mgpoissonsolve.c - does MG solution to Poisson equation
+mgpoissonsolve_utils.c - has base MG routines
+mgpoissonsolve.h - header file for mgpoissonsolve_utils.c
+
+HEALPix Stuff:
+healpix_utils.c - base set of HEALPix utilities
+healpix_utils.h - header for base set of HEALPix utilities
+healpix_fastdiscquery.c - routine for quick query of disc in HEALPix
+healpix_shtrans.h - header file for all SHT related variables and functions
+healpix_plmgen.c - generates Associated Legendre polynomials - from
+                   public HEALPix package
+healpix_shtrans.c - utility routines for SHT operations and planning
+alm2allmaps_transpose_mpi.c - does alm -> all maps synthesis operation
+                              (generates map and all of its
+			      derivatives up to second order)
+alm2map_transpose_mpi.c - does alm -> map synthesis operation
+map2alm_transpose_mpi.c - does map -> alm analysis operation
+
+I/O:
+galsio.c - I/O for galaxies
+lightconeio.c - I/O for light cones
+partio.c - I/O for particles
+rayio.c - I/O for rays
+restart.c - reads/writes restart files
+
+Making Lens Planes:
+make_lensplanes_hdf5.c - makes lens planes
+make_lensplanes_pointmass_test.c - makes lens planes for point mass
+                                   and NFW tests
+read_lensplanes_hdf5.c - reads lens planes

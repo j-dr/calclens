@@ -1,0 +1,38 @@
+/////////////////////////////////////////////
+Authors
+/////////////////////////////////////////////
+All of the code in CALCLENS was written by myself (Matthew R. Becker)
+over a period of three years starting in the winter of 2009 through
+the fall of 2012. However there are three important exceptions.
+
+1) Most of the HEALPix routines (http://healpix.jpl.nasa.gov/)
+have been modified and translated from C++ and F90 to C under the GNU
+GPL v2. I have made every attempt to retain the original copyrights
+where appropriate and to note the changes I made to the routines,
+though I am sure that there is code I have added which was not noted
+properly. I have also added quite a bit of new functionality to them
+as well.  
+
+2) CALCLENS uses a hypercube parallel communication scheme, the
+implementation of which used here was originally by Volker Springel and copied
+from Gadget-2 (http://www.mpa-garching.mpg.de/gadget/) under GNU GPL
+v2. I have made every attempt to place a notice in the code where this
+algorithm is used. Also, some of the M-to-N I/O, array reordering, restart I/O
+routines were inspired by Gadget-2 as well.
+
+3) The structure of the Makefile follows that of Gadget-2, copied
+under the same license as 2) above.
+
+/////////////////////////////////////////////
+Acknowledgements
+/////////////////////////////////////////////
+I would like to thank Andrey Kravtsov, Tom Abel, Eduardo Rozo, Wayne
+Hu, Risa Wechsler, Michael Busha, Gus Evrard, Doug Rudd and the DES
+weak lensing and cluster working groups for their comments and
+suggestions which vastly improved this work. Several people tested and
+used early versions of the shear fields including Joerg Dietrich, Tim
+Eifler and Alexie Leauthaud.  Their assistance and patience is most
+appreciated. I would also like to thank Doug Rudd, Stuart Marshall and
+Valeri Galtsev for their assistance with various compute clusters. I
+am additionally grateful to Volker Springel for publicly releasing
+Gagdet-2.
