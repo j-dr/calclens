@@ -994,7 +994,7 @@ static void file_write_rays2bin(long fileNum, long firstTask, long lastTask, MPI
 			  
 #ifdef OUTPUTRAYDEFLECTIONS
 			  *((double*) (&(chunkRays[(k-firstInd)*rays + sizeof(long) + 2*sizeof(double) + 4*sizeof(double)]))) = bundleCells[j].rays[k].alpha[0];
-			  *((double*) (&(chunkRays[(k-firstInd)*rays + sizeof(long) + 2*sizeof(double) + 4*sizeof(double) + sizeof(double)]))) = bundleCells[j].rays[k].alpha[0];
+			  *((double*) (&(chunkRays[(k-firstInd)*rays + sizeof(long) + 2*sizeof(double) + 4*sizeof(double) + sizeof(double)]))) = bundleCells[j].rays[k].alpha[1];
 #endif
 #ifdef OUTPUTPHI
 			  *((double*) (&(chunkRays[(k-firstInd)*rays + sizeof(long) + 2*sizeof(double) + 4*sizeof(double) + 2*sizeof(double)]))) = bundleCells[j].rays[k].phi;

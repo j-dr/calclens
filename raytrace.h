@@ -21,7 +21,7 @@
 #ifndef _RAYTRACE_
 #define _RAYTRACE_
 
-#define RAYTRACEVERSION "CALCLENS v1.0"
+#define RAYTRACEVERSION "CALCLENS v0.9a"
 
 /* Some debugging macros
    undef DEBUG for no debugging

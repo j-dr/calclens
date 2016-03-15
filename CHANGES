@@ -2,4 +2,6 @@
 Changes
 /////////////////////////////////////////////
 
-v1.0 - original release - October 2012
+v0.9 - original release - October 2012
+v0.9a - fixed bug which outputs the zero-th component of the deflection 
+        angle twice - found by Wei Chengliang in binary ray output - January 2013
