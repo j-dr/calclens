@@ -471,10 +471,6 @@ void read_lcparts_at_planenum_fullsky_partdist(long planeNum)
   long *PeanoIndsToRead;
   long NumPeanoIndsToRead;
     
-  char file_name[MAX_FILENAME];
-  hid_t file_id;
-  herr_t status;
-
   long bundleNest;
   double vec[3];
   
@@ -567,10 +563,6 @@ void read_lcparts_at_planenum_all(long planeNum)
   long *PeanoIndsToRead;
   long NumPeanoIndsToRead;
     
-  char file_name[MAX_FILENAME];
-  hid_t file_id;
-  herr_t status;
-
   long bundleNest;
   double vec[3];
   
