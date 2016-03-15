@@ -5,30 +5,35 @@
 #include <mpi.h>
 #include <gsl/gsl_sort_long.h>
 #include <gsl/gsl_rng.h>
+#include <unistd.h>
 
 #include "raytrace.h"
 #include "read_lensplanes_pixLC.h"
 
+struct pixLCheader {
+  unsigned long npart;      // number of particles in the present file
+  unsigned int nside;       // nside value used to sort particles within this file
+  unsigned int filenside;   // nside used to break up radial bin this file falls in
+  float BoxSize;            // in Mpc/h
+  double mass;              // particle mass in 1e10 M_sun/h
+  unsigned long npartTotal; // total number of particles in the box
+  double Omega0;           
+  double OmegaLambda;      
+  double HubbleParam;       // little 'h'
+};
+
 void readRayTracingPlaneAtPeanoInds_pixLC(long planeNum, long HEALPixOrder, long *PeanoIndsToRead, long NumPeanoIndsToRead, Part **LCParts, long *NumLCParts)
 {
   char file_name[MAX_FILENAME];
-  long i,ind,j,k,FileHEALPixOrder,*NumLCPartsInPix,FileNPix;
+  long i,ind,j,k,FileHEALPixOrder,nest;
   long *PeanoIndsToReadFromFile,NumPeanoIndsToReadFromFile;
   long KeepLCPart,LCPartPeanoInd;
   double vec[3];
   Part LCPartRead;
-  
-  // FIXME stub
-  NumLCParts = 0;
-  *LCParts = NULL;
-  
-  // open file
-  
-  /*if(file_id < 0)
-    {
-      fprintf(stderr,"%d: lens plane '%s' could not be opened!\n",ThisTask,file_name);
-      assert(0);
-    }
+  struct pixLCheader head;
+  FILE *fp;
+  float *pos = NULL;
+  long npos = 0;
   
 #ifdef KEEP_RAND_FRAC 
   if(ThisTask == 0)
@@ -41,55 +46,174 @@ void readRayTracingPlaneAtPeanoInds_pixLC(long planeNum, long HEALPixOrder, long
   rng = gsl_rng_alloc(gsl_rng_ranlxd2);
 #endif
   
-  /// read info about file
-
-  status = H5LTread_dataset(file_id,"/HEALPixOrder",H5T_NATIVE_LONG,&FileHEALPixOrder);
-  assert(status >= 0);
-  FileNPix = order2npix(FileHEALPixOrder);
-  NumLCPartsInPix = (long*)malloc(sizeof(long)*FileNPix);
-  status = H5LTread_dataset(file_id,"/NumLCPartsInPix",H5T_NATIVE_LONG,NumLCPartsInPix);
-  assert(status >= 0);
-  //getPeanoIndsToReadFromFile(HEALPixOrder,PeanoIndsToRead,NumPeanoIndsToRead,FileHEALPixOrder,&PeanoIndsToReadFromFile,&NumPeanoIndsToReadFromFile);
+  // get file layout
+  FileHEALPixOrder = -1;
+  for(i=0;i<1000000000;++i) 
+    {
+      // try to read file name
+      sprintf(file_name,"%s/%s_%ld_%ld",rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,planeNum,i);
+      fp = fopen(file_name,"r");
+      if(fp == NULL)
+	continue;
+      
+      // read header
+      j = fread(&head,sizeof(struct pixLCheader),(size_t) 1,fp);
+      if(j < 1)
+	{
+	  fprintf(stderr,"%d: could not read header for lens plane '%s'!\n",ThisTask,file_name);
+	  assert(0);	  
+	}
+      
+      // close file
+      fclose(fp);
+      
+      // get order
+      FileHEALPixOrder = head.filenside;
+      FileHEALPixOrder = nside2order(FileHEALPixOrder);
+      break;
+    }
   
+  // if we get here, could not find a file
+  if(FileHEALPixOrder == -1) 
+    {
+      fprintf(stderr,"%d: could not get healpix order for lens plane %04ld!\n",ThisTask,planeNum);
+      assert(0);      
+    }
+  
+  // get peano inds to read from file
+  getPeanoIndsToReadFromFile(HEALPixOrder,PeanoIndsToRead,NumPeanoIndsToRead,FileHEALPixOrder,&PeanoIndsToReadFromFile,&NumPeanoIndsToReadFromFile);
+  
+  // FIXME stub
   *NumLCParts = 0;
-  for(i=0;i<NumPeanoIndsToReadFromFile;++i)
-    *NumLCParts = *NumLCParts + NumLCPartsInPix[PeanoIndsToReadFromFile[i]];
+  *LCParts = NULL;
   
+  ind = 0;
+  for(i=0;i<NumPeanoIndsToReadFromFile;++i)
+    {
+      // get file name
+      nest = peano2nest(PeanoIndsToReadFromFile[i],FileHEALPixOrder);
+      sprintf(file_name,"%s/%s_%ld_%ld",rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,planeNum,nest);
+      
+      // file does not exist, move on
+      if(access(file_name,F_OK) == -1)
+	continue;
+      
+      // open file to read
+      fp = fopen(file_name,"r");
+      if(fp == NULL)
+	{
+	  fprintf(stderr,"%d: lens plane '%s' could not be opened!\n",ThisTask,file_name);
+	  assert(0);
+	}
+
+      // read header
+      j = fread(&head,sizeof(struct pixLCheader),(size_t) 1,fp);
+      if(j < 1)
+	{
+	  fprintf(stderr,"%d: could not read header for lens plane '%s'!\n",ThisTask,file_name);
+	  assert(0);	  
+	}
+      
+      if(head.npart > 0)
+	{
+	  // realloc
+	  if(head.npart > npos)
+	    {
+	      pos = (float*)realloc(pos,3*head.npart*sizeof(float));
+	      if(pos == NULL)
+		{
+		  fprintf(stderr,"%d: could not realloc pos array for lens plane '%s'!\n",ThisTask,file_name);
+		  assert(0);
+		}
+	    }
+	  
+	  // read data
+	  j = fread(pos,3*head.npart*sizeof(float),(size_t) 1,fp);
+	  if(j != 1)
+	    {
+	      fprintf(stderr,"%d: could not read pos array for lens plane '%s'!\n",ThisTask,file_name);
+	      assert(0);	  
+	    }
+	  
+	  // realloc output parts
+	  if(head.npart + ind > *NumLCParts) 
+	    {
+	      *NumLCParts = (*NumLCParts) + head.npart*3; // a little buffer
+	      *LCParts = (Part*)realloc(*LCParts,sizeof(Part)*(*NumLCParts));
+	      assert(*LCParts != NULL);
+	    }
+	  
+	  // put in outputs
+#ifdef KEEP_RAND_FRAC 
+	  gsl_rng_set(rng,(unsigned long) (PeanoIndsToReadFromFile[i]));
+#endif
+	  j = 0;
+	  for(k=0;k<head.npart;++k)
+	    {
+#ifdef KEEP_RAND_FRAC
+	      if(gsl_rng_uniform(rng) >= RAND_FRAC_TO_KEEP)
+		continue;
+#endif	      
+	      (*LCParts)[ind+j].pos[0] = pos[3*k+0];
+	      (*LCParts)[ind+j].pos[1] = pos[3*k+1];
+	      (*LCParts)[ind+j].pos[2] = pos[3*k+2];
+#ifdef KEEP_RAND_FRAC 
+	      (*LCParts)[ind+j].mass = head.mass/RAND_FRAC_TO_KEEP;
+#else
+	      (*LCParts)[ind+j].mass = head.mass;
+#endif	      
+	      ++j;
+	    }
+	  ind += j;
+	  
+	} // if(head.npart > 0)
+
+      // close the file
+      fclose(fp);	  
+    }  
+  
+  // do final realloc
+  *NumLCParts = ind;
   if(*NumLCParts > 0)
     {
-      *LCParts = (Part*)malloc(sizeof(Part)*(*NumLCParts));
+      *LCParts = (Part*)realloc(*LCParts,sizeof(Part)*(*NumLCParts));
       assert(*LCParts != NULL);
-      
+    }
+  else
+    {
+      free(*LCParts);
+      *NumLCParts = 0;
+      *LCParts = NULL;
+    }
+  
+  // if file cells are larger than requested cells, cull extra particles
+  if(FileHEALPixOrder < HEALPixOrder && (*NumLCParts) > 0)
+    {
       ind = 0;
-      for(i=0;i<NumPeanoIndsToReadFromFile;++i)
+      for(i=0;i<(*NumLCParts);++i)
 	{
-	  if(NumLCPartsInPix[PeanoIndsToReadFromFile[i]] > 0)
-	    {
-	      sprintf(tablename,"PeanoInd%ld",PeanoIndsToReadFromFile[i]);
-	      status = H5TBread_fields_name(file_id,tablename,"px,py,pz,mass",0,NumLCPartsInPix[PeanoIndsToReadFromFile[i]], 
-					    dst_size,field_offset,dst_sizes,*LCParts+ind);
-	      assert(status >= 0);
+	  vec[0] = (double) ((*LCParts)[i].pos[0]);
+	  vec[1] = (double) ((*LCParts)[i].pos[1]);
+	  vec[2] = (double) ((*LCParts)[i].pos[2]);
+	  LCPartPeanoInd = nest2peano(vec2nest(vec,HEALPixOrder),HEALPixOrder);
 	      
-#ifdef KEEP_RAND_FRAC 
-	      gsl_rng_set(rng,(unsigned long) (PeanoIndsToReadFromFile[i]));
-	      j = 0;
-	      for(k=0;k<NumLCPartsInPix[PeanoIndsToReadFromFile[i]];++k)
+	  KeepLCPart = 0;
+	  for(j=0;j<NumPeanoIndsToRead;++j)
+	    {
+	      if(LCPartPeanoInd == PeanoIndsToRead[j])
 		{
-		  if(gsl_rng_uniform(rng) < RAND_FRAC_TO_KEEP)
-		    {
-		      (*LCParts)[ind+j] = (*LCParts)[ind+k];
-		      (*LCParts)[ind+j].mass = (*LCParts)[ind+j].mass/RAND_FRAC_TO_KEEP;
-		      ++j;
-		    }
+		  KeepLCPart = 1;
+		  break;
 		}
-	      ind += j;
-#else
-	      ind += NumLCPartsInPix[PeanoIndsToReadFromFile[i]];
-#endif
+	    }
+
+	  if(KeepLCPart)
+	    {
+	      (*LCParts)[ind] = (*LCParts)[i];
+	      ++ind;
 	    }
 	}
       
-#ifdef KEEP_RAND_FRAC 
       *NumLCParts = ind;
       if(*NumLCParts > 0)
 	{
@@ -102,49 +226,6 @@ void readRayTracingPlaneAtPeanoInds_pixLC(long planeNum, long HEALPixOrder, long
 	  *NumLCParts = 0;
 	  *LCParts = NULL;
 	}
-#endif
-
-  /// if file cells are larger than requested cells, cull extra particles
-      if(FileHEALPixOrder < HEALPixOrder && (*NumLCParts) > 0)
-	{
-	  ind = 0;
-	  for(i=0;i<(*NumLCParts);++i)
-	    {
-	      vec[0] = (double) ((*LCParts)[i].pos[0]);
-	      vec[1] = (double) ((*LCParts)[i].pos[1]);
-	      vec[2] = (double) ((*LCParts)[i].pos[2]);
-	      LCPartPeanoInd = nest2peano(vec2nest(vec,HEALPixOrder),HEALPixOrder);
-	      
-	      KeepLCPart = 0;
-	      for(j=0;j<NumPeanoIndsToRead;++j)
-		{
-		  if(LCPartPeanoInd == PeanoIndsToRead[j])
-		    {
-		      KeepLCPart = 1;
-		      break;
-		    }
-		}
-
-	      if(KeepLCPart)
-		{
-		  (*LCParts)[ind] = (*LCParts)[i];
-		  ++ind;
-		}
-	    }
-	  
-	  *NumLCParts = ind;
-	  if(*NumLCParts > 0)
-	    {
-	      *LCParts = (Part*)realloc(*LCParts,sizeof(Part)*(*NumLCParts));
-	      assert(*LCParts != NULL);
-	    }
-	  else
-	    {
-	      free(*LCParts);
-	      *NumLCParts = 0;
-	      *LCParts = NULL;
-	    }
-	}
     }
   else
     {
@@ -153,14 +234,9 @@ void readRayTracingPlaneAtPeanoInds_pixLC(long planeNum, long HEALPixOrder, long
     }
 
   // free mem
+  free(pos);
   free(PeanoIndsToReadFromFile);
-  free(NumLCPartsInPix);
 #ifdef KEEP_RAND_FRAC 
   gsl_rng_free(rng);
 #endif
-  
-  /// close file
-  status = H5Fclose(file_id);
-  assert(status >= 0);
-*/
 }
