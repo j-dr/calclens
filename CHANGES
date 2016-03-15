@@ -2,6 +2,8 @@
 Changes
 /////////////////////////////////////////////
 
+v1.0 - last release on this branch
+
 v0.9c - Removed	TreePM and direct summation options. Added ability to use precomputed
         lensing planes. 
 
