@@ -1,7 +1,7 @@
-CALCLENS
-=========
+## calclens
+
 Curved-sky grAvitational Lensing for Cosmological Light conE simulatioNS  
-Copyright (C) 2009,2010,2011,2012,2013,2014 Matthew R. Becker  
+Copyright (C) 2009-2016 Matthew R. Becker  
 Released under GNU GPL v3 - see COPYING and AUTHORS for details.  
 
 CALCLENS stands for Curved-sky grAvitational Lensing for Cosmological
@@ -10,7 +10,7 @@ code for generating weak gravitational lensing shear fields from light
 cone simulations. Currently only flat LCDM models are supported.
 
 License and Conditions of Use
------------------------------------------
+-----------------------------
 This code is released publicly under GNU GPL v3 (see COPYING for
 details). The standard GNU disclaimer (which most definitely applies
 here!) is
@@ -28,22 +28,20 @@ here!) is
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-If CALCLENS is used for any scientific work, I ask that you please
+If CALCLENS is used for any scientific work, please
 cite the paper describing the code 
 
     Becker 2013, MNRAS, 435, 115 [arXiv:astro-ph/1210.3069]
 
 and also post your own work (and any updates) to the arXiv
-(http://arxiv.org/). I also ask that you notify me of any bugs once
-they are confirmed immediately at ```becker.mr<at>gmail<dot>com```.
+(http://arxiv.org/).
 
 CALCLENS is a BYOLC code, which stands for Bring Your Own Light
-Cone. Utilities for reading light cone formats (see lightconeio.c for
-how to write your own) are included below, but there is no way I
-can personally provide many TB of light cone data to the community.
+Cone. Utilities for reading light cone formats (see `lightconeio.c` for
+how to write your own) are included below.
 
 Compilation
-----------------
+-----------
 CALCLENS requires the following widely available public software
 libraries:
 
@@ -55,7 +53,7 @@ FFTW3 - for FFTs used by SHTs (http://www.fftw.org/)
 Other requirements include:
     
 1. a 64 bit system - the types long and double in C must both be 8 bytes
-2. a Unix-like environment (It has not been tested on Mac OSX.  If you do, let me know!)
+2. a Unix/Linux-like environment (It has not been tested on Mac OSX.)
 
 Once these libraries are installed (or if you have them already) and
 requirements are met, then you just have to edit the Makefile to match
@@ -81,7 +79,7 @@ Then simply type "make" in the source directory and you should get an
 executable named "raytrace" for your enjoyment.  
 
 Running an MPI code
------------------------------
+-------------------
 CALCLENS is an MPI-1 parallel code. See the local user guide (or ask a
 friend) on how to run MPI code on your local compute cluster.
 Typically one needs to make a job script and the include commands like 
@@ -92,7 +90,7 @@ to get this work. See the Ray Tracing below for how to actually run
 the code.
 
 Ray Tracing 
-----------------
+-----------
 Ray tracing a light cone involves two steps.  First, the light cone
 must be rewritten into the HDF5 index light cone format.  Then it can
 be ray traced.  
@@ -103,7 +101,7 @@ be ray traced.
    need to setup the configuration file properly as described in Configuration
    below.
    
-   Making lens planes is a purely serial operation, but requires a lot
+   Making lens planes is a purely serial operation and requires a lot
    of memory (though you do not need to have the *entire* light cone in
    memory). The best way to make lens planes is to run an MPI job with
    as many tasks as you have cores per node.  Task 0 will make the
@@ -139,7 +137,7 @@ Makefile, include
                       use the specified area for the MG step
     SHTONLY - set to force the code to use SHTs only
 
-If any of these options are changed, the code must be recompiled!
+If any of these options are changed, the code must be recompiled.
 
 See raytrace.cfg for an example typical configuration file. Its basic
 structure is a set of tag-value pairs like this 
