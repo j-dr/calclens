@@ -22,11 +22,7 @@ void fullsky_partdist_poissondriver(void)
     {
       time = -MPI_Wtime();
       logProfileTag(PROFILETAG_PARTIO);
-
-      if(ThisTask == 0)
-	fprintf(stderr,"reading parts from '%s/%s%04ld.h5'\n",
-		rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,rayTraceData.CurrentPlaneNum);
-
+      
       read_lcparts_at_planenum_fullsky_partdist(rayTraceData.CurrentPlaneNum);
       get_smoothing_lengths();
 
@@ -95,10 +91,6 @@ void cutsky_partdist_poissondriver(void)
 #endif
       time = -MPI_Wtime();
       logProfileTag(PROFILETAG_PARTIO);
-
-      if(ThisTask == 0)
-	fprintf(stderr,"reading parts from '%s/%s%04ld.h5'\n",
-		rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,rayTraceData.CurrentPlaneNum);
 
       read_lcparts_at_planenum(rayTraceData.CurrentPlaneNum);
       get_smoothing_lengths();

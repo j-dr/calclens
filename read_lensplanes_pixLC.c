@@ -12,14 +12,16 @@
 
 struct pixLCheader {
   unsigned long npart;      // number of particles in the present file
-  unsigned int nside;       // nside value used to sort particles within this file
+  unsigned int indexnside;  // nside value used to sort particles within this file
   unsigned int filenside;   // nside used to break up radial bin this file falls in
-  float BoxSize;            // in Mpc/h
+  float rmin;               // minimum radius kept from this box
+  float rmax;               // maximum radius
+  unsigned long npartrad;   // number of particles in this radial bin
+  float boxsize;            // in Mpc/h
   double mass;              // particle mass in 1e10 M_sun/h
-  unsigned long npartTotal; // total number of particles in the box
-  double Omega0;           
-  double OmegaLambda;      
-  double HubbleParam;       // little 'h'
+  double omega0;            // omegaM
+  double omegalambda;       // omegaL
+  double hubbleparam;       // little 'h'
 };
 
 void readRayTracingPlaneAtPeanoInds_pixLC(long planeNum, long HEALPixOrder, long *PeanoIndsToRead, long NumPeanoIndsToRead, Part **LCParts, long *NumLCParts)
@@ -29,11 +31,14 @@ void readRayTracingPlaneAtPeanoInds_pixLC(long planeNum, long HEALPixOrder, long
   long *PeanoIndsToReadFromFile,NumPeanoIndsToReadFromFile;
   long KeepLCPart,LCPartPeanoInd;
   double vec[3];
-  Part LCPartRead;
   struct pixLCheader head;
   FILE *fp;
   float *pos = NULL;
   long npos = 0;
+
+  if(ThisTask == 0)
+    fprintf(stderr,"reading parts from lens plane '%s/%s_%ld_NESTIND'\n",
+	    rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,planeNum);
   
 #ifdef KEEP_RAND_FRAC 
   if(ThisTask == 0)
@@ -97,7 +102,7 @@ void readRayTracingPlaneAtPeanoInds_pixLC(long planeNum, long HEALPixOrder, long
       // file does not exist, move on
       if(access(file_name,F_OK) == -1)
 	continue;
-      
+
       // open file to read
       fp = fopen(file_name,"r");
       if(fp == NULL)
@@ -125,6 +130,14 @@ void readRayTracingPlaneAtPeanoInds_pixLC(long planeNum, long HEALPixOrder, long
 		  fprintf(stderr,"%d: could not realloc pos array for lens plane '%s'!\n",ThisTask,file_name);
 		  assert(0);
 		}
+	    }
+	  
+	  // skip indexes
+	  j = fseek(fp,sizeof(long)*nside2npix(head.indexnside),SEEK_CUR);
+	  if(j != 0) 
+	    {
+	      fprintf(stderr,"%d: could not seek past idx array for lens plane '%s'!\n",ThisTask,file_name);
+	      assert(0);
 	    }
 	  
 	  // read data
@@ -158,9 +171,9 @@ void readRayTracingPlaneAtPeanoInds_pixLC(long planeNum, long HEALPixOrder, long
 	      (*LCParts)[ind+j].pos[1] = pos[3*k+1];
 	      (*LCParts)[ind+j].pos[2] = pos[3*k+2];
 #ifdef KEEP_RAND_FRAC 
-	      (*LCParts)[ind+j].mass = head.mass/RAND_FRAC_TO_KEEP;
+	      (*LCParts)[ind+j].mass = head.mass/RAND_FRAC_TO_KEEP*1e10;
 #else
-	      (*LCParts)[ind+j].mass = head.mass;
+	      (*LCParts)[ind+j].mass = head.mass*1e10;
 #endif	      
 	      ++j;
 	    }

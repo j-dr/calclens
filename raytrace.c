@@ -16,12 +16,11 @@ static void set_plane_params(void);
 void raytrace(void)
 {
   long i,j;
-  long doPoissonSolve;
   double time,minTime,maxTime;//,totTime,avgTime;
   double stepTime,restTime,startTime;
   int writeRestartFile;
   char pname[MAX_FILENAME];
-  FILE *fpStepTime;
+  FILE *fpStepTime = NULL;
 #ifdef NOBACKDENS  
   long totNlensPlaneParts;
 #endif
@@ -341,9 +340,9 @@ static void set_plane_params(void)
   if(ThisTask == 0) {
     fprintf(stderr,"planeNum = %04ld (% 4ld of % 4ld) [dist = %.2lf Mpc/h, z = %.2lf]\n",rayTraceData.CurrentPlaneNum,rayTraceData.CurrentPlaneNum+1,rayTraceData.NumLensPlanes,
 	    rayTraceData.planeRad,1.0/acomvdist(rayTraceData.planeRad)-1.0);
-#ifndef THREEDPOT      
+    /*#ifndef THREEDPOT      
     fprintf(stderr,"lens plane: '%s/%s%04ld.h5'\n", rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,rayTraceData.CurrentPlaneNum);
-#endif
+    #endif*/
     fflush(stderr);
   }
   

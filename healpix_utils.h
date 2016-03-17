@@ -57,6 +57,8 @@ long order2nside(long order_);
 long order2npix(long order_);
 long npix2nside(long npix);
 long nside2order(long nside);
+long npix2order(long npix);
+long nside2npix(long nside);
 
 void nest2xyf(long pix, long *ix, long *iy, long *face_num, long order_);
 long xyf2nest(long ix, long iy, long face_num, long order_);

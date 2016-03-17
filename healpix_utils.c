@@ -178,6 +178,17 @@ long npix2nside(long npix)
   return res;
 }
 
+long npix2order(long npix)
+{
+  return nside2order(npix2nside(npix));
+}
+
+long nside2npix(long nside)
+{
+  assert(nside>0 && !((nside)&(nside-1)));
+  return 12*nside*nside;
+}
+
 long nside2order(long nside)
 {
   assert(nside>0 && !((nside)&(nside-1)));

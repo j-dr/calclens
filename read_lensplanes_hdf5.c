@@ -36,6 +36,10 @@ void readRayTracingPlaneAtPeanoInds_HDF5(long planeNum, long HEALPixOrder, long 
 
   /* open file */
   sprintf(file_name,"%s/%s%04ld.h5",rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,planeNum);
+
+  if(ThisTask == 0)
+    fprintf(stderr,"reading parts from '%s'\n",file_name);
+
   file_id = H5Fopen(file_name,H5F_ACC_RDONLY,H5P_DEFAULT);
   if(file_id < 0)
     {
