@@ -17,7 +17,7 @@ OPTS += -DSHTONLY #set to only use SHT for lensing
 #OPTS += -DNOBACKDENS #define to not subtract a background density from kappa grid - use for point mass test or NFW halo test
 #OPTS += -DDEBUG_IO #define for some debugging I/O
 #OPTS += -DDEBUG_IO_DD #output debug info for domain decomp
-#OPTS += -DDEBUG -DDEBUG_LEVEL=0 #leave undefined for no debugging - 0,1, and 2 give progressively more output to stderr
+OPTS += -DDEBUG -DDEBUG_LEVEL=2 #leave undefined for no debugging - 0,1, and 2 give progressively more output to stderr
 #OPTS += -DTEST_CODE #define to run some basic test code
 #OPTS += -DMEMWATCH -DMEMWATCH_STDIO #define to test for memory leaks, out of bounds, etc. for memory used in this code
 #OPTS += -DUSEMEMCHECK #define to test for memory leaks, out of bounds, etc. for memory used in this code

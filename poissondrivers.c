@@ -123,6 +123,10 @@ void cutsky_partdist_poissondriver(void)
   
 #ifdef DEBUG
 #if DEBUG_LEVEL > 1
+#ifndef NOBACKDENS 
+  long totNlensPlaneParts;
+  MPI_Allreduce(&NlensPlaneParts,&totNlensPlaneParts,1,MPI_LONG,MPI_SUM,MPI_COMM_WORLD);
+#endif
   if(NlensPlaneParts > 0)
     fprintf(stderr,"%d: pos,mass = %f|%f|%f|%e, total # of parts = %ld, # of parts on this task = %ld\n",
 	    ThisTask,lensPlaneParts[0].pos[0],lensPlaneParts[0].pos[1],lensPlaneParts[0].pos[2],lensPlaneParts[0].mass,
