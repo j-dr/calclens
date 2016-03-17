@@ -35,7 +35,7 @@ void readRayTracingPlaneAtPeanoInds_pixLC(long planeNum, long HEALPixOrder, long
   FILE *fp;
   float *pos = NULL;
   long npos = 0;
-
+  
   if(ThisTask == 0)
     fprintf(stderr,"reading parts from lens plane '%s/%s_%ld_NESTIND'\n",
 	    rayTraceData.LensPlanePath,rayTraceData.LensPlaneName,planeNum);
@@ -182,7 +182,7 @@ void readRayTracingPlaneAtPeanoInds_pixLC(long planeNum, long HEALPixOrder, long
 	} // if(head.npart > 0)
 
       // close the file
-      fclose(fp);	  
+      fclose(fp);
     }  
   
   // do final realloc

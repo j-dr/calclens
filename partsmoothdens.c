@@ -11,16 +11,6 @@
 
 #include "raytrace.h"
 
-static int compPartNest(const void *a, const void *b)
-{
-  if(((const Part*)a)->nest > ((const Part*)b)->nest)
-    return 1;
-  else if(((const Part*)a)->nest < ((const Part*)b)->nest)
-    return -1;
-  else
-    return 0;
-}
-
 void get_smoothing_lengths(void)
 {
   long i;

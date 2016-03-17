@@ -3,7 +3,7 @@
 #OPTS += -DOUTPUTRAYDEFLECTIONS #output ray deflections
 #OPTS += -DOUTPUTPHI #output lensing potential at ray position
 OPTS += -DUSE_FITS_RAYOUT #set to use fits for writing rays
-#OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
+OPTS += -DUSE_FULLSKY_PARTDIST #set to tell the code to use a full sky particle distribution in the SHT step 
 OPTS += -DSHTONLY #set to only use SHT for lensing
 #OPTS += -DTHREEDPOT #define to use 3D potential to move rays
 

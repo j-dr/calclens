@@ -16,7 +16,7 @@ void readRayTracingPlaneAtPeanoInds_HDF5(long planeNum, long HEALPixOrder, long 
   herr_t status;
   char file_name[MAX_FILENAME];
   char tablename[MAX_FILENAME];
-  long i,ind,j,k,FileHEALPixOrder,*NumLCPartsInPix,FileNPix;
+  long i,ind,j,FileHEALPixOrder,*NumLCPartsInPix,FileNPix;
   long *PeanoIndsToReadFromFile,NumPeanoIndsToReadFromFile;
   long KeepLCPart,LCPartPeanoInd;
   double vec[3];

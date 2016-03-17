@@ -72,6 +72,8 @@ void read_lcparts_at_planenum(long planeNum)
   
   long shift;
   long NumGroups,myGroup,currGroup,readFromPlane;
+
+  double t0;
   
   shift = 2*(HEALPIX_UTILS_MAXORDER-rayTraceData.bundleOrder);
   
@@ -109,6 +111,7 @@ void read_lcparts_at_planenum(long planeNum)
   myGroup = ThisTask/rayTraceData.NumFilesIOInParallel;
   readFromPlane = 0;
   
+  t0 = -MPI_Wtime();
   for(currGroup=0;currGroup<NumGroups;++currGroup)
     {
       if(currGroup == myGroup)
@@ -151,6 +154,13 @@ void read_lcparts_at_planenum(long planeNum)
   
   assert(readFromPlane == 1);
   
+  t0 += MPI_Wtime();
+  if(ThisTask == 0) 
+    {
+      fprintf(stderr,"read parts in %f seconds\n",t0);
+      fflush(stderr);
+    }
+  
   //now do an exchange to get buffer parts
   long j,log2NTasks;
   long level,sendTask,recvTask;
@@ -166,6 +176,8 @@ void read_lcparts_at_planenum(long planeNum)
   MPI_Request requestSend,requestRecv;
   int didSend,didRecv;
 
+  t0 = -MPI_Wtime();
+  
   log2NTasks = 0;
   while(NTasks > (1 << log2NTasks))
     ++log2NTasks;
@@ -373,6 +385,13 @@ void read_lcparts_at_planenum(long planeNum)
     free(nestCellsToSend);
   free(nestCellsToGet);
   
+  t0 += MPI_Wtime();
+  if(ThisTask == 0) 
+    {
+      fprintf(stderr,"got buffer parts in %f seconds\n",t0);
+      fflush(stderr);
+    }
+
   //if using the full light cone part distribution,
   //need to read in buffer parts which are not primary cells in the domain
 #ifdef USE_FULLSKY_PARTDIST
@@ -380,6 +399,8 @@ void read_lcparts_at_planenum(long planeNum)
   long NumBuffParts = 0;
   long peanoInd;
   
+  t0 = -MPI_Wtime();
+
   NumPeanoIndsToRead = 1;
   for(i=0;i<NbundleCells;++i)
     {
@@ -427,6 +448,13 @@ void read_lcparts_at_planenum(long planeNum)
 	      NumBuffParts = 0;
 	    }
 	}
+    }
+  
+  t0 += MPI_Wtime();
+  if(ThisTask == 0) 
+    {
+      fprintf(stderr,"got fullsky buffer parts in %f seconds\n",t0);
+      fflush(stderr);
     }
 #endif
   
@@ -477,6 +505,8 @@ void read_lcparts_at_planenum_fullsky_partdist(long planeNum)
   long shift;
   long NumGroups,myGroup,currGroup,readFromPlane;
   
+  double t0;
+  
   shift = 2*(HEALPIX_UTILS_MAXORDER - rayTraceData.bundleOrder);
   
   /* set up reading vars
@@ -513,6 +543,7 @@ void read_lcparts_at_planenum_fullsky_partdist(long planeNum)
   myGroup = ThisTask/rayTraceData.NumFilesIOInParallel;
   readFromPlane = 0;
   
+  t0 = -MPI_Wtime();
   for(currGroup=0;currGroup<NumGroups;++currGroup)
     {
       if(currGroup == myGroup)
@@ -554,6 +585,13 @@ void read_lcparts_at_planenum_fullsky_partdist(long planeNum)
     }
   
   assert(readFromPlane == 1);
+  
+  t0 += MPI_Wtime();
+  if(ThisTask == 0) 
+    {
+      fprintf(stderr,"read parts in %f seconds\n",t0);
+      fflush(stderr);
+    }
 }
 
 /* reads light cone particles into bundleCells for the given planeNum */
@@ -568,6 +606,8 @@ void read_lcparts_at_planenum_all(long planeNum)
   
   long shift;
   long NumGroups,myGroup,currGroup,readFromPlane;
+  
+  double t0;
   
   shift = 2*(HEALPIX_UTILS_MAXORDER - rayTraceData.bundleOrder);
   
@@ -601,6 +641,7 @@ void read_lcparts_at_planenum_all(long planeNum)
   myGroup = ThisTask/rayTraceData.NumFilesIOInParallel;
   readFromPlane = 0;
   
+  t0 = -MPI_Wtime();
   for(currGroup=0;currGroup<NumGroups;++currGroup)
     {
       if(currGroup == myGroup)
@@ -642,4 +683,11 @@ void read_lcparts_at_planenum_all(long planeNum)
     }
   
   assert(readFromPlane == 1);
+  
+  t0 += MPI_Wtime();
+  if(ThisTask == 0) 
+    {
+      fprintf(stderr,"read parts in %f seconds\n",t0);
+      fflush(stderr);
+    }
 }
