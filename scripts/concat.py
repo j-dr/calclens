@@ -26,6 +26,47 @@ def read_yaml(fname):
     return cfg
 
 class CalclensConcat(object):
+    """
+    class containing scripts to concatenate and reorganize galaxy outputs from calclens
+    
+    The final output files will have the same names as the input ones except that they 
+    will be prefixed by 'lensed_'.
+    
+    Parameters
+    ----------
+    conf: config dict (usually read from a yaml file, see below)
+    
+    Methods
+    -------
+    go: concat and reorg the files (no parameters)
+    
+    Example 1
+    ---------
+    
+    # run in python
+    conf = {#blah blah}
+    cc = CalclensConcat(conf)
+    cc.go()
+    
+    Example 2
+    ---------
+    
+    It can be run from the command line like this
+    
+    python concat.oy concat.yaml
+    
+    Config File
+    -----------
+    A config file has the following keys 
+        
+    OutputPath: 'directory/for/outputs' # will be cleared so path should be unique
+    InputPath: 'directory/of/inputs' # usually a path to outputs of calclens
+    InputName: 'basename' # basename of galaxy outputs from calclens (the GalOutputName parameter)
+    ConcatOutputName: 'basename' # basename of intermediate outputs from this script
+    GalsFileList: 'path/to/gal/file/list' # same as parameter to calclens
+    
+    """
+
     def __init__(self,conf):
         self.conf.update(conf)
 
@@ -177,3 +218,10 @@ class CalclensConcat(object):
                         writer.add_data(fnum,wdset)
 
         writer.finalize_data()
+
+if __name__ == '__main__':
+    conf = read_yaml(sys.argv[1])
+    
+    cc = CalclensConcat(conf)
+    cc.go()
+
