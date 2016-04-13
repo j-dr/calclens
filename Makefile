@@ -27,7 +27,8 @@ OPTS += -DNGPSHTDENS #define to use NGP interp for SHT step
 #OPTS += -DCICSHTDENS #define to use CIC interp for SHT step
 
 #select your computer
-COMP="orange"
+COMP="sherlock"
+#COMP="orange"
 #COMP="orion-gcc"
 #COMP="midway"
 #COMP="home"
@@ -39,6 +40,13 @@ COMP="orange"
 #defaults if you need them
 CC          =  mpicc
 OPTIMIZE    =  -g -O0 #-Wall -wd981 #-wd1419 -wd810
+
+ifeq ($(COMP),"sherlock")
+CC          =  mpicc
+OPTIMIZE    =  -g -O3 -Wall #-wd981 #-wd1419 -wd810
+EXTRACFLAGS =  -I${HOME}/.local/include
+EXTRACLIB   =  -L${HOME}/.local/lib
+endif
 
 ifeq ($(COMP),"home")
 CC          =  mpicc
