@@ -3,3 +3,4 @@
 raytrace
 lensplanes/makelensplanes
 snapranges3Dpot/snapranges3Dpot
+*.pyc

@@ -6,6 +6,7 @@ import fitsio
 import itertools
 import numpy as np
 import yaml
+from catwriter import CatWriter
 
 # MPI
 from mpi4py import MPI
@@ -68,6 +69,7 @@ class CalclensConcat(object):
     """
 
     def __init__(self,conf):
+        self.conf = {}
         self.conf.update(conf)
 
         # get and broad cast info
@@ -183,10 +185,11 @@ class CalclensConcat(object):
         rbase = self.conf['InputName']
         Npr = self.num_lens_planes
         Nfr = self.num_output_files
-
+        Npw = len(self.galcatlist)
+        
         for plane in range(0,Npr):
             if plane%NTasks == ThisTask:
-                print "   ",ThisTask+":",plane+1,"of",Npr
+                print "   ",ThisTask,":",plane+1,"of",Npr
 
                 for sec in range(0,Nfr):
                     tail = '%04d.%04d.fit' % (plane,sec)
