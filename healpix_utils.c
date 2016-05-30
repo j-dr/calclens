@@ -256,6 +256,18 @@ long xyf2nest(long ix, long iy, long face_num, long order_)
   return pix;
 }
 
+long lower_nest(long pix, long order1_, long order2_)
+{
+  assert(order1_ > order2_);
+  int i;
+  int base = pix >> 2 * order1_;
+  int hosubpix = pix & ( ( 1 << ( 2 * order1_ ) ) - 1);
+  int losubpix = hosubpix / ( 1 << ( 2 * ( order1_ - order2_) ) );
+
+  return base * ( 1 << (2 * order2_ ) ) + losubpix;
+}
+ 
+
 void ring2xyf(long pix, long *ix, long *iy, long *face_num, long order_)
 {
   long iring, iphi, kshift, nr;

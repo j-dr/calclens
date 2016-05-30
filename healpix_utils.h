@@ -66,6 +66,7 @@ void nest2ang(long pix, double *theta, double *phi, long order_);
 void nest2vec(long pix, double *vec, long order_);
 long ang2nest(double theta, double phi, long order_);
 long vec2nest(double *vec, long order_);
+long lower_nest(long pix, long order1_, long order2_);
 
 void ring2xyf(long pix, long *ix, long *iy, long *face_num, long order_);
 long xyf2ring(long ix, long iy, long face_num, long order_);

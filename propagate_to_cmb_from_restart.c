@@ -243,9 +243,13 @@ void propagate_to_cmb_from_restart(void)
   char restart_file_name          [MAX_FILENAME];
   char temporary_restart_file_name[MAX_FILENAME];
   char sys[MAX_FILENAME];
-  char map_filename = "CMB_rays_2048.fits";
-  long maporder_ = 11;
+  char map_filename[MAX_FILENAME];
+  double *A00, *A01, *A10, *A11, *ra, *dec;
+  long *nest;
 
+  long maporder_ = 11;
+  long  npix = 12*(1<<maporder_*2);
+  
 //  char cmb_lensing_output_file_name[MAX_FILENAME];
   int pbc;
   long NraysPerBundleCell, bundleCellInd;
@@ -257,7 +261,7 @@ void propagate_to_cmb_from_restart(void)
     fprintf(stdout,"trying to read rays from restart files and propagating them to the CMB...\n");
  
 //    sprintf(restart_file_name, "%s/restart.0", rayTraceData.OutputPath);
-     sprintf(restart_file_name, "/nfs/slac/g/ki/ki23/des/jderose/BCC/Chinchilla/Herd/Chinchilla-1/calclens/restart.0");
+     sprintf(restart_file_name, "/home/jderose/uscratch/BCC/Chinchilla/Herd/Chinchilla-1/calclens/restart.0");
     
     fp = checked_fopen(restart_file_name, "r");
     fprintf(stderr, "debugging: opened file %s\n", restart_file_name);
@@ -297,17 +301,13 @@ void propagate_to_cmb_from_restart(void)
     fclose(fp);
   } /* for ThisTask == 0: read first restart file & extract data */
 
-  { /* initialize map data */
-    long  npix = 12*(1<<maporder_*2);
-
-    A00 = (float*)malloc(sizeof(float)*npix);
-    A01 = (float*)malloc(sizeof(float)*npix);
-    A10 = (float*)malloc(sizeof(float)*npix);
-    A11 = (float*)malloc(sizeof(float)*npix);
-    ra  = (float*)malloc(sizeof(float)*npix);
-    dec = (float*)malloc(sizeof(float)*npix);
-    nest = (long*)malloc(sizeof(long));
-  } /* initialize map data */
+  A00 = (double*)malloc(sizeof(double)*npix);
+  A01 = (double*)malloc(sizeof(double)*npix);
+  A10 = (double*)malloc(sizeof(double)*npix);
+  A11 = (double*)malloc(sizeof(double)*npix);
+  ra  = (double*)malloc(sizeof(double)*npix);
+  dec = (double*)malloc(sizeof(double)*npix);
+  nest = (long*)malloc(sizeof(long)*npix);
 
   { /* distribute information from first restart file */
     MPI_Bcast(&number_of_restart_files , 1, MPI_INT , 0, MPI_COMM_WORLD);
@@ -343,18 +343,17 @@ void propagate_to_cmb_from_restart(void)
 
   // work filewise: (i) read rays, (ii) propagate rays, (iii) write rays
     
-  // const int restart_file_number_begin = item_number_begin_for_bin_number(ThisTask, NTasks, number_of_restart_files);
-  // const int restart_file_number_end   = item_number_end_for_bin_number  (ThisTask, NTasks, number_of_restart_files);
+  const int restart_file_number_begin = item_number_begin_for_bin_number(ThisTask, NTasks, number_of_restart_files);
+  const int restart_file_number_end   = item_number_end_for_bin_number  (ThisTask, NTasks, number_of_restart_files);
   
   //debugging:
   int restart_file_number;
-  const int restart_file_number_begin = 0;
-  const int restart_file_number_end   = 1;
+  //const int restart_file_number_begin = 0;
+  //const int restart_file_number_end   = 1;
   for(restart_file_number = restart_file_number_begin; restart_file_number < restart_file_number_end; restart_file_number++)
   {
     { /* read rays: */
-//      sprintf(restart_file_name, "%s/restart.%d", rayTraceData.OutputPath, restart_file_number);
-      sprintf(restart_file_name, "/nfs/slac/g/ki/ki23/des/jderose/BCC/Chinchilla/Herd/Chinchilla-1/calclens/restart.%d", restart_file_number);
+      sprintf(restart_file_name, "/home/jderose/uscratch/BCC/Chinchilla/Herd/Chinchilla-1/calclens/restart.%d", restart_file_number);
     
 #ifdef DEBUG
 #if DEBUG_LEVEL > 0
@@ -456,6 +455,8 @@ void propagate_to_cmb_from_restart(void)
             bundleCells[bundleCellInd].rays[i].phi      = 0.;
          }
          rayprop_sphere(wp_CMB, rayTraceData.planeRad, rayTraceData.planeRadMinus1, bundleCellInd);
+	 updateMap(&bundleCells[bundleCellInd], maporder_,
+		   nest, A00, A01, A10, A11, ra, dec);
        }
        
       if(index_of_first_active_bundle_cell >= 0)
@@ -466,11 +467,6 @@ void propagate_to_cmb_from_restart(void)
         fprintf_ray(stderr, &(bundleCells[index_of_last_active_bundle_cell].rays[0]));
       }
     } /* propagate rays */
-
-    { /* update degraded healpix map */
-      updateMap(&bundleCells[bundlecellInd], maporder_,
-		&nest, &A00, &A01, &A10, &A11, &ra, &dec);
-    }
 
     { /* write rays: */
     
@@ -530,11 +526,24 @@ void propagate_to_cmb_from_restart(void)
   } /* loop over restart files */
 
   { /* reduce and write map */
-    reduceMap(&nest, &A00, &A01, &A10, &A11, &ra, &dec, npix);
-    if (ThisTask==0)
+    reduceMap(nest, A00, A01, A10, A11, ra, dec, npix);
+
+    if (ThisTask!=0)
       {
-	writeMap(&nest, &A00, &A01, &A10, &A11, &ra, &dec, npix,
-		 map_filename);
+	free(nest);
+	free(A00);
+	free(A01);
+	free(A10);
+	free(A11);
+	free(ra);
+	free(dec);
+      }
+    else
+      {
+	fprintf(stderr, "Writing map\n");
+	sprintf(map_filename, "%s/CMB_rays_2048.fits", rayTraceData.OutputPath);
+	fprintf(stderr, "last nest: %ld\n",nest[npix-1]);
+	writeMap(nest, A00, A01, A10, A11, ra, dec, npix, map_filename);
       }
   } /*finalize map */
 

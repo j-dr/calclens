@@ -254,6 +254,17 @@ typedef struct {
   long index;
 } ImageGal;
 
+typedef struct {
+  long nest;
+  double ra;
+  double dec;
+  double A00;
+  double A01;
+  double A10;
+  double A11;
+  double kappa;
+} ImageCell;
+
 // 176 bytes 
 typedef struct {
   long nest;
@@ -426,5 +437,19 @@ void clean_gals_restart(void);
 
 /* in fftpoissondriver.c */
 void threedpot_poissondriver(void);
+
+/* in degrade_map.c */
+void updateMap(HEALPixBundleCell *bundleCell, const long order_,
+	       long *nest, double *A00, double *A01, double *A10,
+	       double *A11, double *ra, double *dec);
+
+void reduceMap(long *nest, double *A00, double *A01, double *A10,
+	       double *A11, double *ra, double *dec,
+	       const long npix);
+
+void writeMap(long *nest, double *A00, double *A01, double *A10,
+	      double *A11, double *ra, double *dec,
+	      const long npix, const char *filename);
+
 
 #endif /* _RAYTRACE_ */

@@ -91,7 +91,7 @@ int main(int argc, char **argv)
     }
   
   /* do ray tracing */
-  raytrace();
+  propagate_to_cmb_from_restart();
   
   /* finish profiling info*/
   logProfileTag(PROFILETAG_TOTTIME);
