@@ -31,10 +31,10 @@ void updateMap(HEALPixBundleCell *bundleCell, const long order_,
   for (i=0;i<(*bundleCell).Nrays;i++)
     {
       
-      //lpix = lower_nest((*bundleCell).rays[i].nest,
-      //		rayTraceData.rayOrder,
-      //		order_);
-      lpix = vec2nest((*bundleCell).rays[i].n, order_);
+      lpix = lower_nest((*bundleCell).rays[i].nest,
+      		rayTraceData.rayOrder,
+      		order_);
+      //lpix = vec2nest((*bundleCell).rays[i].n, order_);
       
       if (i==0)
 	{
