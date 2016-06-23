@@ -1,151 +1,125 @@
+//////////////////////////////////////////////////////////////////////
+// author(s): Joe DeRose, Stefan Hilbert, ...
+//////////////////////////////////////////////////////////////////////
+
 #include <mpi.h>
 #include <assert.h>
+#include <string.h>
 #include "fitsio.h"
 #include "raytrace.h"
 #include "healpix_utils.h"
 
-void printerror( int status)
+#include "checked_alloc.h"
+
+
+//////////////////////////////////////////////////////////////////////
+// aux function: printerror
+//--------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+static inline void
+printerror(int status)
 {
   /*****************************************************/
   /* Print out cfitsio error messages and exit program */
   /*****************************************************/
 
-
   if (status)
-    {
-      fits_report_error(stderr, status); /* print error report */
-
-      exit( status );    /* terminate the program, returning error status */
-    }
+  {
+    fits_report_error(stderr, status); /* print error report */
+    exit( status );    /* terminate the program, returning error status */
+  }
   return;
 }
 
-void updateMap(HEALPixBundleCell *bundleCell, const long order_,
-	       long *nest, double *A00, double *A01, double *A10,
-	       double *A11, double *ra, double *dec)
+  
+//////////////////////////////////////////////////////////////////////
+// function: updateLensMap
+//--------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////         
+void 
+updateLensMap(HEALPixBundleCell *bundleCell, const long map_order,
+              long* map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10,
+              double *map_pixel_sum_A11, double *map_pixel_sum_ra, double *map_pixel_sum_dec)
 {
   int i;
   long lpix;
   double theta, phi;
 
   for (i=0;i<(*bundleCell).Nrays;i++)
-    {
-      
-      lpix = lower_nest((*bundleCell).rays[i].nest,
-      		rayTraceData.rayOrder,
-      		order_);
-      //lpix = vec2nest((*bundleCell).rays[i].n, order_);
-      
-      if (i==0)
-	{
-	  fprintf(stderr, "lpix: %ld\n", lpix);
-	}
-      vec2radec((*bundleCell).rays[i].n, &phi, &theta);
-      A00[lpix] += (*bundleCell).rays[i].A[0];
-      A01[lpix] += (*bundleCell).rays[i].A[1];
-      A10[lpix] += (*bundleCell).rays[i].A[2];
-      A11[lpix] += (*bundleCell).rays[i].A[3];
-      ra[lpix]  += phi;
-      dec[lpix] += theta;
-      nest[lpix]++;
-    }
+  {
+    lpix = lower_nest((*bundleCell).rays[i].nest, rayTraceData.rayOrder, map_order);
+    //lpix = vec2nest((*bundleCell).rays[i].n, map_order);
+
+    vec2radec((*bundleCell).rays[i].n, &phi, &theta);
+    map_pixel_sum_1   [lpix] ++;
+    map_pixel_sum_A00 [lpix] += (*bundleCell).rays[i].A[0];
+    map_pixel_sum_A01 [lpix] += (*bundleCell).rays[i].A[1];
+    map_pixel_sum_A10 [lpix] += (*bundleCell).rays[i].A[2];
+    map_pixel_sum_A11 [lpix] += (*bundleCell).rays[i].A[3];
+    map_pixel_sum_ra  [lpix] += phi;
+    map_pixel_sum_dec [lpix] += theta;
+    
+//     if ( i == 0)
+//     {
+//       fprintf(stderr, "lpix: %ld\n", lpix);
+//       fprintf(stderr, "task %d: debugging: map_pixel_sum_1  [lpix] =  %ld,...\n", ThisTask, map_pixel_sum_1   [lpix]);
+//       fprintf(stderr, "task %d: debugging: map_pixel_sum_A00[lpix] =  %f,...\n" , ThisTask, map_pixel_sum_A00 [lpix]);
+//       fprintf(stderr, "task %d: debugging: map_pixel_sum_A01[lpix] =  %f,...\n" , ThisTask, map_pixel_sum_A01 [lpix]);
+//       fprintf(stderr, "task %d: debugging: map_pixel_sum_A10[lpix] =  %f,...\n" , ThisTask, map_pixel_sum_A10 [lpix]);
+//       fprintf(stderr, "task %d: debugging: map_pixel_sum_A11[lpix] =  %f,...\n" , ThisTask, map_pixel_sum_A11 [lpix]);
+//       fprintf(stderr, "task %d: debugging: map_pixel_sum_ra [lpix] =  %f,...\n" , ThisTask, map_pixel_sum_ra  [lpix]);
+//       fprintf(stderr, "task %d: debugging: map_pixel_sum_dec[lpix] =  %f,...\n" , ThisTask, map_pixel_sum_dec [lpix]);
+//     }    
+  }
 }
 
-void reduceMap(long *nest, double *A00, double *A01, double *A10,
-	       double *A11, double *ra, double *dec,
-	       const long npix)
+
+//////////////////////////////////////////////////////////////////////
+// function: MPI_ReduceLensMap
+//--------------------------------------------------------------------
+// now using MPI_IN_PLACE reduction 
+//////////////////////////////////////////////////////////////////////         
+void
+MPI_ReduceLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10, double *map_pixel_sum_A11, double *map_pixel_sum_ra, double *map_pixel_sum_dec,
+                  const long map_n_pixels, const int root)
 {
-  int i;
-  double *dtemp;
-  long *ltemp;
-  
-  dtemp = (double*)malloc(sizeof(double)*npix);
-  ltemp = (long*)malloc(sizeof(long)*npix);
-
-  if (dtemp==NULL || ltemp==NULL)
-    {
-      fprintf(stderr, "Memory allocation failure\n");
-    }
-
-  MPI_Reduce(nest, ltemp, npix, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-  if (ThisTask==0)
-    {
-      memcpy(nest, ltemp, npix*sizeof(long));
-    }
-  
-  MPI_Reduce(A00, dtemp, npix, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  if (ThisTask==0)
-    {
-      memcpy(A00, dtemp, npix*sizeof(double));
-    }
-  
-  MPI_Reduce(A01, dtemp, npix, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  if (ThisTask==0)
-    {
-      memcpy(A01, dtemp, npix*sizeof(double));
-    }
-  
-  MPI_Reduce(A10, dtemp, npix, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  if (ThisTask==0)
-    {
-      memcpy(A10, dtemp, npix*sizeof(double));
-    }
-
-  MPI_Reduce(A11, dtemp, npix, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  if (ThisTask==0)
-    {
-      memcpy(A11, dtemp, npix*sizeof(double));
-    }
-
-  MPI_Reduce(ra, dtemp, npix, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  if (ThisTask==0)
-    {
-      memcpy(ra, dtemp, npix*sizeof(double));
-    }
-  
-  MPI_Reduce(dec, dtemp, npix, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  if (ThisTask==0)
-    {
-      memcpy(dec, dtemp, npix*sizeof(double));
-    }
-  
-  fprintf(stderr, "Averaging arrays\n");
-  if (ThisTask==0)
-    {
-      for (i=0;i<npix;i++)
-	{
-	  if (i==(npix-1))
-	    {
-	      fprintf(stderr, "Last pixel: %ld\n", npix);
-	    }
-	  A00[i] /= nest[i];
-	  A01[i] /= nest[i];
-	  A10[i] /= nest[i];
-	  A11[i] /= nest[i];
-	  ra[i] /= nest[i];
-	  dec[i] /= nest[i];
-	  nest[i] = i;
-	}
-    }
-  fprintf(stderr, "Done averaging arrays\n");
+  if(NTasks > 1)
+  {
+    MPI_Reduce((ThisTask == root) ? MPI_IN_PLACE : map_pixel_sum_1  ,  map_pixel_sum_1  , map_n_pixels, MPI_LONG  , MPI_SUM, root, MPI_COMM_WORLD);
+    MPI_Reduce((ThisTask == root) ? MPI_IN_PLACE : map_pixel_sum_A00,  map_pixel_sum_A00, map_n_pixels, MPI_DOUBLE, MPI_SUM, root, MPI_COMM_WORLD);
+    MPI_Reduce((ThisTask == root) ? MPI_IN_PLACE : map_pixel_sum_A01,  map_pixel_sum_A01, map_n_pixels, MPI_DOUBLE, MPI_SUM, root, MPI_COMM_WORLD);
+    MPI_Reduce((ThisTask == root) ? MPI_IN_PLACE : map_pixel_sum_A10,  map_pixel_sum_A10, map_n_pixels, MPI_DOUBLE, MPI_SUM, root, MPI_COMM_WORLD);
+    MPI_Reduce((ThisTask == root) ? MPI_IN_PLACE : map_pixel_sum_A11,  map_pixel_sum_A11, map_n_pixels, MPI_DOUBLE, MPI_SUM, root, MPI_COMM_WORLD);
+    MPI_Reduce((ThisTask == root) ? MPI_IN_PLACE : map_pixel_sum_ra ,  map_pixel_sum_ra , map_n_pixels, MPI_DOUBLE, MPI_SUM, root, MPI_COMM_WORLD);
+    MPI_Reduce((ThisTask == root) ? MPI_IN_PLACE : map_pixel_sum_dec,  map_pixel_sum_dec, map_n_pixels, MPI_DOUBLE, MPI_SUM, root, MPI_COMM_WORLD);
+  }
 }
 
-void writeMap(long *nest, double *A00, double *A01, double *A10,
-	      double *A11, double *ra, double *dec, const long npix,
-	      const char *filename)
+
+//////////////////////////////////////////////////////////////////////
+// function: writeFITSHEALPixLensMap
+//--------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+void writeFITSHEALPixLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10,
+                  double *map_pixel_sum_A11, double *map_pixel_sum_ra, double *map_pixel_sum_dec,
+                  long map_n_side, const char *filename)
 {
   fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
-  int status, hdutype;
+  int status;
   long firstrow, firstelem;
-
-  int tfields   = 7;       /* table will have 7 columns */
+  
+  long map_n_pixels = 12 * map_n_side * map_n_side;
+  long firstpix     = 0;
+  long lastpix      = map_n_pixels;
+  
+  int tfields   = 8;       /* table will have 8 columns */
 
   char extname[] = "CMB_lensing_map";           /* extension name */
 
   /* define the name, datatype, and physical units for the 3 columns */
-  char *ttype[] = { "NEST", "A00", "A01", "A10", "A11", "RA", "DEC"};
-  char *tform[] = { "1J","1D","1D","1D","1D","1D","1D"};
-  char *tunit[] = { "\0","\0","\0","\0","\0","DEG","DEG",};
+  char *ttype[] = { "NEST_IDX", "N_RAYS", "A00", "A01", "A10", "A11", "ra" , "dec"};
+  char *tform[] = { "1J"      , "1J"    , "1D" , "1D" , "1D" , "1D" , "1D" , "1D" };
+  char *tunit[] = { "\0"      , "\0"    , "\0" , "\0" , "\0" , "\0" , "DEG", "DEG"};
 
   status=0;
   fprintf(stderr, "Creating File\n");
@@ -154,36 +128,104 @@ void writeMap(long *nest, double *A00, double *A01, double *A10,
   printerror( status );
 
   /* append a new empty binary table onto the FITS file */
-  if ( fits_create_tbl( fptr, BINARY_TBL, npix, tfields, ttype, tform,
-			tunit, extname, &status) )
-    printerror( status );
+  if ( fits_create_tbl( fptr, BINARY_TBL, map_n_pixels, tfields, ttype, tform, tunit, extname, &status) )
+  { printerror( status ); } 
+  
+  fits_write_key    (fptr, TSTRING, "PIXTYPE" , "HEALPIX"  , "HEALPIX Pixelisation"                        , &status);
+  fits_write_key    (fptr, TSTRING, "ORDERING", "NESTED  " , "Pixel ordering scheme, either RING or NESTED", &status);
+  fits_write_key    (fptr, TLONG  , "NSIDE"   , &map_n_side, "Resolution parameter for HEALPIX"            , &status);
+  fits_write_key    (fptr, TLONG  , "FIRSTPIX", &firstpix  , ""                                            , &status);
+  fits_write_key    (fptr, TLONG  , "LASTPIX" , &lastpix   , ""                                            , &status);
+  fits_write_key    (fptr, TSTRING, "COORDSYS", "C       " , "Pixelisation coordinate system"              , &status);
+  fits_write_comment(fptr, "G = Galactic, E = ecliptic, C = celestial = equatorial"                        , &status);
+  { printerror( status ); }
+
+  void  * raw_temp = checked_malloc(((sizeof(long ) < sizeof(double)) ? sizeof(double) : sizeof(long)) * map_n_pixels);
+  long  * ltemp    = (long  *) raw_temp;
+  double* dtemp    = (double*) raw_temp;
+  int     i;
 
   firstrow  = 1;  /* first row in table to write   */
   firstelem = 1;  /* first element in row  (ignored in ASCII tables) */
 
   fprintf(stderr, "Writing cols\n");
-  fits_write_col(fptr, TLONG, 1, firstrow, firstelem, npix, nest,
-		 &status);
-  fprintf(stderr, "Writing cols\n");
-  fits_write_col(fptr, TDOUBLE, 2, firstrow, firstelem, npix, A00,
-		 &status);
-  fprintf(stderr, "Writing cols\n");
-  fits_write_col(fptr, TDOUBLE, 3, firstrow, firstelem, npix, A01,
-		 &status);
-  fprintf(stderr, "Writing cols\n");
-  fits_write_col(fptr, TDOUBLE, 4, firstrow, firstelem, npix, A10,
-		 &status);
-  fprintf(stderr, "Writing cols\n");
-  fits_write_col(fptr, TDOUBLE, 5, firstrow, firstelem, npix, A11,
-		 &status);
-  fprintf(stderr, "Writing cols\n");
-  fits_write_col(fptr, TDOUBLE, 6, firstrow, firstelem, npix, ra,
-		 &status);
-  fprintf(stderr, "Writing cols\n");
-  fits_write_col(fptr, TDOUBLE, 7, firstrow, firstelem, npix, dec,
-		 &status);  
+  for (i = 0; i < map_n_pixels; i++) { ltemp[i] = i ; }
+  fits_write_col(fptr, TLONG  , 1, firstrow, firstelem, map_n_pixels, ltemp, &status);
+  
+  fprintf(stderr, "Writing cols\n");                                                     
+  for (i = 0; i < map_n_pixels; i++) { ltemp[i] = map_pixel_sum_1[i]; }
+  fits_write_col(fptr, TLONG  , 2, firstrow, firstelem, map_n_pixels, ltemp, &status);
+  
+  fprintf(stderr, "Writing cols\n");                                                     
+  for (i = 0; i < map_n_pixels; i++) { dtemp[i] = map_pixel_sum_1[i] <= 0 ? 0. : map_pixel_sum_A00[i] / map_pixel_sum_1[i]; }
+  fits_write_col(fptr, TDOUBLE, 3, firstrow, firstelem, map_n_pixels, dtemp, &status);
+  
+  fprintf(stderr, "Writing cols\n");                                                     
+  for (i = 0; i < map_n_pixels; i++) { dtemp[i] = map_pixel_sum_1[i] <= 0 ? 0. :  map_pixel_sum_A01[i] / map_pixel_sum_1[i]; }
+  fits_write_col(fptr, TDOUBLE, 4, firstrow, firstelem, map_n_pixels, dtemp, &status);
+  
+  fprintf(stderr, "Writing cols\n");                                                     
+  for (i = 0; i < map_n_pixels; i++) { dtemp[i] = map_pixel_sum_1[i] <= 0 ? 0. :  map_pixel_sum_A10[i] / map_pixel_sum_1[i]; }
+  fits_write_col(fptr, TDOUBLE, 5, firstrow, firstelem, map_n_pixels, dtemp, &status);
+  
+  fprintf(stderr, "Writing cols\n");                                                     
+  for (i = 0; i < map_n_pixels; i++) { dtemp[i] = map_pixel_sum_1[i] <= 0 ? 0. :  map_pixel_sum_A11[i] / map_pixel_sum_1[i]; }
+  fits_write_col(fptr, TDOUBLE, 6, firstrow, firstelem, map_n_pixels, dtemp, &status);
+  
+  fprintf(stderr, "Writing cols\n");                                                     
+  for (i = 0; i < map_n_pixels; i++) { dtemp[i] = map_pixel_sum_1[i] <= 0 ? 0. :  map_pixel_sum_ra [i] / map_pixel_sum_1[i]; }
+  fits_write_col(fptr, TDOUBLE, 7, firstrow, firstelem, map_n_pixels, dtemp, &status);
+    
+  fprintf(stderr, "Writing cols\n");                                                     
+  for (i = 0; i < map_n_pixels; i++) { dtemp[i] = map_pixel_sum_1[i] <= 0 ? 0. :  map_pixel_sum_dec[i] / map_pixel_sum_1[i]; }
+  fits_write_col(fptr, TDOUBLE, 8, firstrow, firstelem, map_n_pixels, dtemp, &status);  
+  
+  free(raw_temp);
 
-  if ( fits_close_file(fptr, &status) )       /* close the FITS file */
-    printerror( status );
+  if (fits_close_file(fptr, &status))       /* close the FITS file */
+  { printerror( status ); }
+  
   return;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// function: writeSingleFITSHEALPixLensMap
+//--------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+void 
+writeSingleFITSHEALPixLensMap(const float *signal, long nside, const char *filename)
+{
+  fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
+  int status=0, hdutype;
+
+  long naxes[] = {0,0};
+
+  char order[9];                 /* HEALPix ordering */
+  char *ttype[] = { "SIGNAL" };
+  char *tform[] = { "1E" };
+  char *tunit[] = { " " };
+  char CoordinateSystemParameterString[9];
+  
+  long firstpix = 0;
+  long lastpix  = 12 * nside * nside;
+
+  /* create new FITS file */
+  fits_create_file  (&fptr, filename, &status);
+  fits_create_img   (fptr, SHORT_IMG, 0, naxes, &status);
+  fits_write_date   (fptr, &status);
+  fits_movabs_hdu   (fptr, 1, &hdutype, &status);
+  fits_create_tbl   (fptr, BINARY_TBL, 12L*nside*nside, 1, ttype, tform, tunit, "BINTABLE", &status);
+  
+  fits_write_key    (fptr, TSTRING, "PIXTYPE" , "HEALPIX" , "HEALPIX Pixelisation"                        , &status);
+  fits_write_key    (fptr, TSTRING, "ORDERING", "NESTED  ", "Pixel ordering scheme, either RING or NESTED", &status);
+  fits_write_key    (fptr, TLONG  , "NSIDE"   , &nside    , "Resolution parameter for HEALPIX"            , &status);
+  fits_write_key    (fptr, TLONG  , "FIRSTPIX", &firstpix , ""                                            , &status);
+  fits_write_key    (fptr, TLONG  , "LASTPIX" , &lastpix  , ""                                            , &status);
+  fits_write_key    (fptr, TSTRING, "COORDSYS", "C       ", "Pixelisation coordinate system"              , &status);
+  fits_write_comment(fptr, "G = Galactic, E = ecliptic, C = celestial = equatorial"                       , &status);
+
+  fits_write_col(fptr, TFLOAT, 1, 1, 1, 12 * nside * nside, (void *)signal, &status);
+  fits_close_file(fptr, &status);
+  printerror(status);
 }

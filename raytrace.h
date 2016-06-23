@@ -1,3 +1,12 @@
+//////////////////////////////////////////////////////////////////////
+// header guard:
+//////////////////////////////////////////////////////////////////////
+#ifndef HEADER_GUARD_FOR_RAYTRACE_H
+#define HEADER_GUARD_FOR_RAYTRACE_H
+
+//////////////////////////////////////////////////////////////////////
+// libraries:
+//////////////////////////////////////////////////////////////////////
 #include <fftw3.h>
 #include <mpi.h>
 #include <hdf5.h>
@@ -18,8 +27,9 @@
 #include <dmalloc.h>
 #endif
 
-#ifndef _RAYTRACE_
-#define _RAYTRACE_
+//////////////////////////////////////////////////////////////////////
+// other:
+//////////////////////////////////////////////////////////////////////
 
 #define RAYTRACEVERSION "CALCLENS v1.0"
 
@@ -438,18 +448,25 @@ void clean_gals_restart(void);
 /* in fftpoissondriver.c */
 void threedpot_poissondriver(void);
 
+#ifdef PROPAGATE_TO_CMB_FROM_RESTART
 /* in degrade_map.c */
-void updateMap(HEALPixBundleCell *bundleCell, const long order_,
-	       long *nest, double *A00, double *A01, double *A10,
-	       double *A11, double *ra, double *dec);
+void updateLensMap(HEALPixBundleCell *bundleCell, const long map_order,
+                  long* map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10,
+                  double *map_pixel_sum_A11, double *map_pixel_sum_ra, double *map_pixel_sum_dec);
 
-void reduceMap(long *nest, double *A00, double *A01, double *A10,
-	       double *A11, double *ra, double *dec,
-	       const long npix);
+void MPI_ReduceLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10, 
+                       double *map_pixel_sum_A11, double *map_pixel_sum_ra, double *map_pixel_sum_dec,
+                       const long map_n_pixels, const int root);
 
-void writeMap(long *nest, double *A00, double *A01, double *A10,
-	      double *A11, double *ra, double *dec,
-	      const long npix, const char *filename);
+void writeFITSHEALPixLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10,
+                  double *map_pixel_sum_A11, double *map_pixel_sum_ra, double *map_pixel_sum_dec, 
+                  const long map_n_pixels, const char *filename);
+
+void writeSingleFITSHEALPixLensMap(const float *signal, long nside, const char *filename);
+                  
+/* in propagate_to_cmb_from_restart.c */
+void propagate_to_cmb_from_restart(void);
+#endif /* defined PROPAGATE_TO_CMB_FROM_RESTART */
 
 
-#endif /* _RAYTRACE_ */
+#endif /* HEADER_GUARD_FOR_RAYTRACE_H */
