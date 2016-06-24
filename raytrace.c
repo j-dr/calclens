@@ -26,7 +26,7 @@ void raytrace(void)
 #endif
 
   //Need to clean this up. Quick and dirty for map debugging.
-  bool MapPlaneFlag = false;
+  int MapPlaneFlag = 0;
   int* lp_map;
   long* map_pixel_sum_1;
   double* map_pixel_sum_A00, map_pixel_sum_A01, map_pixel_sum_A10,
@@ -176,7 +176,7 @@ void raytrace(void)
       {
         if ((rayTraceData.CurrentPlaneNum+1)==lp_map[rayTraceData.CurrentMapNum])
         {
-            MapPlaneFlag = true;
+            MapPlaneFlag = 1;
             map_pixel_sum_1              = (long*  ) checked_calloc(map_n_pixels, sizeof(long  ));
             map_pixel_sum_A00            = (double*) checked_calloc(map_n_pixels, sizeof(double));
             map_pixel_sum_A01            = (double*) checked_calloc(map_n_pixels, sizeof(double));
@@ -311,7 +311,7 @@ void raytrace(void)
       free(map_pixel_sum_ra);
       free(map_pixel_sum_dec);
       rayTraceData.CurrentMapNum += 1;
-      MapPlaneFlag = false;
+      MapPlaneFlag = 0;
     } /* reduce and write map */
 
       logProfileTag(PROFILETAG_STEPTIME);
