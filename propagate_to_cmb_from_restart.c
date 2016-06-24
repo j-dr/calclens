@@ -57,13 +57,13 @@ static inline void
 alloc_rays_for_one_restart_file(const int number_of_restart_files_)
 {
   long shift_, NraysPerBundleCell_;
-  
+
   shift_ = rayTraceData.rayOrder - rayTraceData.bundleOrder;
   shift_ = 2 * shift_;
-  
+
   NraysPerBundleCell_ = 1;
   NraysPerBundleCell_ = (NraysPerBundleCell_ << shift_);
-  
+
   long NumBuff_ = 25.0*1024.0*1024.0/sizeof(HEALPixRay)/NraysPerBundleCell_;
   if(NumBuff_ < 10)
   { NumBuff_ = 10; }
@@ -83,7 +83,7 @@ free_rays()
   NumAllRaysGlobal = 0;
 }
 
-  
+
 //////////////////////////////////////////////////////////////////////
 // function: reset_bundle_cells
 //--------------------------------------------------------------------
@@ -92,16 +92,16 @@ void reset_bundle_cells(void)
 {
   long i_;
   long shift_, NraysPerBundleCell_;
-  
+
   shift_ = rayTraceData.rayOrder - rayTraceData.bundleOrder;
   shift_ = 2 * shift_;
-  
+
   NraysPerBundleCell_ = 1;
   NraysPerBundleCell_ = (NraysPerBundleCell_ << shift_);
-  
+
   NumAllRaysGlobal = 0;
-  
-  for(i_ = 0; i_ < NbundleCells; ++i_) 
+
+  for(i_ = 0; i_ < NbundleCells; ++i_)
     {
       if(ISSETBITFLAG(bundleCells[i_].active,PRIMARY_BUNDLECELL))
         {
@@ -118,8 +118,8 @@ void reset_bundle_cells(void)
         }
     }
 }
- 
- 
+
+
 //////////////////////////////////////////////////////////////////////
 // function: set_plane_distances
 //--------------------------------------------------------------------
@@ -128,15 +128,15 @@ static void
 set_plane_distances(void)
 {
   double binL_ = (rayTraceData.maxComvDistance)/((double) (rayTraceData.NumLensPlanes));
-  
+
   //get comv distances
   if(rayTraceData.CurrentPlaneNum - 1 < 0)
   { rayTraceData.planeRadMinus1 = 0.0; }
   else
   { rayTraceData.planeRadMinus1 = (rayTraceData.CurrentPlaneNum - 1.0)*binL_ + binL_/2.0; }
-  
+
   rayTraceData.planeRad = rayTraceData.CurrentPlaneNum*binL_ + binL_/2.0;
-  
+
   if(rayTraceData.CurrentPlaneNum+1 == rayTraceData.NumLensPlanes)
   { rayTraceData.planeRadPlus1 = rayTraceData.maxComvDistance; }
   else
@@ -149,11 +149,11 @@ set_plane_distances(void)
 //--------------------------------------------------------------------
 ///////////////////////////////////////////////////////////////////////
 static inline double
-flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift_(const double z_, const double Omega_matter_, const double Hubble_distance_ ) 
+flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift_(const double z_, const double Omega_matter_, const double Hubble_distance_ )
 {
   const double Omega_Lambda_ = 1.  - Omega_matter_;
   const double inv_omlf_     = 1. / (Omega_Lambda_ + (1. + z_) * (1. + z_) * (1. + z_) * Omega_matter_);
-  const double result_       = 
+  const double result_       =
   (0.99 < Omega_Lambda_ * inv_omlf_) ?
     Hubble_distance_ * z_ :
     Hubble_distance_ * (  2. * gsl_sf_hyperg_2F1(1./2., 1., 7./6., Omega_Lambda_            )
@@ -162,7 +162,7 @@ flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift_(const double z_, co
 }
 
 static inline double
-flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift(const double z_, const double Omega_matter_) 
+flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift(const double z_, const double Omega_matter_)
 { return flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift_(z_, Omega_matter_, 2997.92458 /* value in Mpc, change if using different units */); }
 
 
@@ -196,7 +196,7 @@ void propagate_to_cmb_from_restart(void)
 
   RayTraceData rtd;
   long i;
-  
+
   int number_of_restart_files;
   int fspd;
 
@@ -207,7 +207,7 @@ void propagate_to_cmb_from_restart(void)
 
   const double z_CMB = 1100.;
   double wp_CMB;
-  
+
   const bool write_restart_files_for_rays_at_cmb = false;
   const bool write_fits_maps_for_rays_at_cmb     = true;
   const bool overwrite_files_for_rays_at_cmb     = true;
@@ -216,7 +216,7 @@ void propagate_to_cmb_from_restart(void)
   const long map_order    = 7;
   const long map_n_side   = (1 << map_order);
   const long map_n_pixels = 12 * map_n_side * map_n_side;
-  
+
   long   *map_pixel_sum_1  ;
   double *map_pixel_sum_A00;
   double *map_pixel_sum_A01;
@@ -227,18 +227,18 @@ void propagate_to_cmb_from_restart(void)
 
   int pbc;
   long NraysPerBundleCell, bundleCellIndex;
-  
+
   // for ThisTask == 0: read first restart file & extract data:
   if(ThisTask==0)
-  { 
+  {
     fprintf(stdout, "task %d: trying to read aux data from first restart file...\n", ThisTask);
- 
+
 //    sprintf(output_filename, "%s/restart.0", rayTraceData.OutputPath);
      sprintf(output_filename, "/home/jderose/uscratch/BCC/Chinchilla/Herd/Chinchilla-1/calclens/restart.0");
-    
+
     fp = checked_fopen(output_filename, "r");
     fprintf(stderr, "debugging: opened file %s\n", output_filename);
-    
+
     checked_fread(&number_of_restart_files, sizeof(int)         , (size_t) 1, fp);
     fprintf(stderr, "debugging: number_of_restart_files = %d\n", number_of_restart_files);
 
@@ -254,7 +254,7 @@ void propagate_to_cmb_from_restart(void)
 
     checked_fread(&NbundleCells, sizeof(long), (size_t) 1, fp);
     fprintf(stderr, "debugging: NbundleCells = %ld\n", NbundleCells);
- 
+
     bundleCells                        = (HEALPixBundleCell*)checked_malloc(sizeof(HEALPixBundleCell) * NbundleCells);
     bundleCellsNest2RestrictedPeanoInd = (long*             )checked_malloc(sizeof(long)              * NbundleCells);
     bundleCellsRestrictedPeanoInd2Nest = (long*             )checked_malloc(sizeof(long)              * NbundleCells);
@@ -262,12 +262,12 @@ void propagate_to_cmb_from_restart(void)
     checked_fread(bundleCells                       , sizeof(HEALPixBundleCell), (size_t) NbundleCells, fp);
     checked_fread(bundleCellsNest2RestrictedPeanoInd, sizeof(long)             , (size_t) NbundleCells, fp);
     checked_fread(bundleCellsRestrictedPeanoInd2Nest, sizeof(long)             , (size_t) NbundleCells, fp);
-                  
+
     checked_fread(&NrestrictedPeanoInd, sizeof(long), (size_t) 1, fp);
     fprintf(stderr, "debugging: NrestrictedPeanoInd = %ld\n", NrestrictedPeanoInd);
 
     fclose(fp);
-    
+
     fprintf(stderr, "task %d: finished reading aux data from first restart file.\n", ThisTask);
   } /* for ThisTask == 0: read first restart file & extract data */
 
@@ -284,19 +284,19 @@ void propagate_to_cmb_from_restart(void)
     if(ThisTask == 0)
     { fprintf(stdout, "task %d: finished broadcast of aux data from first restart file\n", ThisTask); }
   } /* distribute information from first restart file */
-  
+
   { /* set up mem structs to hold ray and aux data */
-    fprintf(stdout, "task %d: allocating memory for raytracing data...\n", ThisTask); 
- 
+    fprintf(stdout, "task %d: allocating memory for raytracing data...\n", ThisTask);
+
     NraysPerBundleCell = (1ll) << (2*(rayTraceData.rayOrder - rayTraceData.bundleOrder));
-   
+
     if(ThisTask != 0)
     {
       bundleCells                        = (HEALPixBundleCell*)checked_malloc(sizeof(HEALPixBundleCell)*NbundleCells);
       bundleCellsNest2RestrictedPeanoInd = (long*             )checked_malloc(sizeof(long             )*NbundleCells);
       bundleCellsRestrictedPeanoInd2Nest = (long*             )checked_malloc(sizeof(long             )*NbundleCells);
     }
-   
+
     firstRestrictedPeanoIndTasks = (long*)   checked_malloc(sizeof(long) * number_of_restart_files);
     lastRestrictedPeanoIndTasks  = (long*)   checked_malloc(sizeof(long) * number_of_restart_files);
 
@@ -309,10 +309,10 @@ void propagate_to_cmb_from_restart(void)
     map_pixel_sum_dec            = (double*) checked_calloc(map_n_pixels, sizeof(double));
 
     alloc_rays_for_one_restart_file(number_of_restart_files);
-    
-    fprintf(stdout, "task %d: memory for raytracing data allocated.\n", ThisTask); 
+
+    fprintf(stdout, "task %d: memory for raytracing data allocated.\n", ThisTask);
   } /* set up mem structs to hold ray and aux data */
-  
+
   {/* set distance to cmb */
     wp_CMB = flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift(z_CMB, rayTraceData.OmegaM);
 //       fprintf(stderr, "debugging: wp_CMB = %f\n", wp_CMB);
@@ -331,11 +331,11 @@ void propagate_to_cmb_from_restart(void)
       fprintf(stderr, "task %d: trying to read rays from restart file '%s'...\n", ThisTask, output_filename);
 
       fp = checked_fopen(output_filename, "r");
-    
+
       checked_fread(&number_of_restart_files          , sizeof(int)              , (size_t) 1                      , fp);
       checked_fread(&fspd                             , sizeof(int)              , (size_t) 1                      , fp);
       checked_fread(&rtd                              , sizeof(RayTraceData)     , (size_t) 1                      , fp);
-      
+
       rayTraceData.bundleOrder     = rtd.bundleOrder     ;
       rayTraceData.rayOrder        = rtd.rayOrder        ;
       rayTraceData.OmegaM          = rtd.OmegaM          ;
@@ -346,7 +346,7 @@ void propagate_to_cmb_from_restart(void)
       rayTraceData.minDec          = rtd.minDec          ;
       rayTraceData.maxDec          = rtd.maxDec          ;
       rayTraceData.CurrentPlaneNum = rtd.CurrentPlaneNum ;
-      
+
       checked_fread(&NbundleCells                     , sizeof(long)             , (size_t) 1                      , fp);
       checked_fread(bundleCells                       , sizeof(HEALPixBundleCell), (size_t) NbundleCells           , fp);
       checked_fread(bundleCellsNest2RestrictedPeanoInd, sizeof(long)             , (size_t) NbundleCells           , fp);
@@ -355,53 +355,23 @@ void propagate_to_cmb_from_restart(void)
       checked_fread(firstRestrictedPeanoIndTasks      , sizeof(long)             , (size_t) number_of_restart_files, fp);
       checked_fread(lastRestrictedPeanoIndTasks       , sizeof(long)             , (size_t) number_of_restart_files, fp);
       checked_fread(&pbc                              , sizeof(int)              , (size_t) 1                      , fp);
-     
+
       reset_bundle_cells();
-      
-      for(i=0; i < NbundleCells; ++i) 
+
+      for(i=0; i < NbundleCells; ++i)
        if(ISSETBITFLAG(bundleCells[i].active, PRIMARY_BUNDLECELL))
           checked_fread(bundleCells[i].rays, (size_t) NraysPerBundleCell, sizeof(HEALPixRay), fp);
-      
+
       fclose(fp);
     } /* read rays */
 
     { /* propagate rays: */
       fprintf(stderr, "task %d: propagating rays from restart file %d...\n", ThisTask, restart_file_number);
-   
+
       set_plane_distances();
 
-//       fprintf(stderr, "debugging: rayTraceData.planeRadMinus1 = %f\n", rayTraceData.planeRadMinus1);
-//       fprintf(stderr, "debugging: rayTraceData.planeRad = %f\n", rayTraceData.planeRad);
-//       fprintf(stderr, "debugging: wp_CMB = %f\n", wp_CMB);
-//       
-//      int index_of_first_active_bundle_cell = -1;
-//      int index_of_last_active_bundle_cell = -1;
-//      for(bundleCellIndex = 0; bundleCellIndex < NbundleCells; ++bundleCellIndex) 
-//        if(ISSETBITFLAG(bundleCells[bundleCellIndex].active, PRIMARY_BUNDLECELL))
-//        { 
-//          index_of_first_active_bundle_cell = bundleCellIndex;
-//          break;
-//        }
-//      for(bundleCellIndex = NbundleCells; bundleCellIndex--; ) 
-//        if(ISSETBITFLAG(bundleCells[bundleCellIndex].active, PRIMARY_BUNDLECELL))
-//        { 
-//          index_of_last_active_bundle_cell = bundleCellIndex;
-//          break;
-//        }
-//        
-//      if(index_of_first_active_bundle_cell < 0)
-//      {  
-//        fprintf(stderr,"task %d: no active bundle cells \n",ThisTask);
-//      }
-//      else
-//      {
-//        fprintf(stderr,"first ray before:\n");
-//        fprintf_ray(stderr, &(bundleCells[index_of_first_active_bundle_cell].rays[0]));
-//        fprintf(stderr,"last ray before:\n");
-//        fprintf_ray(stderr, &(bundleCells[index_of_last_active_bundle_cell].rays[0]));
-//      }
-   
-      for(bundleCellIndex = 0; bundleCellIndex < NbundleCells; ++bundleCellIndex) 
+
+      for(bundleCellIndex = 0; bundleCellIndex < NbundleCells; ++bundleCellIndex)
         if(ISSETBITFLAG(bundleCells[bundleCellIndex].active, PRIMARY_BUNDLECELL))
         {
           for(i = 0; i < bundleCells[bundleCellIndex].Nrays; ++i)
@@ -417,36 +387,29 @@ void propagate_to_cmb_from_restart(void)
           rayprop_sphere(wp_CMB, rayTraceData.planeRad, rayTraceData.planeRadMinus1, bundleCellIndex);
           updateLensMap(&bundleCells[bundleCellIndex], map_order, map_pixel_sum_1, map_pixel_sum_A00, map_pixel_sum_A01, map_pixel_sum_A10, map_pixel_sum_A11, map_pixel_sum_ra, map_pixel_sum_dec);
         }
-       
-//       if(index_of_first_active_bundle_cell >= 0)
-//       {
-//         fprintf(stderr,"first ray after:\n");
-//         fprintf_ray(stderr, &(bundleCells[index_of_first_active_bundle_cell].rays[0]));
-//         fprintf(stderr,"last ray after:\n");
-//         fprintf_ray(stderr, &(bundleCells[index_of_last_active_bundle_cell].rays[0]));
-//       }
+
+
     } /* propagate rays */
 
     if(write_restart_files_for_rays_at_cmb)
     { /* write rays: */
       fprintf(stderr, "task %d: wrting rays from restart file %d...\n", ThisTask, restart_file_number);
  
-  //     sprintf(output_filename, "/nfs/slac/g/ki/ki23/des/jderose/BCC/Chinchilla/Herd/Chinchilla-1/calclens/restart_rays_at_cmb.%d", restart_file_number);
       sprintf(output_filename, "%s/restart_rays_at_cmb.%d", rayTraceData.OutputPath, restart_file_number);
       sprintf(temporary_output_filename, "%s.tmp", output_filename);
-      
-     
+
+
       fprintf(stderr, "debugging: output_filename = '%s'\n", output_filename);
       fprintf(stderr, "debugging: temporary_output_filename = '%s'\n", temporary_output_filename);
 
       if(overwrite_files_for_rays_at_cmb || !file_exists(output_filename))
       {
         fp = checked_fopen(temporary_output_filename, "w");
-        
+
         checked_fwrite(&number_of_restart_files          , sizeof(int)              , (size_t) 1                      , fp);
         checked_fwrite(&fspd                             , sizeof(int)              , (size_t) 1                      , fp);
         checked_fwrite(&rtd                              , sizeof(RayTraceData)     , (size_t) 1                      , fp);
-        
+
         rayTraceData.bundleOrder     = rtd.bundleOrder     ;
         rayTraceData.rayOrder        = rtd.rayOrder        ;
         rayTraceData.OmegaM          = rtd.OmegaM          ;
@@ -458,7 +421,7 @@ void propagate_to_cmb_from_restart(void)
         rayTraceData.maxDec          = rtd.maxDec          ;
         rayTraceData.CurrentPlaneNum = rtd.CurrentPlaneNum ;
   //       rayTraceData.Restart         = rtd.CurrentPlaneNum ;
-        
+
         checked_fwrite(&NbundleCells                     , sizeof(long)             , (size_t) 1                      , fp);
         checked_fwrite(bundleCells                       , sizeof(HEALPixBundleCell), (size_t) NbundleCells           , fp);
         checked_fwrite(bundleCellsNest2RestrictedPeanoInd, sizeof(long)             , (size_t) NbundleCells           , fp);
@@ -467,11 +430,11 @@ void propagate_to_cmb_from_restart(void)
         checked_fwrite(firstRestrictedPeanoIndTasks      , sizeof(long)             , (size_t) number_of_restart_files, fp);
         checked_fwrite(lastRestrictedPeanoIndTasks       , sizeof(long)             , (size_t) number_of_restart_files, fp);
         checked_fwrite(&pbc                              , sizeof(int)              , (size_t) 1                      , fp);
-        
-        for(i=0; i < NbundleCells; ++i) 
+
+        for(i=0; i < NbundleCells; ++i)
          if(ISSETBITFLAG(bundleCells[i].active, PRIMARY_BUNDLECELL))
             checked_fwrite(bundleCells[i].rays, sizeof(HEALPixRay), (size_t) NraysPerBundleCell, fp);
-     
+
         fclose(fp);
         sprintf(sys,"mv %s %s",temporary_output_filename, output_filename);
         system(sys);
@@ -484,45 +447,45 @@ void propagate_to_cmb_from_restart(void)
     if (ThisTask==0)
     { fprintf(stderr, "task %d: reducing rays...\n", ThisTask); }
 
-     MPI_ReduceLensMap(map_pixel_sum_1, map_pixel_sum_A00, map_pixel_sum_A01, map_pixel_sum_A10, 
+     MPI_ReduceLensMap(map_pixel_sum_1, map_pixel_sum_A00, map_pixel_sum_A01, map_pixel_sum_A10,
                        map_pixel_sum_A11, map_pixel_sum_ra, map_pixel_sum_dec,
                        map_n_pixels, 0);
- 
+
     if(ThisTask==0)
-    { fprintf(stderr, "task %d: reduced rays.\n", ThisTask); }          
-  
+    { fprintf(stderr, "task %d: reduced rays.\n", ThisTask); }
+
     if (ThisTask==0)
     {
-      sprintf(output_filename, "%s/CMB_convergence_%ld.fits", rayTraceData.OutputPath, map_n_side);   
+      sprintf(output_filename, "%s/CMB_convergence_%ld.fits", rayTraceData.OutputPath, map_n_side);
       fprintf(stderr, "task %d: writing convergence map to file '%s'...\n", ThisTask, output_filename);
-      
+
       if(overwrite_files_for_rays_at_cmb || !file_exists(output_filename))
       {
         sprintf(temporary_output_filename, "%s.tmp", output_filename);
-      
+
         /* fits_create_file() (in writeHealpixLensMap) seems not to like to overwrite existing files */
         if(file_exists(temporary_output_filename))
         { remove(temporary_output_filename);}
-        
+
         float* convergence = (float*) checked_malloc (sizeof(float) * map_n_pixels);
         for(i = 0; i < map_n_pixels; i++)
         { convergence[i] = (map_pixel_sum_1[i] <= 0) ? 0.0 : 1.0 - 0.5 * (map_pixel_sum_A00[i] + map_pixel_sum_A11[i]) / map_pixel_sum_1[i]; }
         writeSingleFITSHEALPixLensMap(convergence, map_n_side, temporary_output_filename);
         free(convergence);
-   
+
         sprintf(sys,"mv %s %s",temporary_output_filename, output_filename);
         system(sys);
-      }      
+      }
 
       sprintf(output_filename, "%s/CMB_rays_%ld.fits", rayTraceData.OutputPath, map_n_side);
       fprintf(stderr, "task %d: writing ray map to file '%s'...\n", ThisTask, output_filename);
-      
+
       if(overwrite_files_for_rays_at_cmb || !file_exists(output_filename))
       {
         /* fits_create_file() (in writeLensMap) seems not to like to overwrite existing files */
         if(file_exists(temporary_output_filename))
         { remove(temporary_output_filename); }
- 
+
         writeFITSHEALPixLensMap(map_pixel_sum_1, map_pixel_sum_A00, map_pixel_sum_A01, map_pixel_sum_A10,
                      map_pixel_sum_A11, map_pixel_sum_ra, map_pixel_sum_dec,
                      map_n_side, temporary_output_filename);
@@ -534,7 +497,7 @@ void propagate_to_cmb_from_restart(void)
   } /* reduce and write map */
 
   { /* free mem */
-    fprintf(stderr, "task %d: freeing memory...\n", ThisTask); 
+    fprintf(stderr, "task %d: freeing memory...\n", ThisTask);
 
     free(bundleCells);
     free(bundleCellsNest2RestrictedPeanoInd);
@@ -548,10 +511,10 @@ void propagate_to_cmb_from_restart(void)
     free(map_pixel_sum_A10);
     free(map_pixel_sum_A11);
     free(map_pixel_sum_ra );
-    free(map_pixel_sum_dec);    
-    
+    free(map_pixel_sum_dec);
+
     free_rays();
-    
-    fprintf(stderr, "task %d: memory freed.\n", ThisTask); 
+
+    fprintf(stderr, "task %d: memory freed.\n", ThisTask);
   } /* free mem */
 }
