@@ -22,13 +22,6 @@
 #include "checked_alloc.h"
 
 
-//////////////////////////////////////////////////////////////////////
-// aux function: file_exists
-//--------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////
-static inline bool
-file_exists( const char* filename_)
-{ return (0 == access(filename_, F_OK)); }
 
 
 
@@ -161,7 +154,7 @@ flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift_(const double z_, co
   return result_;
 }
 
-static inline double
+double
 flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift(const double z_, const double Omega_matter_)
 { return flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift_(z_, Omega_matter_, 2997.92458 /* value in Mpc, change if using different units */); }
 

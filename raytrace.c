@@ -10,6 +10,8 @@
 #include <string.h>
 
 #include "raytrace.h"
+#include "checked_alloc.h"
+#include "checked_io.h"
 
 static void set_plane_params(void);
 
@@ -18,7 +20,7 @@ void raytrace(void)
   long i,j;
   double time,minTime,maxTime;//,totTime,avgTime;
   double stepTime,restTime,startTime;
-  int writeRestartFile, NMaps;
+  int writeRestartFile;
   char pname[MAX_FILENAME];
   FILE *fpStepTime = NULL;
 #ifdef NOBACKDENS
@@ -26,11 +28,19 @@ void raytrace(void)
 #endif
 
   //Need to clean this up. Quick and dirty for map debugging.
+  long NMaps;
+  char* output_filename[MAX_FILENAME];
+  char* temporary_output_filename[MAX_FILENAME];
+  char sys                      [MAX_FILENAME];  
   int MapPlaneFlag = 0;
   int* lp_map;
   long* map_pixel_sum_1;
-  double* map_pixel_sum_A00, map_pixel_sum_A01, map_pixel_sum_A10,
-            map_pixel_sum_A11, map_pixel_sum_ra, map_pixel_sum_dec;
+  double* map_pixel_sum_A00;
+  double* map_pixel_sum_A01;
+  double* map_pixel_sum_A10;
+  double* map_pixel_sum_A11;
+  double* map_pixel_sum_ra;
+  double* map_pixel_sum_dec;
   const long map_order    = 7;
   const long map_n_side   = (1 << map_order);
   const long map_n_pixels = 12 * map_n_side * map_n_side;
@@ -101,8 +111,8 @@ void raytrace(void)
 
   if(strlen(rayTraceData.MapRedshiftList) > 0)
     {
-      getNMaps(NMaps);
-      lp_map = (int*)malloc(sizeof(int)*NMaps)
+      getNMaps(&NMaps);
+      lp_map = (int*)malloc(sizeof(int)*NMaps);
       getMapLensPlaneNums(lp_map, NMaps);
     }
 
@@ -268,7 +278,7 @@ void raytrace(void)
         sprintf(output_filename, "%s/Convergence_%ld_%ld.fits", rayTraceData.OutputPath, map_n_side, rayTraceData.CurrentMapNum);
         fprintf(stderr, "task %d: writing convergence map to file '%s'...\n", ThisTask, output_filename);
 
-        if(overwrite_files_for_rays_at_cmb || !file_exists(output_filename))
+        if(!file_exists(output_filename))
         {
           sprintf(temporary_output_filename, "%s.tmp", output_filename);
 
@@ -289,7 +299,7 @@ void raytrace(void)
         sprintf(output_filename, "%s/Rays_%ld_%ld.fits", rayTraceData.OutputPath, map_n_side, rayTraceData.CurrentMapNum);
         fprintf(stderr, "task %d: writing ray map to file '%s'...\n", ThisTask, output_filename);
 
-        if(overwrite_files_for_rays_at_cmb || !file_exists(output_filename))
+        if(!file_exists(output_filename))
         {
           /* fits_create_file() (in writeLensMap) seems not to like to overwrite existing files */
           if(file_exists(temporary_output_filename))

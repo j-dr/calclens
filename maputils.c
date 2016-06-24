@@ -36,15 +36,15 @@ printerror(int status)
 //--------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////
 void
-getNMaps(int &NMaps)
+getNMaps(long *NMaps)
 {
-    fp = fopen(rayTraceData.MapRedshiftList,"r");
-    assert(fp != NULL);
+  FILE *fp;
+  fp = fopen(rayTraceData.MapRedshiftList,"r");
+  assert(fp != NULL);
+  //Get number of Maps
+  *NMaps = fnumlines(fp);
 
-    //Get number of Maps
-    Nmaps = fnumlines(fp);
-
-    fclose(fp);
+  fclose(fp);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -52,11 +52,13 @@ getNMaps(int &NMaps)
 //--------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////
 void
-readMapRedshifts(double* z_map,  int NMaps)
+readMapRedshifts(double* z_map,  long NMaps)
 {
+  int i;
   float mz;
   char mzstr[MAX_FILENAME];
-
+  FILE *fp;
+  
   fp = fopen(rayTraceData.MapRedshiftList,"r");
   assert(fp != NULL);
 
@@ -72,7 +74,7 @@ readMapRedshifts(double* z_map,  int NMaps)
 }
 
 void
-getMapLensPlaneNums(int* lp_map, int NMaps)
+getMapLensPlaneNums(int* lp_map, long NMaps)
 {
   int i;
   double* z_map;
@@ -81,7 +83,7 @@ getMapLensPlaneNums(int* lp_map, int NMaps)
 
   z_map = (double*)malloc(sizeof(double)*NMaps);
 
-  readMapRedshifts(zmap, NMaps);
+  readMapRedshifts(z_map, NMaps);
 
   for (i=0; i<NMaps; i++)
   {
@@ -90,9 +92,6 @@ getMapLensPlaneNums(int* lp_map, int NMaps)
     lp_map[i] = (int) round(r/binL);
   }
 }
-
-void
-
 
 //////////////////////////////////////////////////////////////////////
 // function: updateLensMap

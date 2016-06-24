@@ -454,7 +454,7 @@ void threedpot_poissondriver(void);
 
 #ifdef PROPAGATE_TO_CMB_FROM_RESTART
 /* in maputils.c */
-void getNMaps(int &NMaps);
+void getNMaps(long* NMaps);
 void getMapLensPlaneNums(int* lp_map, int NMaps);
 void updateLensMap(HEALPixBundleCell *bundleCell, const long map_order,
                   long* map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10,
@@ -471,7 +471,7 @@ void writeFITSHEALPixLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, d
 void writeSingleFITSHEALPixLensMap(const float *signal, long nside, const char *filename);
 
 /* in propagate_to_cmb_from_restart.c */
-static inline double flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift(const double z_, const double Omega_matter_);
+double flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift(const double z_, const double Omega_matter_);
 void propagate_to_cmb_from_restart(void);
 #endif /* defined PROPAGATE_TO_CMB_FROM_RESTART */
 
