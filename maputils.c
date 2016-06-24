@@ -31,12 +31,74 @@ printerror(int status)
   return;
 }
 
-  
+//////////////////////////////////////////////////////////////////////
+// function: getNMaps
+//--------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+void
+getNMaps(int &NMaps)
+{
+    fp = fopen(rayTraceData.MapRedshiftList,"r");
+    assert(fp != NULL);
+
+    //Get number of Maps
+    Nmaps = fnumlines(fp);
+
+    fclose(fp);
+}
+
+//////////////////////////////////////////////////////////////////////
+// function: readMapRedshifts
+//--------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+void
+readMapRedshifts(double* z_map,  int NMaps)
+{
+  float mz;
+  char mzstr[MAX_FILENAME];
+
+  fp = fopen(rayTraceData.MapRedshiftList,"r");
+  assert(fp != NULL);
+
+  for(i=0;i<NMaps;++i)
+  {
+    fgets(mzstr,MAX_FILENAME,fp);
+    mz = atof(mzstr);
+    assert(mz!=0.0);
+    z_map[i] = mz;
+  }
+
+  fclose(fp);
+}
+
+void
+getMapLensPlaneNums(int* lp_map, int NMaps)
+{
+  int i;
+  double* z_map;
+  double  r;
+  double binL = (rayTraceData.maxComvDistance)/((double) (rayTraceData.NumLensPlanes));
+
+  z_map = (double*)malloc(sizeof(double)*NMaps);
+
+  readMapRedshifts(zmap, NMaps);
+
+  for (i=0; i<NMaps; i++)
+  {
+    r = flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift(
+          z_map[i], rayTraceData.OmegaM);
+    lp_map[i] = (int) round(r/binL);
+  }
+}
+
+void
+
+
 //////////////////////////////////////////////////////////////////////
 // function: updateLensMap
 //--------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////         
-void 
+//////////////////////////////////////////////////////////////////////
+void
 updateLensMap(HEALPixBundleCell *bundleCell, const long map_order,
               long* map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10,
               double *map_pixel_sum_A11, double *map_pixel_sum_ra, double *map_pixel_sum_dec)
@@ -58,7 +120,7 @@ updateLensMap(HEALPixBundleCell *bundleCell, const long map_order,
     map_pixel_sum_A11 [lpix] += (*bundleCell).rays[i].A[3];
     map_pixel_sum_ra  [lpix] += phi;
     map_pixel_sum_dec [lpix] += theta;
-    
+
 //     if ( i == 0)
 //     {
 //       fprintf(stderr, "lpix: %ld\n", lpix);
@@ -69,7 +131,7 @@ updateLensMap(HEALPixBundleCell *bundleCell, const long map_order,
 //       fprintf(stderr, "task %d: debugging: map_pixel_sum_A11[lpix] =  %f,...\n" , ThisTask, map_pixel_sum_A11 [lpix]);
 //       fprintf(stderr, "task %d: debugging: map_pixel_sum_ra [lpix] =  %f,...\n" , ThisTask, map_pixel_sum_ra  [lpix]);
 //       fprintf(stderr, "task %d: debugging: map_pixel_sum_dec[lpix] =  %f,...\n" , ThisTask, map_pixel_sum_dec [lpix]);
-//     }    
+//     }
   }
 }
 
@@ -77,8 +139,8 @@ updateLensMap(HEALPixBundleCell *bundleCell, const long map_order,
 //////////////////////////////////////////////////////////////////////
 // function: MPI_ReduceLensMap
 //--------------------------------------------------------------------
-// now using MPI_IN_PLACE reduction 
-//////////////////////////////////////////////////////////////////////         
+// now using MPI_IN_PLACE reduction
+//////////////////////////////////////////////////////////////////////
 void
 MPI_ReduceLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10, double *map_pixel_sum_A11, double *map_pixel_sum_ra, double *map_pixel_sum_dec,
                   const long map_n_pixels, const int root)
@@ -107,11 +169,11 @@ void writeFITSHEALPixLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, d
   fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
   int status;
   long firstrow, firstelem;
-  
+
   long map_n_pixels = 12 * map_n_side * map_n_side;
   long firstpix     = 0;
   long lastpix      = map_n_pixels;
-  
+
   int tfields   = 8;       /* table will have 8 columns */
 
   char extname[] = "CMB_lensing_map";           /* extension name */
@@ -123,14 +185,14 @@ void writeFITSHEALPixLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, d
 
   status=0;
   fprintf(stderr, "Creating File\n");
-  
+
   fits_create_file (&fptr, filename, &status);
   printerror( status );
 
   /* append a new empty binary table onto the FITS file */
   if ( fits_create_tbl( fptr, BINARY_TBL, map_n_pixels, tfields, ttype, tform, tunit, extname, &status) )
-  { printerror( status ); } 
-  
+  { printerror( status ); }
+
   fits_write_key    (fptr, TSTRING, "PIXTYPE" , "HEALPIX"  , "HEALPIX Pixelisation"                        , &status);
   fits_write_key    (fptr, TSTRING, "ORDERING", "NESTED  " , "Pixel ordering scheme, either RING or NESTED", &status);
   fits_write_key    (fptr, TLONG  , "NSIDE"   , &map_n_side, "Resolution parameter for HEALPIX"            , &status);
@@ -151,40 +213,40 @@ void writeFITSHEALPixLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, d
   fprintf(stderr, "Writing cols\n");
   for (i = 0; i < map_n_pixels; i++) { ltemp[i] = i ; }
   fits_write_col(fptr, TLONG  , 1, firstrow, firstelem, map_n_pixels, ltemp, &status);
-  
-  fprintf(stderr, "Writing cols\n");                                                     
+
+  fprintf(stderr, "Writing cols\n");
   for (i = 0; i < map_n_pixels; i++) { ltemp[i] = map_pixel_sum_1[i]; }
   fits_write_col(fptr, TLONG  , 2, firstrow, firstelem, map_n_pixels, ltemp, &status);
-  
-  fprintf(stderr, "Writing cols\n");                                                     
+
+  fprintf(stderr, "Writing cols\n");
   for (i = 0; i < map_n_pixels; i++) { dtemp[i] = map_pixel_sum_1[i] <= 0 ? 0. : map_pixel_sum_A00[i] / map_pixel_sum_1[i]; }
   fits_write_col(fptr, TDOUBLE, 3, firstrow, firstelem, map_n_pixels, dtemp, &status);
-  
-  fprintf(stderr, "Writing cols\n");                                                     
+
+  fprintf(stderr, "Writing cols\n");
   for (i = 0; i < map_n_pixels; i++) { dtemp[i] = map_pixel_sum_1[i] <= 0 ? 0. :  map_pixel_sum_A01[i] / map_pixel_sum_1[i]; }
   fits_write_col(fptr, TDOUBLE, 4, firstrow, firstelem, map_n_pixels, dtemp, &status);
-  
-  fprintf(stderr, "Writing cols\n");                                                     
+
+  fprintf(stderr, "Writing cols\n");
   for (i = 0; i < map_n_pixels; i++) { dtemp[i] = map_pixel_sum_1[i] <= 0 ? 0. :  map_pixel_sum_A10[i] / map_pixel_sum_1[i]; }
   fits_write_col(fptr, TDOUBLE, 5, firstrow, firstelem, map_n_pixels, dtemp, &status);
-  
-  fprintf(stderr, "Writing cols\n");                                                     
+
+  fprintf(stderr, "Writing cols\n");
   for (i = 0; i < map_n_pixels; i++) { dtemp[i] = map_pixel_sum_1[i] <= 0 ? 0. :  map_pixel_sum_A11[i] / map_pixel_sum_1[i]; }
   fits_write_col(fptr, TDOUBLE, 6, firstrow, firstelem, map_n_pixels, dtemp, &status);
-  
-  fprintf(stderr, "Writing cols\n");                                                     
+
+  fprintf(stderr, "Writing cols\n");
   for (i = 0; i < map_n_pixels; i++) { dtemp[i] = map_pixel_sum_1[i] <= 0 ? 0. :  map_pixel_sum_ra [i] / map_pixel_sum_1[i]; }
   fits_write_col(fptr, TDOUBLE, 7, firstrow, firstelem, map_n_pixels, dtemp, &status);
-    
-  fprintf(stderr, "Writing cols\n");                                                     
+
+  fprintf(stderr, "Writing cols\n");
   for (i = 0; i < map_n_pixels; i++) { dtemp[i] = map_pixel_sum_1[i] <= 0 ? 0. :  map_pixel_sum_dec[i] / map_pixel_sum_1[i]; }
-  fits_write_col(fptr, TDOUBLE, 8, firstrow, firstelem, map_n_pixels, dtemp, &status);  
-  
+  fits_write_col(fptr, TDOUBLE, 8, firstrow, firstelem, map_n_pixels, dtemp, &status);
+
   free(raw_temp);
 
   if (fits_close_file(fptr, &status))       /* close the FITS file */
   { printerror( status ); }
-  
+
   return;
 }
 
@@ -193,7 +255,7 @@ void writeFITSHEALPixLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, d
 // function: writeSingleFITSHEALPixLensMap
 //--------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////
-void 
+void
 writeSingleFITSHEALPixLensMap(const float *signal, long nside, const char *filename)
 {
   fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
@@ -206,7 +268,7 @@ writeSingleFITSHEALPixLensMap(const float *signal, long nside, const char *filen
   char *tform[] = { "1E" };
   char *tunit[] = { " " };
   char CoordinateSystemParameterString[9];
-  
+
   long firstpix = 0;
   long lastpix  = 12 * nside * nside;
 
@@ -216,7 +278,7 @@ writeSingleFITSHEALPixLensMap(const float *signal, long nside, const char *filen
   fits_write_date   (fptr, &status);
   fits_movabs_hdu   (fptr, 1, &hdutype, &status);
   fits_create_tbl   (fptr, BINARY_TBL, 12L*nside*nside, 1, ttype, tform, tunit, "BINTABLE", &status);
-  
+
   fits_write_key    (fptr, TSTRING, "PIXTYPE" , "HEALPIX" , "HEALPIX Pixelisation"                        , &status);
   fits_write_key    (fptr, TSTRING, "ORDERING", "NESTED  ", "Pixel ordering scheme, either RING or NESTED", &status);
   fits_write_key    (fptr, TLONG  , "NSIDE"   , &nside    , "Resolution parameter for HEALPIX"            , &status);

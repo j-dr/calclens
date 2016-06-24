@@ -37,8 +37,8 @@
    undef DEBUG for no debugging
    DEBUG_LEVEL = 0 is for basic debugging
    DEBUG_LEVEL = 1 is for messages printed by a single task but not as critical
-   DEBUG_LEVEL = 2 or above is used for messages that every task will print 
-   
+   DEBUG_LEVEL = 2 or above is used for messages that every task will print
+
    define DEBUG_IO some output as follows
    1) activecells%d.dat - list of ring inds and nside vals for all active cells for each task (task # put into %d by printf)
    2) buffcells%d.dat - list of ring inds and nside vals for all buffer cells for each task (task # put into %d by printf)
@@ -110,7 +110,7 @@
 
 /*
   MG patch and grid search options:
-  
+
   GRIDSEARCH_RADIUS_ARCMIN - radius within which to search for galaxy images in arcminutes
   MIN_SMOOTH_TO_RAY_RATIO - minimum smoothing length is set to this factor times the ray grid size
   RAYBUFF_RADIUS_ARCMIN - radius used to get buffer rays ofr galaxy image search - should be maximum deflection code could ever see
@@ -132,7 +132,7 @@
 #define CLEARBITFLAG(x,b) ((x) &= (~(1 << (b))))
 #define ISSETBITFLAG(x,b) ((x) & (1 << (b)))
 #define PRIMARY_BUNDLECELL                       0    //primary domain decomp cells
-#define PARTBUFF_BUNDLECELL                      1    //cells with buffer particles 
+#define PARTBUFF_BUNDLECELL                      1    //cells with buffer particles
 #define MAPBUFF_BUNDLECELL                       2    //cells with map buffer cells - internal flag
 #define RAYBUFF_BUNDLECELL                       3    //cells with buffer rays for grid search
 #define FULLSKY_PARTDIST_PRIMARY_BUNDLECELL      4    //primary domain cells for sep. full sky density
@@ -173,15 +173,19 @@ typedef struct {
   long MaxNFFT;
   char ThreeDPotSnapList[MAX_FILENAME];
   double LengthConvFact;
-  
+
   /* for doing gals image search */
-  char GalsFileList[MAX_FILENAME]; 
+  char GalsFileList[MAX_FILENAME];
   char GalOutputName[MAX_FILENAME];
   long NumGalOutputFiles;
-  
+
+  /* for doing lensing maps */
+  char MapRedshiftList[MAX_FILENAME];
+
   //internal params for code
   long Restart; /* set to index of ray plane to start with if you want to restart*/
   long CurrentPlaneNum;
+  long CurrentMapNum;
   long poissonOrder;                  //order of SHT poisson solve step
   double galImageSearchRad;           //radius within which to search for galaxy images
   double galImageSearchRayBufferRad;  //radius within which to get rays from other processors to do grid search
@@ -224,7 +228,7 @@ typedef struct {
   double cosrad;
 } NNbrData;
 
-//40 bytes 
+//40 bytes
 #define NFIELDS_LCPARTICLE ((hsize_t) 8)
 typedef struct {
   long partid;
@@ -275,7 +279,7 @@ typedef struct {
   double kappa;
 } ImageCell;
 
-// 176 bytes 
+// 176 bytes
 typedef struct {
   long nest;
   double n[3];      //ray location
@@ -310,13 +314,13 @@ extern const char *ProfileTagNames[];
 extern RayTraceData rayTraceData;                        /* global struct with all vars from config file */
 extern long NbundleCells;                                /* the number of bundle cells used for overall domain decomp */
 extern HEALPixBundleCell *bundleCells;                   /* the vector of bundle cells used for domain decomp */
-extern long *bundleCellsNest2RestrictedPeanoInd;         /* a global "hash" of bundle nest indexes that defines the domain covered by 
+extern long *bundleCellsNest2RestrictedPeanoInd;         /* a global "hash" of bundle nest indexes that defines the domain covered by
 							    rays in terms of a coniguous space-filling index set */
 extern long *bundleCellsRestrictedPeanoInd2Nest;         /* inverse of bundleCellsNest2RestrictedPeanoInd */
 extern long NrestrictedPeanoInd;                         /* number of restricted peano inds == total number of bundle cells with rays */
-extern long *firstRestrictedPeanoIndTasks;               /* array which holds first index of section of RestrictedPeanoInds assigned to each MPI task 
+extern long *firstRestrictedPeanoIndTasks;               /* array which holds first index of section of RestrictedPeanoInds assigned to each MPI task
 							    - this forms the domain decomp */
-extern long *lastRestrictedPeanoIndTasks;                /* array which holds last index of section of RestrictedPeanoInds assigned to each MPI task 
+extern long *lastRestrictedPeanoIndTasks;                /* array which holds last index of section of RestrictedPeanoInds assigned to each MPI task
 							    - this forms the domain decomp */
 extern HEALPixRay *AllRaysGlobal;                       /* pointer to memory location of all rays */
 extern long MaxNumAllRaysGlobal;                        /* maximum number of rays that can be stored */
@@ -449,22 +453,25 @@ void clean_gals_restart(void);
 void threedpot_poissondriver(void);
 
 #ifdef PROPAGATE_TO_CMB_FROM_RESTART
-/* in degrade_map.c */
+/* in maputils.c */
+void getNMaps(int &NMaps);
+void getMapLensPlaneNums(int* lp_map, int NMaps);
 void updateLensMap(HEALPixBundleCell *bundleCell, const long map_order,
                   long* map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10,
                   double *map_pixel_sum_A11, double *map_pixel_sum_ra, double *map_pixel_sum_dec);
 
-void MPI_ReduceLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10, 
+void MPI_ReduceLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10,
                        double *map_pixel_sum_A11, double *map_pixel_sum_ra, double *map_pixel_sum_dec,
                        const long map_n_pixels, const int root);
 
 void writeFITSHEALPixLensMap(long *map_pixel_sum_1, double *map_pixel_sum_A00, double *map_pixel_sum_A01, double *map_pixel_sum_A10,
-                  double *map_pixel_sum_A11, double *map_pixel_sum_ra, double *map_pixel_sum_dec, 
+                  double *map_pixel_sum_A11, double *map_pixel_sum_ra, double *map_pixel_sum_dec,
                   const long map_n_pixels, const char *filename);
 
 void writeSingleFITSHEALPixLensMap(const float *signal, long nside, const char *filename);
-                  
+
 /* in propagate_to_cmb_from_restart.c */
+static inline double flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift(const double z_, const double Omega_matter_);
 void propagate_to_cmb_from_restart(void);
 #endif /* defined PROPAGATE_TO_CMB_FROM_RESTART */
 
