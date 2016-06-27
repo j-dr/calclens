@@ -5,11 +5,37 @@
 #include <mpi.h>
 #include <assert.h>
 #include <string.h>
+#include <math.h>
 #include "fitsio.h"
 #include "raytrace.h"
 #include "healpix_utils.h"
+#include <gsl/gsl_errno.h>
+// #include <gsl/gsl_math.h>
+#include <gsl/gsl_sf_hyperg.h>
 
 #include "checked_alloc.h"
+
+
+static inline double
+flat_LambdaCDM_los_comoving_distance_for_redshift_(double z_, double Omega_matter_, double Hubble_distance_ )
+  {
+    const double Omega_Lambda_ = 1.  - Omega_matter_;
+    const double inv_omlf_     = 1. / (Omega_Lambda_ + (1. + z_) * (1. + z_) * (1. + z_) * Omega_matter_);
+    const double result_       =
+      (0.99 < Omega_Lambda_ * inv_omlf_) ?
+      Hubble_distance_ * z_ :
+      Hubble_distance_ * (  2. * gsl_sf_hyperg_2F1(1./2., 1., 7./6., Omega_Lambda_            )
+				+                        - 2. * gsl_sf_hyperg_2F1(1./2., 1., 7./6., Omega_Lambda_ * inv_omlf_) * sqrt(inv_omlf_) * (1. + z_));
+    fprintf(stderr, "z : %f\n", z_);
+    fprintf(stderr, "omegal : %f\n", Omega_Lambda_);
+    fprintf(stderr, "inv_omlf : %f\n", inv_omlf_);    
+    fprintf(stderr, "Result : %f\n", result_);
+    return result_;
+
+   }
+static inline double
+flat_LambdaCDM_los_comoving_distance_for_redshift(double z_, double Omega_matter_)
+{ return flat_LambdaCDM_los_comoving_distance_for_redshift_(z_, Omega_matter_, 2997.92458 /* value in Mpc, change if using different units */); }
 
 
 //////////////////////////////////////////////////////////////////////
@@ -43,7 +69,7 @@ getNMaps(long *NMaps)
   assert(fp != NULL);
   //Get number of Maps
   *NMaps = fnumlines(fp);
-
+  fprintf(stderr, "Number of maps %ld\n", *NMaps);
   fclose(fp);
 }
 
@@ -80,15 +106,18 @@ getMapLensPlaneNums(int* lp_map, long NMaps)
   double* z_map;
   double  r;
   double binL = (rayTraceData.maxComvDistance)/((double) (rayTraceData.NumLensPlanes));
-
+  fprintf(stderr, "binL : %f\n", binL);
   z_map = (double*)malloc(sizeof(double)*NMaps);
 
   readMapRedshifts(z_map, NMaps);
 
   for (i=0; i<NMaps; i++)
   {
-    r = flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift(
+    fprintf(stderr, "Map redshift : %f\n", z_map[i]);
+    r = flat_LambdaCDM_los_comoving_distance_for_redshift(
           z_map[i], rayTraceData.OmegaM);
+    fprintf(stderr, "Map comoving distance : %f\n", r);
+    fprintf(stderr, "Lens plane : %f\n", round(r/binL));
     lp_map[i] = (int) round(r/binL);
   }
 }

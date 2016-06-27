@@ -46,8 +46,8 @@ CC          =  mpicc
 OPTIMIZE    =  -g -O3 -Wall #-wd981 #-wd1419 -wd810
 EXTRACFLAGS =  -I${HOME}/.local/include
 EXTRACLIB   =  -L${HOME}/.local/lib
-FITSI       =  -I${HOME}/.local/cfitsio/include
-FITSL       =  -L${HOME}/.local/cfitsio/lib
+#FITSI       =  -I${HOME}/.local/cfitsio/include
+#FITSL       =  -L${HOME}/.local/cfitsio/lib
 endif
 
 ifeq ($(COMP),"home")
@@ -107,8 +107,8 @@ FFTWLIBS = -lfftw3_mpi -lfftw3
 endif
 
 CLINK=$(CC)
-CFLAGS=$(OPTIMIZE) $(FFTWI) $(HDF5I) $(FITSI) $(GSLI) $(EXTRACFLAGS) $(OPTS)
-CLIB=$(EXTRACLIB) $(FFTWL) $(HDF5L) $(FITSL) $(GSLL) -lgsl -lgslcblas $(FFTWLIBS) -lfftw3f -lz -lhdf5_hl -lhdf5  -lcfitsio -lm
+CFLAGS=$(OPTIMIZE) $(FFTWI) $(HDF5I) $(GSLI) $(EXTRACFLAGS) $(OPTS)
+CLIB=$(EXTRACLIB) $(FFTWL) $(HDF5L) $(GSLL) -lgsl -lgslcblas $(FFTWLIBS) -lfftw3f -lz -lhdf5_hl -lhdf5  -lcfitsio -lm
 
 ifeq (MEMWATCH,$(findstring MEMWATCH,$(CFLAGS)))
 MEMWATCH=memwatch.o

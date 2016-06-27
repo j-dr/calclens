@@ -85,13 +85,14 @@ int main(int argc, char **argv)
       fprintf(stderr,"galaxy image ray buffer radius = %f arcmin\n",RAYBUFF_RADIUS_ARCMIN);
       fprintf(stderr,"SHT order = %ld, bundle order = %ld, ray order = %ld\n",rayTraceData.SHTOrder,rayTraceData.bundleOrder,rayTraceData.rayOrder);
       fprintf(stderr,"min,max comv. smoothing scale = %lg|%lg\n",rayTraceData.minComvSmoothingScale,rayTraceData.maxComvSmoothingScale);
+      fprintf(stderr,"Map redshift file name : %s\n",rayTraceData.MapRedshiftList);
       fprintf(stderr,"sizeof(long) = %lu, sizeof(long long) = %lu\n",sizeof(long),sizeof(long long));
       fprintf(stderr,"----------------------------------------------------------------------------------------------------------------------\n");
       fprintf(stderr,"\n");
     }
   
   /* do ray tracing */
-  propagate_to_cmb_from_restart();
+  raytrace();
   
   /* finish profiling info*/
   logProfileTag(PROFILETAG_TOTTIME);

@@ -141,8 +141,8 @@ set_plane_distances(void)
 // flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift:
 //--------------------------------------------------------------------
 ///////////////////////////////////////////////////////////////////////
-static inline double
-flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift_(const double z_, const double Omega_matter_, const double Hubble_distance_ )
+double
+flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift_(double z_, const double Omega_matter_, const double Hubble_distance_ )
 {
   const double Omega_Lambda_ = 1.  - Omega_matter_;
   const double inv_omlf_     = 1. / (Omega_Lambda_ + (1. + z_) * (1. + z_) * (1. + z_) * Omega_matter_);
@@ -155,7 +155,7 @@ flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift_(const double z_, co
 }
 
 double
-flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift(const double z_, const double Omega_matter_)
+flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift(double z_, const double Omega_matter_)
 { return flat_LambdaCDM_line_of_sight_comoving_distance_for_redshift_(z_, Omega_matter_, 2997.92458 /* value in Mpc, change if using different units */); }
 
 

@@ -41,7 +41,7 @@ void raytrace(void)
   double* map_pixel_sum_A11;
   double* map_pixel_sum_ra;
   double* map_pixel_sum_dec;
-  const long map_order    = 7;
+  const long map_order    = 11;
   const long map_n_side   = (1 << map_order);
   const long map_n_pixels = 12 * map_n_side * map_n_side;
 
@@ -114,6 +114,10 @@ void raytrace(void)
       getNMaps(&NMaps);
       lp_map = (int*)malloc(sizeof(int)*NMaps);
       getMapLensPlaneNums(lp_map, NMaps);
+      for (i=0;i<NMaps;i++)
+	{
+	  fprintf(stderr, "Map lens plane %d: %d\n", i, lp_map[i]);
+	}
     }
 
   //timers for restart
