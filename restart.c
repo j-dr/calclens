@@ -118,8 +118,10 @@ static void restart_io(int read)
 	      
 	      MPI_Abort(MPI_COMM_WORLD,777);
 	    }
-	  if(read)
+	  if(read) {
 	    rayTraceData.Restart = rtd_in.CurrentPlaneNum;
+	    rayTraceData.CurrentMapNum = rtd_in.CurrentMapNum;
+	  }
 	  
 	  //read/write domain decomp info
 	  frw_io(&NbundleCells,sizeof(long),(size_t) 1,fp,read);
