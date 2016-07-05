@@ -92,7 +92,13 @@ int main(int argc, char **argv)
     }
   
   /* do ray tracing */
-  raytrace();
+  if (rayTraceData.CMBLensing)
+    {
+      propagate_to_cmb_from_restart();
+    } else
+    {
+      raytrace();
+    }
   
   /* finish profiling info*/
   logProfileTag(PROFILETAG_TOTTIME);

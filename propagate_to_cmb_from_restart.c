@@ -112,7 +112,6 @@ void reset_bundle_cells(void)
     }
 }
 
-
 //////////////////////////////////////////////////////////////////////
 // function: set_plane_distances
 //--------------------------------------------------------------------
@@ -206,7 +205,7 @@ void propagate_to_cmb_from_restart(void)
   const bool overwrite_files_for_rays_at_cmb     = true;
 
 //  const long map_order    = 11;
-  const long map_order    = 7;
+  const long map_order    = 11;
   const long map_n_side   = (1 << map_order);
   const long map_n_pixels = 12 * map_n_side * map_n_side;
 
@@ -227,7 +226,7 @@ void propagate_to_cmb_from_restart(void)
     fprintf(stdout, "task %d: trying to read aux data from first restart file...\n", ThisTask);
 
 //    sprintf(output_filename, "%s/restart.0", rayTraceData.OutputPath);
-     sprintf(output_filename, "/home/jderose/uscratch/BCC/Chinchilla/Herd/Chinchilla-1/calclens/restart.0");
+    sprintf(output_filename, "%s/restart.0", rayTraceData.OutputPath);
 
     fp = checked_fopen(output_filename, "r");
     fprintf(stderr, "debugging: opened file %s\n", output_filename);
@@ -319,7 +318,7 @@ void propagate_to_cmb_from_restart(void)
   for(restart_file_number = restart_file_number_begin; restart_file_number < restart_file_number_end; restart_file_number++)
   {
     { /* read rays: */
-      sprintf(output_filename, "/home/jderose/uscratch/BCC/Chinchilla/Herd/Chinchilla-1/calclens/restart.%d", restart_file_number);
+      sprintf(output_filename, "%s/restart.%d", rayTraceData.OutputPath, restart_file_number);
 
       fprintf(stderr, "task %d: trying to read rays from restart file '%s'...\n", ThisTask, output_filename);
 

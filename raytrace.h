@@ -181,6 +181,7 @@ typedef struct {
 
   /* for doing lensing maps */
   char MapRedshiftList[MAX_FILENAME];
+  long CMBLensing;
 
   //internal params for code
   long Restart; /* set to index of ray plane to start with if you want to restart*/
