@@ -188,7 +188,7 @@ void raytrace(void)
 
       if (strlen(rayTraceData.MapRedshiftList)>0)
       {
-        if ((rayTraceData.CurrentPlaneNum+1)==lp_map[rayTraceData.CurrentMapNum])
+        if (((rayTraceData.CurrentPlaneNum+1)==lp_map[rayTraceData.CurrentMapNum]) && !rayTraceData.MaxResMap)
         {
             MapPlaneFlag = 1;
             map_pixel_sum_1              = (long*  ) checked_calloc(map_n_pixels, sizeof(long  ));
@@ -198,6 +198,9 @@ void raytrace(void)
             map_pixel_sum_A11            = (double*) checked_calloc(map_n_pixels, sizeof(double));
             map_pixel_sum_ra             = (double*) checked_calloc(map_n_pixels, sizeof(double));
             map_pixel_sum_dec            = (double*) checked_calloc(map_n_pixels, sizeof(double));
+        } else if ((rayTraceData.CurrentPlaneNum+1)==lp_map[rayTraceData.CurrentMapNum])
+        {
+            write_rays(rayTraceData.CurrentMapNum);
         }
       }
 

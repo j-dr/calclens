@@ -48,6 +48,7 @@ void read_config(char *filename)
   rayTraceData.CurrentMapNum = 0;
   rayTraceData.MapRedshiftList[0] = '\0';
   rayTraceData.CMBLensing = 0;
+  rayTraceData.MaxResMap = 0;
 
   //make output dir
   mkdir(rayTraceData.OutputPath,02755);
@@ -156,6 +157,7 @@ void read_config(char *filename)
       ASSIGN_CONFIG_STR(GalOutputName);
       ASSIGN_CONFIG_STR(MapRedshiftList);
       ASSIGN_CONFIG_LONG(CMBLensing);
+      ASSIGN_CONFIG_LONG(MaxResMap);
       ASSIGN_CONFIG_LONG(NumGalOutputFiles);
 
 

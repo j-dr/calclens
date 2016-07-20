@@ -182,7 +182,7 @@ typedef struct {
   /* for doing lensing maps */
   char MapRedshiftList[MAX_FILENAME];
   long CMBLensing;
-
+  long MaxResMap;
   //internal params for code
   long Restart; /* set to index of ray plane to start with if you want to restart*/
   long CurrentPlaneNum;
@@ -448,6 +448,7 @@ void destroyHEALPixTree(HEALPixTreeData *td);
 /* in restart.c */
 void read_restart(void);
 void write_restart(void);
+void write_rays(long mapnum);
 void clean_gals_restart(void);
 
 /* in fftpoissondriver.c */
