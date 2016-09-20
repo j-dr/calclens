@@ -405,7 +405,7 @@ static void file_write_rays2fits(long fileNum, long firstTask, long lastTask, MP
   MPI_Status mpistatus;
   double t0 = 0.0;
   
-  sprintf(name,"%s/%s%04ld.%04ld",rayTraceData.OutputPath,rayTraceData.RayOutputName,rayTraceData.CurrentPlaneNum,fileNum);
+  sprintf(name,"%s/%s%04ld.%04ld",rayTraceData.OutputPath,rayTraceData.RayOutputName,rayTraceData.CurrentMapNum,fileNum);
   sprintf(bangname,"!%s",name);
   
   /* build fits table layout*/
@@ -862,7 +862,7 @@ static void file_write_rays2bin(long fileNum, long firstTask, long lastTask, MPI
   rays += sizeof(double);
 #endif
   
-  sprintf(name,"%s/%s%04ld.%04ld",rayTraceData.OutputPath,rayTraceData.RayOutputName,rayTraceData.CurrentPlaneNum,fileNum);
+  sprintf(name,"%s/%s%04ld.%04ld",rayTraceData.OutputPath,rayTraceData.RayOutputName,rayTraceData.CurrentMapNum,fileNum);
   
   NumRaysInChunkBase = buffSizeMB*1024l*1024l/rays;
   chunkRays = (char*)malloc(rays*NumRaysInChunkBase);

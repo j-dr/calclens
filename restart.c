@@ -8,14 +8,14 @@
 
 #include "raytrace.h"
 
-static void restart_io(int read, int mapnum);
+static void restart_io(int read);
 static size_t frw_io(void *p, size_t size, size_t nitems, FILE *fp, int read);
 
 /*
   this routine writes unformatted binary restart files
   for the ray tracing
 */
-static void restart_io(int read, long mapnum)
+static void restart_io(int read)
 {
   RayTraceData rtd_in;
   long i,mygroup,currgroup,Ngroups;
@@ -34,16 +34,8 @@ static void restart_io(int read, long mapnum)
   fspd = 0;
 #endif
 
-  if (mapnum != NULL)
-  {
-    sprintf(name,"%s/rays_%d.%d",rayTraceData.OutputPath,mapnum, ThisTask);
-
-  }
-  else
-  {
-    sprintf(name,"%s/restart.%d",rayTraceData.OutputPath,ThisTask);
-    sprintf(sys,"mv %s %s.bak",name,name);
-  }
+  sprintf(name,"%s/restart.%d",rayTraceData.OutputPath,ThisTask);
+  sprintf(sys,"mv %s %s.bak",name,name);
 
   mygroup = ThisTask/rayTraceData.NumFilesIOInParallel;
   Ngroups = NTasks/rayTraceData.NumFilesIOInParallel;
@@ -57,7 +49,7 @@ static void restart_io(int read, long mapnum)
 	  time = -MPI_Wtime();
 
 	  //move old files to .bak files if writing
-	  if((!read) && (mapnum != NULL))
+	  if(!read)
 	    system(sys);
 
 	  if(read)
@@ -218,17 +210,12 @@ static size_t frw_io(void *p, size_t size, size_t nitems, FILE *fp, int read)
 
 void read_restart(void)
 {
-  restart_io(1, NULL);
+  restart_io(1);
 }
 
 void write_restart(void)
 {
-  restart_io(0, NULL);
-}
-
-void write_rays(long mapnum)
-{
-  restart_io(0, mapnum);
+  restart_io(0);
 }
 
 //remove gals from previous planes not needed during restart

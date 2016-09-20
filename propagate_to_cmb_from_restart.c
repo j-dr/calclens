@@ -200,12 +200,12 @@ void propagate_to_cmb_from_restart(void)
   const double z_CMB = 1100.;
   double wp_CMB;
 
-  const bool write_restart_files_for_rays_at_cmb = false;
+  const bool write_restart_files_for_rays_at_cmb = true;
   const bool write_fits_maps_for_rays_at_cmb     = true;
-  const bool overwrite_files_for_rays_at_cmb     = true;
+  const bool overwrite_files_for_rays_at_cmb     = false;
 
 //  const long map_order    = 11;
-  const long map_order    = 11;
+  const long map_order    = 12;
   const long map_n_side   = (1 << map_order);
   const long map_n_pixels = 12 * map_n_side * map_n_side;
 
@@ -377,12 +377,14 @@ void propagate_to_cmb_from_restart(void)
             bundleCells[bundleCellIndex].rays[i].phi      = 0.;
           }
           rayprop_sphere(wp_CMB, rayTraceData.planeRad, rayTraceData.planeRadMinus1, bundleCellIndex);
+
           updateLensMap(&bundleCells[bundleCellIndex], map_order, map_pixel_sum_1, map_pixel_sum_A00, map_pixel_sum_A01, map_pixel_sum_A10, map_pixel_sum_A11, map_pixel_sum_ra, map_pixel_sum_dec);
         }
 
 
     } /* propagate rays */
-
+    //write_rays();
+    
     if(write_restart_files_for_rays_at_cmb)
     { /* write rays: */
       fprintf(stderr, "task %d: wrting rays from restart file %d...\n", ThisTask, restart_file_number);

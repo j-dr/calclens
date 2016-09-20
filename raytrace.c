@@ -198,9 +198,6 @@ void raytrace(void)
             map_pixel_sum_A11            = (double*) checked_calloc(map_n_pixels, sizeof(double));
             map_pixel_sum_ra             = (double*) checked_calloc(map_n_pixels, sizeof(double));
             map_pixel_sum_dec            = (double*) checked_calloc(map_n_pixels, sizeof(double));
-        } else if ((rayTraceData.CurrentPlaneNum+1)==lp_map[rayTraceData.CurrentMapNum])
-        {
-            write_rays(rayTraceData.CurrentMapNum);
         }
       }
 
@@ -244,12 +241,16 @@ void raytrace(void)
 #endif
 
       //write rays
-      if((rayTraceData.Restart == 0 || rayTraceData.CurrentPlaneNum >= rayTraceData.Restart) && strlen(rayTraceData.RayOutputName) > 0)
+      if (strlen(rayTraceData.MapRedshiftList)>0)
+      {
+	if (((rayTraceData.CurrentPlaneNum+1)==lp_map[rayTraceData.CurrentMapNum]) && strlen(rayTraceData.RayOutputName) > 0 && rayTraceData.MaxResMap)
 	{
 	  logProfileTag(PROFILETAG_RAYIO);
 	  write_rays();
+          rayTraceData.CurrentMapNum += 1;
 	  logProfileTag(PROFILETAG_RAYIO);
 	}
+      }
 
       //ray propagation is done for each active (bit 0 set) bundleCell
       for(i=0;i<NbundleCells;++i)

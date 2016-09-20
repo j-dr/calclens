@@ -448,7 +448,6 @@ void destroyHEALPixTree(HEALPixTreeData *td);
 /* in restart.c */
 void read_restart(void);
 void write_restart(void);
-void write_rays(long mapnum);
 void clean_gals_restart(void);
 
 /* in fftpoissondriver.c */
