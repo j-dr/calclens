@@ -246,6 +246,7 @@ void propagate_to_cmb_from_restart(void)
 
     checked_fread(&NbundleCells, sizeof(long), (size_t) 1, fp);
     fprintf(stderr, "debugging: NbundleCells = %ld\n", NbundleCells);
+    fprintf(stderr, "debugging: CurrentPlaneNum = %ld\n", rtd.CurrentPlaneNum);
 
     bundleCells                        = (HEALPixBundleCell*)checked_malloc(sizeof(HEALPixBundleCell) * NbundleCells);
     bundleCellsNest2RestrictedPeanoInd = (long*             )checked_malloc(sizeof(long)              * NbundleCells);
