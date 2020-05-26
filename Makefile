@@ -27,7 +27,8 @@ OPTS += -DNGPSHTDENS #define to use NGP interp for SHT step
 #OPTS += -DCICSHTDENS #define to use CIC interp for SHT step
 
 #select your computer
-COMP="edison"
+#COMP="edison"
+COMP="cori-haswell"
 #COMP="sherlock"
 #COMP="orange"
 #COMP="orion-gcc"
@@ -49,6 +50,42 @@ EXTRACFLAGS =  -I${HOME}/.local/include
 EXTRACLIB   =  -L${HOME}/.local/lib
 #FITSI       =  -I${HOME}/.local/cfitsio/include
 #FITSL       =  -L${HOME}/.local/cfitsio/lib
+endif
+
+ifeq ($(COMP),"edison")
+CC          =  cc
+OPTIMIZE    =  -g -O3 -Wall #-wd981 #-wd1419 -wd810
+EXTRACFLAGS =  -I${HOME}/.local/include
+EXTRACLIB   =  -L${HOME}/.local/lib
+GSLI        =  -I$(GSL_DIR)/include
+GSLL        =  -L$(GSL_DIR)/lib
+FFTWI       =  -I$(FFTW_DIR)/include 
+FFTWL       =  -L$(FFTW_DIR)/lib
+HDF5I       =  -I$(HDF5_DIR)/include 
+HDF5L       =  -L$(HDF5_DIR)/lib
+FITSI       =  -I${CFITSIO_DIR}/include
+FITSL       =  -L${CFITSIO_DIR}/lib
+#FITSI       =  -I${HOME}/usr/local/cfitsio/include
+#FITSL       =  -L${HOME}/usr/local/cfitsio/lib
+endif
+
+ifeq ($(COMP),"cori-haswell")
+CC          =  cc
+OPTIMIZE    =  -O3 -ffast-math -funroll-loops #-g -O3 -Wall #-wd981 #-wd1419 -wd810
+#EXTRACFLAGS =  -I${HOME}/.local/include
+#EXTRACLIB   =  -L${HOME}/.local/lib
+GSLI        =  -I$(GSL_DIR)/include
+GSLL        =  -L$(GSL_DIR)/lib
+FFTWI       =  -I$(FFTW_DIR)/include 
+FFTWL       =  -L$(FFTW_DIR)/lib
+#HDF5I       =  -I$(HDF5_DIR)/include 
+#HDF5L       =  -L$(HDF5_DIR)/lib
+FITSI       =  -I$(CFITSIO_DIR)/include 
+FITSL       =  -L$(CFITSIO_DIR)/lib
+#FITSI       =  -I/global/homes/j/jderose/usr/local/cfitsio/include
+#FITSL       =  -L/global/homes/j/jderose/usr/local/cfitsio/lib
+#FITSI       =  -I${HOME}/usr/local/cfitsio/include
+#FITSL       =  -L${HOME}/usr/local/cfitsio/lib
 endif
 
 ifeq ($(COMP),"edison")
